@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastrar Society – GoPlay</title>
+    <link rel="stylesheet" href="../css/goplay.css">
+</head>
+
+<body class="with-sidebar">
+
+    <header>
+        <div class="menu-icon">☰</div>
+        <!-- <img src="../assets/logo_goplay.png" class="logo"> -->
+    </header>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="menuLateral">
+        <div class="sidebar-title">MENU</div>
+
+        <a href="home.html">🏠 Início</a>
+        <a href="societies.html">👀 Ver Societies</a>
+        <a href="society-create.html">➕ Cadastrar Society</a>
+        <a href="times.html">⚽ Times</a>
+        <a href="jogadores.html">🧑‍🤝‍🧑 Jogadores</a>
+        <a href="pagamentos.html">💳 Pagamentos</a>
+        <a href="convites.html">✉️ Convites</a>
+        <a href="perfil.html">👤 Perfil</a>
+        <a href="campos.html">🌱 Campos</a>
+        <a href="cardapio.html">🍔 Cardápio</a>
+    </div>
+
+    <div class="container">
+
+        <div class="card-title">Cadastrar meu Society</div>
+
+        <div class="card">
+
+            <input id="nome" class="input" placeholder="Nome do Society">
+            <textarea id="descricao" class="input" placeholder="Descrição" style="height:70px;"></textarea>
+
+            <input id="telefone" class="input" placeholder="Telefone">
+            <input id="whatsapp" class="input" placeholder="WhatsApp">
+            <input id="email" class="input" placeholder="E-mail">
+            <input id="website" class="input" placeholder="Website">
+
+            <input id="instagram" class="input" placeholder="Instagram">
+            <input id="facebook" class="input" placeholder="Facebook">
+            <input id="youtube" class="input" placeholder="YouTube">
+
+            <input id="cep" class="input" placeholder="CEP">
+            <input id="endereco" class="input" placeholder="Endereço">
+            <input id="estado" class="input" placeholder="Estado">
+            <input id="cidade" class="input" placeholder="Cidade">
+
+            <button class="btn" onclick="salvarSociety()">Salvar Society</button>
+
+        </div>
+
+    </div>
+
+    <script src="../scripts/menu.js" defer></script>
+    <script src="../scripts/societyCreate.js" defer></script>
+</body>
+
+</html>

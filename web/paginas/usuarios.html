@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Criar Conta – GoPlay</title>
+    <link rel="stylesheet" href="../css/goplay.css">
+</head>
+
+<body class="with-sidebar">
+
+    <header>
+        <div class="menu-icon">☰</div>
+    </header>
+
+    <div class="sidebar" id="menuLateral">
+        <div class="sidebar-title">MENU</div>
+
+        <a href="login.html">➡️ Já tenho conta</a>
+    </div>
+
+    <div class="container">
+
+        <div class="card-title">Criar Conta</div>
+
+        <div class="card">
+
+            <input id="nome" class="input" placeholder="Nome completo">
+            <input id="email" class="input" placeholder="E-mail">
+            <input id="senha" class="input" type="password" placeholder="Senha">
+            <input id="telefone" class="input" placeholder="Telefone (opcional)">
+
+            <button class="btn" onclick="criarUsuario()">Criar Conta</button>
+
+        </div>
+
+    </div>
+
+    <script src="../scripts/menu.js" defer></script>
+    <script src="../scripts/usuarios.js" defer></script>
+
+</body>
+
+</html>

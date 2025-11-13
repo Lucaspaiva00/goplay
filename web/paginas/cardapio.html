@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Cardápio – GoPlay</title>
+    <link rel="stylesheet" href="../css/goplay.css">
+</head>
+
+<body class="with-sidebar">
+
+    <header>
+        <div class="menu-icon">☰</div>
+    </header>
+
+    <!-- MENU LATERAL -->
+    <div class="sidebar" id="menuLateral">
+        <div class="sidebar-title">MENU</div>
+
+        <a href="home.html">🏠 Início</a>
+        <a href="societies.html">👀 Ver Societies</a>
+        <a href="society-create.html">➕ Cadastrar Society</a>
+        <a href="times.html">⚽ Times</a>
+        <a href="jogadores.html">🧑‍🤝‍🧑 Jogadores</a>
+        <a href="pagamentos.html">💳 Pagamentos</a>
+        <a href="convites.html">✉️ Convites</a>
+        <a href="perfil.html">👤 Perfil</a>
+        <a href="campos.html">🌱 Campos</a>
+        <a href="cardapio.html">🍔 Cardápio</a>
+    </div>
+
+    <!-- CONTEÚDO -->
+    <div class="container">
+
+        <div class="card-title">Cardápio do Society</div>
+
+        <!-- LISTA DE ITENS -->
+        <div id="listaCardapio" class="card">
+            Carregando cardápio...
+        </div>
+
+        <!-- NOVO ITEM -->
+        <div class="card">
+            <h3>Novo Item</h3>
+
+            <input id="nome" class="input" placeholder="Nome do item">
+            <input id="preco" class="input" placeholder="Preço (ex: 12.50)" type="number" step="0.01">
+
+            <button class="btn" onclick="salvarItem()">Salvar Item</button>
+        </div>
+    </div>
+
+    <!-- JS -->
+    <script src="../scripts/menu.js" defer></script>
+    <script src="../scripts/cardapio.js" defer></script>
+
+</body>
+
+</html>
