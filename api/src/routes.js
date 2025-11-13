@@ -11,6 +11,7 @@ const listagemcontroller = require("./controller/listagemController")
 const cardapiocontroller = require("./controller/cardapioController");
 const campocontroller = require("./controller/campoController");
 const convitecontroller = require("./controller/conviteController");
+const campeonatoController = require("./controller/campeonatoController")
 
 router.post('/usuarios', usuariocontroller.create);
 router.post('/login', usuariocontroller.login);
@@ -37,5 +38,11 @@ router.get('/campos/:societyId', campocontroller.list);
 
 router.post('/convite', convitecontroller.convidar);
 
+router.post('/campeonato', campeonatoController.create);
+router.get('/campeonato/society/:societyId', campeonatoController.listBySociety);
+router.post('/campeonato/:id/add-time', campeonatoController.addTime);
+router.post('/campeonato/:id/gerar-chaves', campeonatoController.generateBracket);
+router.get('/campeonato/:id/jogos', campeonatoController.listGames);
+router.post('/campeonato/jogo/:jogoId/finalizar', campeonatoController.finalizarJogo);
 
 module.exports = router;

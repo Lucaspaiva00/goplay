@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Novo Campeonato – GoPlay</title>
+    <link rel="stylesheet" href="../css/goplay.css">
+
+    <style>
+        .titulo-esportivo {
+            color: #00ff88;
+            font-size: 26px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #00ff8866;
+        }
+
+        .form-card {
+            background: #0d0d0d;
+            border: 2px solid #00ff88;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #00ff8866;
+        }
+
+        .input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background: #111;
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            border-radius: 5px;
+        }
+
+        .btn-esportivo {
+            background: #00ff88;
+            color: #000;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 20px;
+            width: 100%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body class="with-sidebar">
+
+    <header>
+        <div class="menu-icon">☰</div>
+    </header>
+
+    <div class="sidebar" id="menuLateral">
+        <a href="campeonatos.html">🏆 Campeonatos</a>
+        <a href="home.html">🏠 Início</a>
+    </div>
+
+    <div class="container">
+        <div class="titulo-esportivo">Criar Campeonato</div>
+
+        <div class="form-card">
+            <input id="nome" class="input" placeholder="Nome do Campeonato">
+            <select id="tipo" class="input">
+                <option value="MATA_MATA">Mata-Mata</option>
+                <option value="GRUPOS">Fase de Grupos</option>
+            </select>
+            <input id="maxTimes" class="input" type="number" placeholder="Número máximo de times">
+
+            <button class="btn-esportivo" onclick="salvarCampeonato()">Salvar</button>
+        </div>
+    </div>
+
+    <script src="../scripts/menu.js"></script>
+    <script src="../scripts/campeonatoCreate.js"></script>
+
+</body>
+
+</html>
