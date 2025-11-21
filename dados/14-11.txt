@@ -1,0 +1,7 @@
+Goplay
+
+Cadastro do Society:
+Adicionar campo de cnpj
+
+Society-detalhe retirar "convite para joagadores e somente mostrar 
+essa opção de convidar quando for o time para o jogador ou o joagdor para o time
