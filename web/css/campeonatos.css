@@ -1,0 +1,86 @@
+/* ============================================
+   CAMPEONATOS – LISTAGEM PREMIUM
+============================================ */
+
+.campeonatos-wrapper {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.titulo-pagina {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 600;
+    color: #0a2240;
+    margin-bottom: 25px;
+}
+
+/* BOTÃO NOVO CAMPEONATO */
+.btn-novo-campeonato {
+    background: #0a2240;
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    padding: 14px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 30px;
+    transition: 0.2s ease;
+    font-size: 16px;
+}
+
+.btn-novo-campeonato:hover {
+    background: #183b68;
+}
+
+/* CARD DO CAMPEONATO */
+.card-campeonato {
+    background: #fff;
+    padding: 22px;
+    border-radius: 14px;
+    margin: 0 auto 25px auto;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    transition: 0.25s ease;
+}
+
+.card-campeonato:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+}
+
+.card-campeonato h3 {
+    margin: 0 0 5px;
+    font-size: 19px;
+    color: #0a2240;
+}
+
+.card-campeonato .tipo {
+    font-size: 14px;
+    color: #666;
+}
+
+.card-campeonato .times {
+    margin-top: 6px;
+    font-size: 15px;
+    color: #222;
+}
+
+.card-btn {
+    margin-top: 15px;
+    padding: 10px 16px;
+    background: #0a2240;
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.card-btn:hover {
+    background: #183b68;
+}

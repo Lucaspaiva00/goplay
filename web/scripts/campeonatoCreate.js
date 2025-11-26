@@ -7,7 +7,7 @@ function salvarCampeonato() {
         societyId,
         nome: nome.value.trim(),
         tipo: tipo.value,
-        maxTimes: maxTimes.value
+        maxTimes: Number(maxTimes.value)
     };
 
     fetch(`${BASE_URL}/campeonato`, {
@@ -17,7 +17,7 @@ function salvarCampeonato() {
     })
         .then(res => res.json())
         .then(json => {
-            alert("Campeonato criado!");
+            alert("Campeonato criado com sucesso!");
             window.location.href = "campeonatos.html";
         });
 }

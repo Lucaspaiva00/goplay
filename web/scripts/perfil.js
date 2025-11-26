@@ -1,125 +1,75 @@
-// =====================
+// =====================================================
 // VALIDAR LOGIN
-// =====================
-const usuario = JSON.parse(localStorage.getItem("usuario"));
+// =====================================================
+const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado"));
 
-if (!usuario) {
+if (!usuarioLogado) {
     alert("Sessão expirada. Faça login novamente.");
     window.location.href = "login.html";
 }
 
-// =====================
-// GERAR MENU DINÂMICO
-// =====================
-const menu = document.getElementById("menu");
-menu.innerHTML = "";
 
-const tipo = usuario.tipo;
-
-// Sempre aparece
-menu.innerHTML += `
-    <li onclick="location.href='home.html'"><i class="fas fa-home"></i> Início</li>
-`;
-
-if (tipo === "PLAYER") {
-    menu.innerHTML += `
-        <li onclick="location.href='societies.html'"><i class="fas fa-eye"></i> Ver Societies</li>
-        <li onclick="location.href='times.html'"><i class="fas fa-users"></i> Meus Times</li>
-        <li onclick="location.href='jogadores.html'"><i class="fas fa-user-friends"></i> Jogadores</li>
-    `;
-}
-
-if (tipo === "DONO_SOCIETY") {
-    menu.innerHTML += `
-        <li onclick="location.href='society-create.html'"><i class="fas fa-plus-circle"></i> Cadastrar Society</li>
-        <li onclick="location.href='campos.html'"><i class="fas fa-futbol"></i> Campos</li>
-        <li onclick="location.href='cardapio.html'"><i class="fas fa-utensils"></i> Cardápio</li>
-        <li onclick="location.href='pagamentos.html'"><i class="fas fa-credit-card"></i> Pagamentos</li>
-    `;
-}
-
-if (tipo === "DONO_TIME") {
-    menu.innerHTML += `
-        <li onclick="location.href='meus-times.html'"><i class="fas fa-users"></i> Meu Time</li>
-        <li onclick="location.href='jogadores.html'"><i class="fas fa-user-friends"></i> Jogadores</li>
-    `;
-}
-
-// Item ativo
-menu.innerHTML += `
-    <li class="active"><i class="fas fa-user"></i> Perfil</li>
-    <li onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sair</li>
-`;
-
-
-// =====================
-// MENU MOBILE
-// =====================
-const sidebar = document.getElementById("sidebar");
-const overlay = document.getElementById("overlay");
-const menuBtn = document.getElementById("menuBtn");
-
-menuBtn.onclick = () => {
-    sidebar.classList.add("open");
-    overlay.classList.add("show");
-};
-
-overlay.onclick = () => {
-    sidebar.classList.remove("open");
-    overlay.classList.remove("show");
-};
-
-
-// =====================
-// CARREGAR PERFIL DO USUÁRIO
-// =====================
+// =====================================================
+// CARREGAR PERFIL
+// =====================================================
 window.onload = async () => {
     try {
-        const resp = await fetch(`http://localhost:3000/api/usuarios/${usuario.id}`);
-        const data = await resp.json();
+        const resp = await fetch(`http://localhost:3000/usuarios/${usuarioLogado.id}`);
 
-        if (data.error) {
-            alert("Erro ao carregar perfil.");
+        // Se a rota não responder JSON (ex: HTML de erro)
+        if (!resp.ok) {
+            console.log("Erro API:", resp.status);
+            alert("Erro ao carregar dados. (Rota incorreta ou API offline)");
             return;
         }
 
-        // Preencher campos
-        nome.value = data.nome || "";
-        telefone.value = data.telefone || "";
-        nascimento.value = data.nascimento ? data.nascimento.split("T")[0] : "";
-        sexo.value = data.sexo || "";
-        pernaMelhor.value = data.pernaMelhor || "";
-        posicaoCampo.value = data.posicaoCampo || "";
-        altura.value = data.altura || "";
-        peso.value = data.peso || "";
-        goleiro.checked = data.goleiro || false;
+        const data = await resp.json();
+
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        // Preencher formulário
+        document.getElementById("nome").value = data.nome || "";
+        document.getElementById("telefone").value = data.telefone || "";
+        document.getElementById("nascimento").value = data.nascimento ? data.nascimento.split("T")[0] : "";
+        document.getElementById("sexo").value = data.sexo || "";
+        document.getElementById("pernaMelhor").value = data.pernaMelhor || "";
+        document.getElementById("posicaoCampo").value = data.posicaoCampo || "";
+        document.getElementById("altura").value = data.altura || "";
+        document.getElementById("peso").value = data.peso || "";
+        document.getElementById("goleiro").checked = data.goleiro || false;
 
     } catch (err) {
         console.log("ERRO LOAD PERFIL:", err);
-        alert("Erro ao carregar dados.");
+        alert("Erro ao carregar os dados.");
     }
 };
 
 
-// =====================
+
+// =====================================================
 // SALVAR PERFIL
-// =====================
+// =====================================================
 async function salvarPerfil() {
 
+    const nascimentoValue = document.getElementById("nascimento").value;
+
     const payload = {
-        nome: nome.value,
-        telefone: telefone.value,
-        nascimento: nascimento.value || null,
-        sexo: sexo.value,
-        pernaMelhor: pernaMelhor.value,
-        posicaoCampo: posicaoCampo.value,
-        altura: altura.value ? Number(altura.value) : null,
-        peso: peso.value ? Number(peso.value) : null,
-        goleiro: goleiro.checked
+        nome: document.getElementById("nome").value,
+        telefone: document.getElementById("telefone").value,
+        nascimento: nascimentoValue ? new Date(nascimentoValue).toISOString() : null,
+        sexo: document.getElementById("sexo").value,
+        pernaMelhor: document.getElementById("pernaMelhor").value,
+        posicaoCampo: document.getElementById("posicaoCampo").value,
+        altura: document.getElementById("altura").value ? Number(document.getElementById("altura").value) : null,
+        peso: document.getElementById("peso").value ? Number(document.getElementById("peso").value) : null,
+        goleiro: document.getElementById("goleiro").checked
     };
 
     try {
-        const resp = await fetch(`http://localhost:3000/api/usuarios/${usuario.id}`, {
+        const resp = await fetch(`http://localhost:3000/usuarios/${usuarioLogado.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)

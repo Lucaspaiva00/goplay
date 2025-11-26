@@ -1,201 +1,236 @@
-/* ============================================
-   RESET & BASE
-============================================ */
+/* ============================
+   BASE GERAL
+============================ */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: "Inter", sans-serif;
 }
 
 body {
-    background: #f4f5f7;
-    color: #111827;
-    overflow-x: hidden;
+    font-family: "Inter", Arial, sans-serif;
+    background: #f4f6fa;
+    color: #1a1a1a;
 }
 
-/* ============================================
+/* ============================
    SIDEBAR
-============================================ */
+============================ */
 .sidebar {
     width: 260px;
     height: 100vh;
-    background: #052845;
+    background: #0a2240;
     position: fixed;
-    top: 0;
-    left: -260px;
-    transition: .3s ease;
-    z-index: 999;
-    padding-top: 20px;
-}
-
-.sidebar.open {
     left: 0;
+    top: 0;
+    padding-top: 20px;
+    overflow-y: auto;
 }
 
-.logo-area h2 {
+.sidebar .logo-area {
     text-align: center;
-    color: #fff;
-    margin-bottom: 20px;
+    color: white;
+    margin-bottom: 30px;
 }
 
-.sidebar ul {
+#menuDynamic {
     list-style: none;
+    padding: 0 15px;
 }
 
-.sidebar ul li {
-    padding: 14px 22px;
-    cursor: pointer;
-    color: #fff;
+#menuDynamic li {
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-size: 16px;
-    transition: .3s;
+    color: #e6e6e6;
+    padding: 12px 15px;
+    margin-bottom: 5px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: 0.2s ease;
 }
 
-.sidebar ul li:hover,
-.sidebar ul li.active {
-    background: rgba(255, 255, 255, 0.15);
+#menuDynamic li i {
+    margin-right: 10px;
 }
 
-/* ============================================
+#menuDynamic li:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+#menuDynamic li.active {
+    background: #ffffff22;
+    color: #fff;
+    font-weight: 600;
+}
+
+/* ============================
    OVERLAY MOBILE
-============================================ */
+============================ */
 .overlay {
-    position: fixed;
     display: none;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.45);
-    z-index: 998;
 }
 
-.overlay.show {
-    display: block;
-}
-
-/* ============================================
+/* ============================
    TOPBAR
-============================================ */
+============================ */
 .topbar {
+    position: fixed;
+    left: 260px;
+    top: 0;
+    width: calc(100% - 260px);
     height: 60px;
     background: #fff;
     display: flex;
     align-items: center;
     padding: 0 20px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-    position: sticky;
-    top: 0;
-    z-index: 900;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    z-index: 10;
 }
 
 .menu-btn {
     background: none;
     border: none;
-    font-size: 26px;
+    font-size: 22px;
     cursor: pointer;
+    margin-right: 15px;
 }
 
 .title {
-    margin-left: 15px;
-    font-size: 20px;
     font-weight: 600;
-    color: #052845;
+    font-size: 20px;
 }
 
-/* ============================================
-   CONTENT
-============================================ */
+/* ============================
+   ÁREA ÚTIL (corrigido)
+============================ */
+.main-wrapper {
+    margin-left: 260px;
+    margin-top: 60px;
+    padding: 40px 20px;
+}
+
+/* ============================
+   CONTEÚDO CENTRALIZADO
+============================ */
 .content {
-    padding: 30px;
+    display: flex;
+    justify-content: center;
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
 }
 
-@media (min-width: 900px) {
-    .sidebar {
-        left: 0;
-    }
-
-    .overlay {
-        display: none !important;
-    }
-
-    .content {
-        margin-left: 260px;
-    }
-}
-
-/* ============================================
-   PAGE ELEMENTS
-============================================ */
-.page-title {
-    font-size: 28px;
-    font-weight: 700;
-    margin-bottom: 28px;
-    color: #031a35;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
+/* ============================
+   CARD CENTRAL
+============================ */
 .card {
-    background: #fff;
-    padding: 32px;
-    border-radius: 18px;
     width: 100%;
-    max-width: 900px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.10);
+    max-width: 650px;
+    background: #fff;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.page-title {
+    text-align: center;
+    margin-bottom: 25px;
+    font-weight: 600;
+    font-size: 24px;
+    color: #0a2240;
 }
 
 .section-title {
-    font-size: 20px;
-    font-weight: 700;
-    margin: 25px 0 12px;
-    color: #052748;
+    margin: 20px 0 10px;
+    font-size: 17px;
+    font-weight: 600;
+    color: #0a2240;
 }
 
+/* ============================
+   INPUTS PREMIUM
+============================ */
 .input {
     width: 100%;
     padding: 14px;
-    border-radius: 12px;
-    border: 1px solid #dce0e7;
-    margin-top: 10px;
-    font-size: 16px;
-    transition: .2s;
+    margin-bottom: 12px;
+    border: 1px solid #d8d8d8;
+    border-radius: 10px;
+    background: #fdfdfd;
+    font-size: 15px;
+    transition: 0.2s ease;
 }
 
 .input:focus {
-    border-color: #052748;
-    box-shadow: 0 0 0 2px rgba(5, 39, 72, 0.18);
+    border-color: #0a2240;
+    box-shadow: 0 0 0 3px rgba(10, 34, 64, 0.15);
+    outline: none;
+    background: #fff;
 }
 
+/* ============================
+   CHECKBOX
+============================ */
 .checkbox-label {
-    margin-top: 15px;
-    font-size: 16px;
     display: flex;
-    gap: 10px;
+    align-items: center;
+    margin: 10px 0 20px;
+    font-size: 15px;
 }
 
+.checkbox-label input {
+    margin-right: 8px;
+}
+
+/* ============================
+   BOTÃO PREMIUM
+============================ */
 .btn {
     width: 100%;
-    padding: 16px;
-    background: #052748;
-    color: white;
+    padding: 14px;
+    background: #0a2240;
+    color: #fff;
     border: none;
-    border-radius: 12px;
-    font-size: 18px;
-    margin-top: 30px;
+    border-radius: 10px;
     cursor: pointer;
+    font-size: 16px;
     font-weight: 600;
-    transition: .2s;
+    transition: 0.2s ease;
 }
 
 .btn:hover {
-    background: #031a35;
+    background: #183b68;
+}
+
+/* ============================
+   RESPONSIVO
+============================ */
+@media (max-width: 900px) {
+    .sidebar {
+        left: -260px;
+        transition: 0.3s;
+    }
+
+    .sidebar.open {
+        left: 0;
+    }
+
+    .overlay.show {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 9;
+    }
+
+    .topbar {
+        left: 0;
+        width: 100%;
+    }
+
+    .main-wrapper {
+        margin-left: 0;
+    }
 }

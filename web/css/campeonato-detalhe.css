@@ -1,0 +1,92 @@
+/* CONTAINER CENTRAL */
+.detalhe-wrapper {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* CARD PREMIUM */
+.card {
+    background: #fff;
+    padding: 25px;
+    border-radius: 14px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    margin-bottom: 25px;
+}
+
+/* TÍTULOS */
+.card-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0a2240;
+    margin-bottom: 20px;
+}
+
+/* LABELS */
+.label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0a2240;
+    margin: 15px 0 6px 0;
+    display: block;
+}
+
+/* INPUT PREMIUM */
+.input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #d0d4db;
+    background: #f8fafc;
+    font-size: 15px;
+    margin-bottom: 15px;
+}
+
+.input:focus {
+    border-color: #0a2240;
+    outline: none;
+}
+
+/* BOTÃO PADRÃO GOPLAY */
+.btn-primary {
+    width: 100%;
+    background: #0a2240;
+    border: none;
+    padding: 14px;
+    border-radius: 10px;
+    color: #fff;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: .2s;
+}
+
+.btn-primary:hover {
+    background: #183b68;
+}
+
+/* LISTA DE TIMES */
+.lista-times p {
+    background: #eef1f5;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+/* JOGOS */
+.jogo-card {
+    background: #f8fafc;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    border: 1px solid #dbe1e8;
+}
+
+.jogo-nome {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0a2240;
+    margin-bottom: 10px;
+}

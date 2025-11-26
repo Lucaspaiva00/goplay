@@ -7,7 +7,7 @@ function carregarCampeonatos() {
 
     if (!societyId) {
         document.getElementById("listaCampeonatos").innerHTML =
-            "<p>Nenhum society selecionado.</p>";
+            "<p class='sem-campeonatos'>Nenhum society selecionado.</p>";
         return;
     }
 
@@ -16,18 +16,25 @@ function carregarCampeonatos() {
         .then(lista => {
             const div = document.getElementById("listaCampeonatos");
 
-            if (lista.length === 0) {
-                div.innerHTML = "<p>Nenhum campeonato cadastrado.</p>";
+            if (!lista || lista.length === 0) {
+                div.innerHTML = "<p class='sem-campeonatos'>Nenhum campeonato cadastrado.</p>";
                 return;
             }
 
             div.innerHTML = lista.map(c => `
-                <div class="campeonato-card">
-                    <strong>${c.nome}</strong><br>
-                    <span style="font-size:14px;">${c.tipo}</span><br>
-                    Times inscritos: <b>${c.times.length}</b>
-                    <br><br>
-                    <button class="btn-esportivo" onclick="abrir(${c.id})">Gerenciar</button>
+                <div class="card-campeonato">
+
+                    <h3>${c.nome}</h3>
+                    <div class="tipo">${c.tipo.replace("_", " ")}</div>
+
+                    <div class="times">
+                        Times inscritos: <b>${c.times.length}</b>
+                    </div>
+
+                    <button class="card-btn" onclick="abrir(${c.id})">
+                        Gerenciar
+                    </button>
+
                 </div>
             `).join("");
         });

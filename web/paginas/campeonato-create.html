@@ -3,74 +3,65 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Novo Campeonato – GoPlay</title>
-    <link rel="stylesheet" href="../css/goplay.css">
 
-    <style>
-        .titulo-esportivo {
-            color: #00ff88;
-            font-size: 26px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px #00ff8866;
-        }
+    <!-- CSS global (menu, layout, inputs, etc) -->
+    <link rel="stylesheet" href="../css/perfil.css">
 
-        .form-card {
-            background: #0d0d0d;
-            border: 2px solid #00ff88;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px #00ff8866;
-        }
+    <!-- CSS desta página -->
+    <link rel="stylesheet" href="../css/campeonato-create.css">
 
-        .input {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            background: #111;
-            border: 1px solid #00ff88;
-            color: #00ff88;
-            border-radius: 5px;
-        }
-
-        .btn-esportivo {
-            background: #00ff88;
-            color: #000;
-            font-weight: bold;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 20px;
-            width: 100%;
-            cursor: pointer;
-        }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
-<body class="with-sidebar">
+<body>
 
-    <header>
-        <div class="menu-icon">☰</div>
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+        <ul id="menuDynamic"></ul>
+    </aside>
+
+    <!-- OVERLAY -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <h1 class="title">Criar Campeonato</h1>
     </header>
 
-    <div class="sidebar" id="menuLateral">
-        <a href="campeonatos.html">🏆 Campeonatos</a>
-        <a href="home.html">🏠 Início</a>
-    </div>
+    <!-- ÁREA ÚTIL -->
+    <div class="main-wrapper">
+        <main class="content">
 
-    <div class="container">
-        <div class="titulo-esportivo">Criar Campeonato</div>
+            <div class="create-wrapper">
 
-        <div class="form-card">
-            <input id="nome" class="input" placeholder="Nome do Campeonato">
-            <select id="tipo" class="input">
-                <option value="MATA_MATA">Mata-Mata</option>
-                <option value="GRUPOS">Fase de Grupos</option>
-            </select>
-            <input id="maxTimes" class="input" type="number" placeholder="Número máximo de times">
+                <h2 class="titulo-pagina">🏆 Criar Campeonato</h2>
 
-            <button class="btn-esportivo" onclick="salvarCampeonato()">Salvar</button>
-        </div>
+                <div class="card-form">
+
+                    <label class="label">Nome do Campeonato</label>
+                    <input id="nome" class="input" placeholder="Ex: Copa GoPlay">
+
+                    <label class="label">Tipo</label>
+                    <select id="tipo" class="input">
+                        <option value="MATA_MATA">Mata-Mata</option>
+                        <option value="GRUPOS">Fase de Grupos</option>
+                    </select>
+
+                    <label class="label">Número máximo de times</label>
+                    <input id="maxTimes" class="input" type="number" placeholder="Ex: 8">
+
+                    <button class="btn-salvar" onclick="salvarCampeonato()">Salvar</button>
+
+                </div>
+
+            </div>
+
+        </main>
     </div>
 
     <script src="../scripts/menu.js"></script>

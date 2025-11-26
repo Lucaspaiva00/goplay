@@ -73,21 +73,20 @@ function carregarJogos() {
             }
 
             div.innerHTML = lista.map(j => `
-                <div class="jogo">
-                    <div>
-                        <span class="time">${j.timeA.nome}</span>
-                        &nbsp; x &nbsp;
-                        <span class="time">${j.timeB.nome}</span>
-                    </div>
+    <div class="jogo-card">
+        <div class="jogo-nome">
+            ${j.timeA.nome} <b>x</b> ${j.timeB.nome}
+        </div>
 
-                    <input id="gA${j.id}" class="input" placeholder="Gols A">
-                    <input id="gB${j.id}" class="input" placeholder="Gols B">
+        <input id="gA${j.id}" class="input" placeholder="Gols ${j.timeA.nome}">
+        <input id="gB${j.id}" class="input" placeholder="Gols ${j.timeB.nome}">
 
-                    <button class="btn-esportivo" onclick="finalizarJogo(${j.id})">
-                        Finalizar Jogo
-                    </button>
-                </div>
-            `).join("");
+        <button class="btn-primary" onclick="finalizarJogo(${j.id})">
+            Finalizar jogo
+        </button>
+    </div>
+`).join("");
+
         });
 }
 

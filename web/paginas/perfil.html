@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Perfil – GoPlay</title>
+
+    <link rel="stylesheet" href="../css/perfil.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+        <ul id="menuDynamic"></ul>
+    </aside>
+
+    <!-- OVERLAY MOBILE -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <button id="menuBtn" class="menu-btn"><i class="fas fa-bars"></i></button>
+        <h1 class="title">Meu Perfil</h1>
+    </header>
+
+    <!-- ÁREA ÚTIL -->
+    <div class="main-wrapper">
+        <main class="content">
+
+            <div class="card">
+
+                <h2 class="page-title"><i class="fas fa-user-circle"></i> Meu Perfil</h2>
+
+                <h3 class="section-title">Informações pessoais</h3>
+                <input id="nome" class="input" placeholder="Seu nome completo">
+                <input id="telefone" class="input" placeholder="Telefone">
+                <input id="nascimento" type="date" class="input">
+
+                <select id="sexo" class="input">
+                    <option value="">Selecione o sexo</option>
+                    <option value="MASCULINO">Masculino</option>
+                    <option value="FEMININO">Feminino</option>
+                </select>
+
+                <h3 class="section-title">Informações de jogador</h3>
+
+                <input id="pernaMelhor" class="input" placeholder="Perna boa (Direita / Esquerda / Ambas)">
+                <input id="posicaoCampo" class="input" placeholder="Posição em campo">
+                <input id="altura" class="input" placeholder="Altura (ex: 1.80)">
+                <input id="peso" class="input" placeholder="Peso (ex: 75 kg)">
+
+                <label class="checkbox-label">
+                    <input type="checkbox" id="goleiro"> Sou goleiro
+                </label>
+
+                <button class="btn" onclick="salvarPerfil()">Salvar alterações</button>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="../scripts/menu.js"></script>
+    <script src="../scripts/perfil.js"></script>
+
+</body>
+
+</html>

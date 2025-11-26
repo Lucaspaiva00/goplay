@@ -3,92 +3,71 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalhes do Campeonato – GoPlay</title>
-    <link rel="stylesheet" href="../css/goplay.css">
 
-    <style>
-        .titulo-esportivo {
-            color: #00ff88;
-            font-size: 26px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px #00ff8866;
-        }
+    <!-- LAYOUT GLOBAL PREMIUM -->
+    <link rel="stylesheet" href="../css/perfil.css">
 
-        .bloco {
-            background: #0d0d0d;
-            border: 2px solid #00ff88;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px #00ff8866;
-            margin-bottom: 20px;
-        }
+    <!-- CSS ESPECÍFICO DO DETALHE -->
+    <link rel="stylesheet" href="../css/campeonato-detalhe.css">
 
-        .btn-esportivo {
-            background: #00ff88;
-            color: #000;
-            font-weight: bold;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 10px;
-            width: 100%;
-            cursor: pointer;
-        }
-
-        .jogo {
-            background: #111;
-            padding: 10px;
-            margin-top: 10px;
-            border-left: 4px solid #00ff88;
-            border-radius: 5px;
-        }
-
-        .time {
-            font-size: 16px;
-            color: #00ff88;
-        }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
-<body class="with-sidebar">
+<body>
 
-    <header>
-        <div class="menu-icon">☰</div>
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+        <ul id="menuDynamic"></ul>
+    </aside>
+
+    <!-- OVERLAY MOBILE -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <h1 class="title" id="titulo">Carregando...</h1>
     </header>
 
-    <div class="sidebar" id="menuLateral">
-        <a href="campeonatos.html">🏆 Campeonatos</a>
-        <a href="home.html">🏠 Início</a>
-    </div>
+    <!-- MAIN WRAPPER -->
+    <div class="main-wrapper">
+        <main class="content">
 
-    <div class="container">
-        <div class="titulo-esportivo" id="titulo"></div>
+            <div class="detalhe-wrapper">
 
-        <!-- Bloco 1 – Times -->
-        <div class="bloco">
-            <h3>Times inscritos</h3>
+                <!-- TIMES -->
+                <div class="card">
+                    <h2 class="card-title">Times inscritos</h2>
 
-            <div id="listaTimes"></div>
+                    <div id="listaTimes" class="lista-times"></div>
 
-            <hr>
+                    <label class="label">Adicionar time</label>
+                    <input id="timeId" class="input" placeholder="ID do time">
 
-            <input id="timeId" class="input" placeholder="ID do time">
-            <button class="btn-esportivo" onclick="addTime()">Adicionar time</button>
-        </div>
+                    <button class="btn-primary" onclick="addTime()">Adicionar time</button>
+                </div>
 
-        <!-- Bloco 2 – Geração de Chaves -->
-        <div class="bloco">
-            <h3>Gerar Chaveamento</h3>
+                <!-- CHAVES -->
+                <div class="card">
+                    <h2 class="card-title">Gerar chaveamento</h2>
 
-            <button class="btn-esportivo" onclick="gerarChaves()">Gerar</button>
-        </div>
+                    <button class="btn-primary" onclick="gerarChaves()">Gerar chaveamento</button>
+                </div>
 
-        <!-- Bloco 3 – Jogos -->
-        <div class="bloco">
-            <h3>Jogos</h3>
-            <div id="listaJogos"></div>
-        </div>
+                <!-- JOGOS -->
+                <div class="card">
+                    <h2 class="card-title">Jogos</h2>
+
+                    <div id="listaJogos"></div>
+                </div>
+
+            </div>
+
+        </main>
     </div>
 
     <script src="../scripts/menu.js"></script>

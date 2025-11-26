@@ -1,0 +1,66 @@
+/* CONTAINER GERAL */
+.create-wrapper {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Título */
+.titulo-pagina {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 600;
+    color: #0a2240;
+    margin-bottom: 25px;
+}
+
+/* CARD BRANCO */
+.card-form {
+    background: #fff;
+    padding: 25px;
+    border-radius: 14px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Labels */
+.label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0a2240;
+    margin-bottom: 6px;
+    display: block;
+}
+
+/* Inputs */
+.input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 18px;
+    border-radius: 10px;
+    border: 1px solid #d0d4db;
+    background: #f8fafc;
+    font-size: 15px;
+}
+
+.input:focus {
+    border-color: #0a2240;
+    outline: none;
+}
+
+/* Botão */
+.btn-salvar {
+    width: 100%;
+    padding: 14px;
+    background: #0a2240;
+    border-radius: 10px;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    transition: 0.25s;
+}
+
+.btn-salvar:hover {
+    background: #183b68;
+}

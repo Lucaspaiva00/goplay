@@ -3,73 +3,58 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Campeonatos – GoPlay</title>
-    <link rel="stylesheet" href="../css/goplay.css">
 
-    <style>
-        .titulo-esportivo {
-            color: #00ff88;
-            font-size: 26px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px #00ff8866;
-        }
+    <!-- CSS global -->
+    <link rel="stylesheet" href="../css/perfil.css">
 
-        .campeonato-card {
-            background: #0d0d0d;
-            border: 2px solid #00ff88;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            box-shadow: 0 0 10px #00ff8866;
-            color: white;
-        }
+    <!-- CSS da página -->
+    <link rel="stylesheet" href="../css/campeonatos.css">
 
-        .btn-esportivo {
-            background: #00ff88;
-            color: #000;
-            font-weight: bold;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 10px;
-            width: 100%;
-            cursor: pointer;
-        }
-
-        .btn-esportivo:hover {
-            background: #04d973;
-        }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
-<body class="with-sidebar">
+<body>
 
-    <header>
-        <div class="menu-icon">☰</div>
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+        <ul id="menuDynamic"></ul>
+    </aside>
+
+    <!-- OVERLAY MOBILE -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <h1 class="title">Campeonatos</h1>
     </header>
 
-    <!-- Sidebar -->
-    <div class="sidebar" id="menuLateral">
-        <div class="sidebar-title">MENU</div>
+    <!-- ÁREA ÚTIL -->
+    <div class="main-wrapper">
+        <main class="content">
 
-        <a href="home.html">🏠 Início</a>
-        <a href="societies.html">👀 Ver Societies</a>
-        <a href="society-create.html">➕ Cadastrar Society</a>
-        <a href="campeonatos.html">🏆 Campeonatos</a>
-    </div>
+            <div class="campeonatos-wrapper">
 
-    <div class="container">
-        <div class="titulo-esportivo">🏆 Campeonatos</div>
+                <h2 class="titulo-pagina">🏆 Campeonatos</h2>
 
-        <button class="btn-esportivo" onclick="window.location.href='campeonato-create.html'">
-            ➕ Criar Campeonato
-        </button>
+                <button class="btn-novo-campeonato" onclick="location.href='campeonato-create.html'">
+                    ➕ Criar novo campeonato
+                </button>
 
-        <div id="listaCampeonatos" style="margin-top:20px;"></div>
+                <div id="listaCampeonatos"></div>
+
+            </div>
+
+        </main>
     </div>
 
     <script src="../scripts/menu.js"></script>
     <script src="../scripts/campeonatos.js"></script>
+
 </body>
 
 </html>
