@@ -3,54 +3,65 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jogadores – GoPlay</title>
-    <link rel="stylesheet" href="../css/goplay.css">
+
+    <!-- CSS Global -->
+    <link rel="stylesheet" href="../css/perfil.css">
+
+    <!-- CSS Específico -->
+    <link rel="stylesheet" href="../css/jogadores.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
-<body class="with-sidebar">
+<body>
 
-    <header>
-        <div class="menu-icon">☰</div>
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+        <ul id="menuDynamic"></ul>
+    </aside>
+
+    <!-- OVERLAY MOBILE -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <h1 class="title"><i class="fas fa-users"></i> Jogadores</h1>
     </header>
 
-    <!-- MENU -->
-    <div class="sidebar" id="menuLateral">
-        <div class="sidebar-title">MENU</div>
+    <!-- MAIN -->
+    <div class="main-wrapper">
+        <main class="content">
 
-        <a href="home.html">🏠 Início</a>
-        <a href="societies.html">👀 Ver Societies</a>
-        <a href="society-create.html">➕ Cadastrar Society</a>
-        <a href="times.html">⚽ Times</a>
-        <a href="jogadores.html">🧑‍🤝‍🧑 Jogadores</a>
-        <a href="pagamentos.html">💳 Pagamentos</a>
-        <a href="convites.html">✉️ Convites</a>
-        <a href="perfil.html">👤 Perfil</a>
-        <a href="campos.html">🌱 Campos</a>
-        <a href="cardapio.html">🍔 Cardápio</a>
+            <div class="jogadores-layout">
+
+                <!-- LISTA DE JOGADORES -->
+                <div class="card">
+                    <h2 class="section-title">Jogadores cadastrados</h2>
+                    <div id="listaJogadores" class="lista-jogadores">
+                        Carregando jogadores...
+                    </div>
+                </div>
+
+                <!-- ADICIONAR JOGADOR -->
+                <div class="card">
+                    <h2 class="section-title">Adicionar Jogador</h2>
+
+                    <input id="usuarioId" class="input" placeholder="ID do usuário">
+                    <button class="btn" onclick="adicionarJogador()">Adicionar Jogador</button>
+                </div>
+
+            </div>
+
+        </main>
     </div>
 
-    <!-- CONTEÚDO -->
-    <div class="container">
-
-        <div class="card-title">Jogadores do Society</div>
-
-        <!-- LISTA -->
-        <div id="listaJogadores" class="card">
-            Carregando jogadores...
-        </div>
-
-        <!-- ADICIONAR -->
-        <div class="card">
-            <h3>Adicionar Jogador</h3>
-
-            <input id="usuarioId" class="input" placeholder="ID do usuário">
-            <button class="btn" onclick="adicionarJogador()">Adicionar Jogador</button>
-        </div>
-
-    </div>
-
-    <script src="../scripts/menu.js" defer></script>
-    <script src="../scripts/jogadores.js" defer></script>
+    <script src="../scripts/menu.js"></script>
+    <script src="../scripts/jogadores.js"></script>
 
 </body>
 

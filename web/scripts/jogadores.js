@@ -4,92 +4,62 @@ document.addEventListener("DOMContentLoaded", () => {
     carregarJogadores();
 });
 
-// Carregar jogadores
 function carregarJogadores() {
+    const societyId = localStorage.getItem("societyId");
 
-    const societyOwnerId = localStorage.getItem("societyOwnerId");
-
-    if (!societyOwnerId) {
+    if (!societyId) {
         document.getElementById("listaJogadores").innerHTML =
-            "<p>Erro: society não encontrado. Volte e abra pelo botão 'Ver detalhes'.</p>";
+            "<p>Erro: society não encontrado.</p>";
         return;
     }
 
-    fetch(`${BASE_URL}/society/owner/${societyOwnerId}`)
+    fetch(`${BASE_URL}/society/${societyId}`)
         .then(res => res.json())
         .then(data => {
-
-            if (!data || data.length === 0) {
-                document.getElementById("listaJogadores").innerHTML =
-                    "<p>Nenhum jogador encontrado.</p>";
-                return;
-            }
-
-            const society = data[0]; // dono pode ter vários societies
-            const jogadores = society.societyPlayers || [];
-
+            const jogadores = data?.societyPlayers || [];
             const div = document.getElementById("listaJogadores");
 
             if (jogadores.length === 0) {
-                div.innerHTML = "<p>Nenhum jogador adicionado ainda.</p>";
+                div.innerHTML = "<p>Nenhum jogador cadastrado ainda.</p>";
                 return;
             }
 
             div.innerHTML = jogadores.map(j => `
-                <div class="card" style="margin-bottom: 10px;">
-                    <strong>${j.usuario.nome}</strong><br>
-                    Email: ${j.usuario.email || "-"}<br>
-                    Telefone: ${j.usuario.telefone || "-"}
+                <div class="jogador-card">
+                    <strong>${j.usuario.nome}</strong>
+                    <p>Email: ${j.usuario.email || "-"}</p>
+                    <p>Telefone: ${j.usuario.telefone || "-"}</p>
                 </div>
             `).join("");
-
-        })
-        .catch(err => {
-            console.error(err);
-            document.getElementById("listaJogadores").innerHTML =
-                "<p>Erro ao carregar jogadores.</p>";
         });
 }
 
-// Adicionar
 function adicionarJogador() {
-
     const societyId = localStorage.getItem("societyId");
     const usuarioId = document.getElementById("usuarioId").value.trim();
 
-    if (!societyId) {
-        alert("Erro: societyId não encontrado.");
+    const jaExiste = document.querySelector(`[data-id="${usuarioId}"]`);
+
+    if (jaExiste) {
+        alert("Este jogador já está cadastrado!");
         return;
     }
-
-    if (!usuarioId) {
-        alert("Informe o ID do usuário.");
-        return;
-    }
-
-    const data = {
-        societyId: Number(societyId),
-        usuarioId: Number(usuarioId)
-    };
 
     fetch(`${BASE_URL}/society/player`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+        body: JSON.stringify({ societyId: Number(societyId), usuarioId: Number(usuarioId) })
     })
         .then(res => res.json())
         .then(json => {
-
-            if (json.error) {
-                alert(json.error);
-                return;
-            }
-
-            alert("Jogador adicionado com sucesso!");
+            if (json.error) return alert(json.error);
+            alert("Jogador adicionado!");
             document.getElementById("usuarioId").value = "";
             carregarJogadores();
-        })
-        .catch(() => {
-            alert("Erro ao adicionar jogador.");
         });
 }
+
+
+// 🔥 Tornar acessível ao HTML
+window.adicionarJogador = adicionarJogador;
+window.carregarJogadores = carregarJogadores;

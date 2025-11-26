@@ -156,6 +156,7 @@ CREATE TABLE `Jogo` (
     `timeBId` INTEGER NOT NULL,
     `golsA` INTEGER NULL,
     `golsB` INTEGER NULL,
+    `finalizado` BOOLEAN NOT NULL DEFAULT false,
     `vencedorId` INTEGER NULL,
 
     PRIMARY KEY (`id`)
@@ -211,3 +212,6 @@ ALTER TABLE `Jogo` ADD CONSTRAINT `Jogo_timeAId_fkey` FOREIGN KEY (`timeAId`) RE
 
 -- AddForeignKey
 ALTER TABLE `Jogo` ADD CONSTRAINT `Jogo_timeBId_fkey` FOREIGN KEY (`timeBId`) REFERENCES `Time`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Jogo` ADD CONSTRAINT `Jogo_vencedorId_fkey` FOREIGN KEY (`vencedorId`) REFERENCES `Time`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

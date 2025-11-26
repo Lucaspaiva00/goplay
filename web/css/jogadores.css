@@ -1,0 +1,44 @@
+/* Layout dos cards (lista + formulário) */
+.jogadores-layout {
+    width: 100%;
+    max-width: 1150px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 2fr 1.3fr;
+    gap: 32px;
+    align-items: flex-start;
+    padding-bottom: 40px;
+}
+
+/* Card da lista e do formulário */
+.jogadores-layout .card {
+    width: 100%;
+}
+
+/* Cada jogador listado */
+.lista-jogadores .jogador-card {
+    background: #f8f9fc;
+    padding: 16px;
+    margin-bottom: 12px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.jogador-card strong {
+    font-size: 15px;
+    color: #0a2240;
+}
+
+.jogador-card p {
+    margin: 2px 0;
+    font-size: 14px;
+    color: #555;
+}
+
+/* Responsividade */
+@media (max-width: 900px) {
+    .jogadores-layout {
+        grid-template-columns: 1fr;
+        padding: 0 10px;
+    }
+}

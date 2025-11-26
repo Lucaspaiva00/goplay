@@ -1,18 +1,16 @@
 const express = require('express');
 const router = express.Router();
 
-
 const usuariocontroller = require('./controller/usuarioController');
-const societycontroller = require("./controller/societyController")
-const timecontroller = require("./controller/timeController")
-const societyplayerscontroller = require("./controller/societyPlayerController")
-const pagamentoscontroller = require("./controller/pagamentoController")
-const listagemcontroller = require("./controller/listagemController")
+const societycontroller = require("./controller/societyController");
+const timecontroller = require("./controller/timeController");
+const societyplayerscontroller = require("./controller/societyPlayerController");
+const pagamentoscontroller = require("./controller/pagamentoController");
+const listagemcontroller = require("./controller/listagemController");
 const cardapiocontroller = require("./controller/cardapioController");
 const campocontroller = require("./controller/campoController");
 const convitecontroller = require("./controller/conviteController");
-const campeonatoController = require("./controller/campeonatoController")
-
+const campeonatoController = require("./controller/campeonatoController");
 
 router.post("/usuarios", usuariocontroller.create);
 router.post("/login", usuariocontroller.login);
@@ -23,13 +21,12 @@ router.post('/society', societycontroller.create);
 router.get('/society/owner/:usuarioId', societycontroller.readByOwner);
 router.get('/society/:id', societycontroller.readById);
 
-router.post('/time', timecontroller.create);            // criar time
-router.get('/time', timecontroller.list);               // listar todos os times
-router.get('/time/dono/:donoId', timecontroller.listByOwner); // listar times por dono
-router.get('/time/:timeId', timecontroller.details);    // detalhes do time
-router.post('/time/entrar', timecontroller.join);       // jogador entrar
-router.post('/time/sair', timecontroller.leave);        // jogador sair
-
+router.post('/time', timecontroller.create);
+router.get('/time', timecontroller.list);
+router.get('/time/dono/:donoId', timecontroller.listByOwner);
+router.get('/time/:timeId', timecontroller.details);
+router.post('/time/entrar', timecontroller.join);
+router.post('/time/sair', timecontroller.leave);
 
 router.post('/society/player', societyplayerscontroller.add);
 

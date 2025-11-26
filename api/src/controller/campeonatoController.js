@@ -21,15 +21,13 @@ const create = async (req, res) => {
 
         return res.status(201).json(campeon);
 
-    } catch (e) {
-        console.log(e);
+    } catch (err) {
+        console.log(err);
         res.status(500).json({ error: "Erro ao criar campeonato." });
     }
 };
 
-
-
-// Listar campeonatos de um society
+// Listar por society
 const listBySociety = async (req, res) => {
     try {
         const { societyId } = req.params;
@@ -44,22 +42,18 @@ const listBySociety = async (req, res) => {
         });
 
         res.json(campeonatos);
-
-    } catch (e) {
-        console.log(e);
+    } catch (err) {
+        console.log(err);
         res.status(500).json({ error: "Erro ao listar campeonatos." });
     }
 };
 
-
-
-// Adicionar time ao campeonato
+// Adicionar time no campeonato
 const addTime = async (req, res) => {
     try {
-        const { id } = req.params; // campeonatoId
+        const { id } = req.params;
         const { timeId } = req.body;
 
-        // Já está no campeonato?
         const exists = await prisma.timeCampeonato.findFirst({
             where: { campeonatoId: Number(id), timeId: Number(timeId) }
         });
@@ -77,15 +71,13 @@ const addTime = async (req, res) => {
 
         res.json(added);
 
-    } catch (e) {
-        console.log(e);
+    } catch (err) {
+        console.log(err);
         res.status(500).json({ error: "Erro ao adicionar time." });
     }
 };
 
-
-
-// GERAR CHAVEAMENTO (MATA-MATA)
+// Gerar jogos (mata-mata)
 const generateBracket = async (req, res) => {
     try {
         const { id } = req.params;
@@ -98,7 +90,6 @@ const generateBracket = async (req, res) => {
             return res.status(400).json({ error: "É necessário pelo menos 2 times." });
         }
 
-        // embaralhar
         const embaralhado = times
             .map(t => t.timeId)
             .sort(() => Math.random() - 0.5);
@@ -122,15 +113,13 @@ const generateBracket = async (req, res) => {
 
         res.json({ jogos: jogosCriados });
 
-    } catch (e) {
-        console.log(e);
+    } catch (err) {
+        console.log(err);
         res.status(500).json({ error: "Erro ao gerar chaves." });
     }
 };
 
-
-
-// LISTAR JOGOS DO CAMPEONATO
+// Listar jogos
 const listGames = async (req, res) => {
     try {
         const { id } = req.params;
@@ -139,50 +128,59 @@ const listGames = async (req, res) => {
             where: { campeonatoId: Number(id) },
             include: {
                 timeA: true,
-                timeB: true
+                timeB: true,
+                vencedor: true
             }
         });
 
         res.json(jogos);
-
-    } catch (e) {
-        console.log(e);
+    } catch (err) {
+        console.log(err);
         res.status(500).json({ error: "Erro ao buscar jogos." });
     }
 };
 
-
-
-// FINALIZAR UM JOGO
+// Finalizar jogo
 const finalizarJogo = async (req, res) => {
     try {
         const { jogoId } = req.params;
         const { golsA, golsB } = req.body;
 
-        let vencedor = null;
-        if (golsA > golsB) vencedor = "A";
-        else if (golsB > golsA) vencedor = "B";
+        const jogoAtual = await prisma.jogo.findUnique({
+            where: { id: Number(jogoId) }
+        });
 
-        const jogo = await prisma.jogo.update({
+        if (!jogoAtual) {
+            return res.status(404).json({ error: "Jogo não encontrado." });
+        }
+
+        let vencedorId = null;
+
+        if (Number(golsA) > Number(golsB)) vencedorId = jogoAtual.timeAId;
+        if (Number(golsB) > Number(golsA)) vencedorId = jogoAtual.timeBId;
+
+        const jogoFinalizado = await prisma.jogo.update({
             where: { id: Number(jogoId) },
             data: {
                 golsA: Number(golsA),
                 golsB: Number(golsB),
-                vencedorId: vencedor
-                    ? (vencedor === "A" ? undefined : undefined)
-                    : null
+                vencedorId,
+                finalizado: true
+            },
+            include: {
+                timeA: true,
+                timeB: true,
+                vencedor: true
             }
         });
 
-        res.json(jogo);
+        res.json(jogoFinalizado);
 
-    } catch (e) {
-        console.log(e);
+    } catch (err) {
+        console.log(err);
         res.status(500).json({ error: "Erro ao finalizar jogo." });
     }
 };
-
-
 
 module.exports = {
     create,

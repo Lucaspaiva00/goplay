@@ -42,11 +42,14 @@ model Usuario {
 
   tipo TipoUsuario @default(PLAYER)
 
+  // Dono de times
   times Time[] @relation("TimeDono")
 
+  // Jogador em um time
   timeRelacionadoId Int?
   timeRelacionado   Time? @relation("TimeJogadores", fields: [timeRelacionadoId], references: [id])
 
+  // Dono de societies
   societies Society[] @relation("UsuarioSocieties")
 
   pagamentos     Pagamento[]
@@ -135,6 +138,7 @@ model Time {
   jogosMandante       Jogo[]           @relation("JogoTimeA")
   jogosVisitante      Jogo[]           @relation("JogoTimeB")
   campeonatosVencidos Campeonato[]     @relation("CampeaoTime")
+  jogos               Jogo[]
 }
 
 model Pagamento {
@@ -208,14 +212,19 @@ model Jogo {
   campeonatoId Int
   campeonato   Campeonato @relation(fields: [campeonatoId], references: [id])
 
-  round   Int
+  round Int
+
   timeAId Int
   timeA   Time @relation("JogoTimeA", fields: [timeAId], references: [id])
 
   timeBId Int
   timeB   Time @relation("JogoTimeB", fields: [timeBId], references: [id])
 
-  golsA      Int?
-  golsB      Int?
+  golsA Int?
+  golsB Int?
+
+  finalizado Boolean @default(false)
+
   vencedorId Int?
+  vencedor   Time? @relation(fields: [vencedorId], references: [id])
 }
