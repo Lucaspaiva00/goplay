@@ -19,9 +19,9 @@ function carregarSocieties() {
             div.innerHTML = societies.map(s => `
                 <div class="card">
                     <strong>${s.nome}</strong><br>
-                    ${s.cidade || ""} / ${s.estado || ""}<br><br>
+                    <small>${s.cidade || ""} / ${s.estado || ""}</small>
 
-                    <button class="btn btn-secondary" onclick="verDetalhes(${s.id})">
+                    <button class="btn-details" onclick="verDetalhes(${s.id})">
                         Ver detalhes
                     </button>
                 </div>

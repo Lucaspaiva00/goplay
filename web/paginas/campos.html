@@ -4,57 +4,73 @@
 <head>
     <meta charset="UTF-8">
     <title>Campos – GoPlay</title>
-    <link rel="stylesheet" href="../css/goplay.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSS CORRETO -->
+    <link rel="stylesheet" href="../css/goplay_home.css"> <!-- HEADER + SIDEBAR -->
+    <link rel="stylesheet" href="../css/campos.css"> <!-- CSS NOVO DA TELA -->
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
 <body class="with-sidebar">
 
-    <header>
-        <div class="menu-icon">☰</div>
+    <!-- HEADER -->
+    <header class="topbar">
+        <button id="menuBtn" class="menu-btn">
+            <i class="fa fa-bars"></i>
+        </button>
+        <h1 class="title">Campos</h1>
     </header>
 
-    <!-- MENU LATERAL -->
-    <div class="sidebar" id="menuLateral">
-        <div class="sidebar-title">MENU</div>
-
-        <a href="home.html">🏠 Início</a>
-        <a href="societies.html">👀 Ver Societies</a>
-        <a href="society-create.html">➕ Cadastrar Society</a>
-        <a href="times.html">⚽ Times</a>
-        <a href="jogadores.html">🧑‍🤝‍🧑 Jogadores</a>
-        <a href="pagamentos.html">💳 Pagamentos</a>
-        <a href="convites.html">✉️ Convites</a>
-        <a href="perfil.html">👤 Perfil</a>
-        <a href="campos.html">🌱 Campos</a>
-        <a href="cardapio.html">🍔 Cardápio</a>
-    </div>
-
-    <!-- CONTEÚDO -->
-    <div class="container">
-
-        <div class="card-title">Campos cadastrados</div>
-
-        <div id="listaCampos" class="card">
-            Carregando campos...
+    <!-- SIDEBAR PADRÃO -->
+    <aside id="sidebar" class="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
         </div>
 
-        <div class="card">
+        <ul>
+            <li onclick="location.href='home.html'"><i class="fa fa-house"></i> Início</li>
+            <li onclick="location.href='societies.html'"><i class="fa fa-eye"></i> Ver Societies</li>
+            <li onclick="location.href='society-create.html'"><i class="fa fa-plus"></i> Cadastrar Society</li>
+            <li onclick="location.href='times.html'"><i class="fa fa-futbol"></i> Times</li>
+            <li onclick="location.href='jogadores.html'"><i class="fa fa-people-group"></i> Jogadores</li>
+            <li onclick="location.href='pagamentos.html'"><i class="fa fa-credit-card"></i> Pagamentos</li>
+            <li onclick="location.href='perfil.html'"><i class="fa fa-user"></i> Perfil</li>
+            <li onclick="location.href='campos.html'" class="active"><i class="fa fa-map"></i> Campos</li>
+            <li onclick="location.href='cardapio.html'"><i class="fa fa-utensils"></i> Cardápio</li>
+        </ul>
+    </aside>
+
+    <div id="overlay" class="overlay"></div>
+
+    <!-- CONTEÚDO -->
+    <main class="content">
+
+
+        <section class="card">
             <h3>Novo Campo</h3>
 
             <input id="nome" class="input" placeholder="Nome do campo">
             <input id="valorAvulso" class="input" placeholder="Valor Avulso (opcional)">
             <input id="valorMensal" class="input" placeholder="Valor Mensal (opcional)">
             <input id="dimensoes" class="input" placeholder="Dimensões (ex: 30x50m)">
-            <input id="estiloGramado" class="input" placeholder="Estilo do Gramado (ex: Sintético)">
-            <input id="foto" class="input" placeholder="URL da foto (opcional)">
+            <input id="estiloGramado" class="input" placeholder="Estilo do Gramado">
+            <input id="foto" class="input" placeholder="URL da foto">
 
             <button class="btn" onclick="salvarCampo()">Salvar Campo</button>
-        </div>
-    </div>
+        </section>
+        <h2 class="page-title">🌱 Campos cadastrados</h2>
+        <section id="listaCampos" class="card">
+            Carregando campos...
+        </section>
+
+
+
+    </main>
 
     <!-- JS -->
-    <script src="../scripts/menu.js" defer></script>
-    <script src="../scripts/campos.js" defer></script>
+    <script src="../js/goplay_home.js"></script>
+    <script src="../scripts/campos.js"></script>
 
 </body>
 

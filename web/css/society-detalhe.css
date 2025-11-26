@@ -1,0 +1,132 @@
+/* =======================
+   ÁREA PRINCIPAL
+======================= */
+
+.section-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #052748;
+    margin: 25px auto 15px;
+    max-width: 900px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* CARD COM DADOS DO SOCIETY */
+.info-card {
+    background: white;
+    padding: 25px;
+    border-radius: 14px;
+    border: 1px solid #e8e8e8;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    max-width: 900px;
+    margin: 0 auto 40px;
+    line-height: 28px;
+}
+
+.info-card h3 {
+    margin: 0 0 10px;
+    font-size: 24px;
+    color: #052748;
+}
+
+.info-card p {
+    margin: 4px 0;
+    color: #333;
+}
+
+/* BOTÕES DE GERENCIAMENTO */
+.buttons-area {
+    max-width: 900px;
+    margin: 0 auto 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 0 20px;
+}
+
+.btn-manage {
+    background: #052748;
+    color: white;
+    padding: 16px;
+    border-radius: 10px;
+    font-size: 17px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: 0.2s;
+}
+
+.btn-manage:hover {
+    background: #031a35;
+}
+
+/* =======================
+   RESPONSIVO - TABLET
+======================= */
+@media (max-width: 900px) {
+
+    .info-card {
+        margin: 0 15px 30px;
+        padding: 22px;
+    }
+
+    .section-title {
+        font-size: 20px;
+        padding: 0 15px;
+    }
+}
+
+/* =======================
+   RESPONSIVO - MOBILE
+======================= */
+@media (max-width: 600px) {
+
+    .info-card {
+        padding: 18px;
+        margin: 0 12px 30px;
+    }
+
+    .info-card h3 {
+        font-size: 20px;
+    }
+
+    .section-title {
+        font-size: 18px;
+        margin-top: 20px;
+    }
+
+    .btn-manage {
+        padding: 14px;
+        font-size: 15px;
+    }
+
+    .buttons-area {
+        padding: 0 12px;
+        gap: 14px;
+    }
+}
+
+/* =======================
+   RESPONSIVO - MOBILE PEQUENO
+======================= */
+@media (max-width: 420px) {
+
+    .info-card {
+        padding: 15px;
+    }
+
+    .info-card p {
+        font-size: 14px;
+    }
+
+    .btn-manage {
+        font-size: 14px;
+        padding: 12px;
+    }
+}

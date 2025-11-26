@@ -4,50 +4,71 @@
 <head>
     <meta charset="UTF-8">
     <title>Cadastrar Society – GoPlay</title>
-    <link rel="stylesheet" href="../css/goplay.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSS global -->
+    <link rel="stylesheet" href="../css/goplay_home.css">
+
+    <!-- CSS específico desta página -->
+    <link rel="stylesheet" href="../css/society_create.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
 <body class="with-sidebar">
 
-    <header>
-        <div class="menu-icon">☰</div>
-        <!-- <img src="../assets/logo_goplay.png" class="logo"> -->
+    <!-- HEADER PADRÃO -->
+    <header class="topbar">
+        <button id="menuBtn" class="menu-btn">
+            <i class="fa fa-bars"></i>
+        </button>
+        <h1 class="title">Cadastrar Society</h1>
     </header>
 
-    <!-- Sidebar -->
-    <div class="sidebar" id="menuLateral">
-        <div class="sidebar-title">MENU</div>
+    <!-- SIDEBAR PADRÃO -->
+    <aside id="sidebar" class="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
 
-        <a href="home.html">🏠 Início</a>
-        <a href="societies.html">👀 Ver Societies</a>
-        <a href="society-create.html">➕ Cadastrar Society</a>
-        <a href="times.html">⚽ Times</a>
-        <a href="jogadores.html">🧑‍🤝‍🧑 Jogadores</a>
-        <a href="pagamentos.html">💳 Pagamentos</a>
-        <a href="convites.html">✉️ Convites</a>
-        <a href="perfil.html">👤 Perfil</a>
-        <a href="campos.html">🌱 Campos</a>
-        <a href="cardapio.html">🍔 Cardápio</a>
-    </div>
+        <ul>
+            <li onclick="location.href='home.html'"><i class="fa fa-house"></i> Início</li>
+            <li onclick="location.href='societies.html'"><i class="fa fa-eye"></i> Ver Societies</li>
+            <li class="active" onclick="location.href='society-create.html'"><i class="fa fa-plus"></i> Cadastrar
+                Society</li>
+            <li onclick="location.href='times.html'"><i class="fa fa-futbol"></i> Times</li>
+            <li onclick="location.href='jogadores.html'"><i class="fa fa-people-group"></i> Jogadores</li>
+            <li onclick="location.href='pagamentos.html'"><i class="fa fa-credit-card"></i> Pagamentos</li>
+            <li onclick="location.href='perfil.html'"><i class="fa fa-user"></i> Perfil</li>
+            <li onclick="location.href='campos.html'"><i class="fa fa-map"></i> Campos</li>
+            <li onclick="location.href='cardapio.html'"><i class="fa fa-utensils"></i> Cardápio</li>
+        </ul>
+    </aside>
 
-    <div class="container">
+    <div id="overlay" class="overlay"></div>
 
-        <div class="card-title">Cadastrar meu Society</div>
+    <!-- CONTEÚDO -->
+    <main class="content">
 
-        <div class="card">
+        <h2 class="page-title">🏆 Cadastrar novo Society</h2>
 
+        <section class="card">
+
+            <h3 class="section-title">Informações principais</h3>
             <input id="nome" class="input" placeholder="Nome do Society">
-            <textarea id="descricao" class="input" placeholder="Descrição" style="height:70px;"></textarea>
+            <textarea id="descricao" class="input textarea" placeholder="Descrição"></textarea>
 
+            <h3 class="section-title">Contato</h3>
             <input id="telefone" class="input" placeholder="Telefone">
             <input id="whatsapp" class="input" placeholder="WhatsApp">
             <input id="email" class="input" placeholder="E-mail">
             <input id="website" class="input" placeholder="Website">
 
+            <h3 class="section-title">Redes sociais</h3>
             <input id="instagram" class="input" placeholder="Instagram">
             <input id="facebook" class="input" placeholder="Facebook">
             <input id="youtube" class="input" placeholder="YouTube">
 
+            <h3 class="section-title">Endereço</h3>
             <input id="cep" class="input" placeholder="CEP">
             <input id="endereco" class="input" placeholder="Endereço">
             <input id="estado" class="input" placeholder="Estado">
@@ -55,12 +76,13 @@
 
             <button class="btn" onclick="salvarSociety()">Salvar Society</button>
 
-        </div>
+        </section>
 
-    </div>
+    </main>
 
-    <script src="../scripts/menu.js" defer></script>
-    <script src="../scripts/societyCreate.js" defer></script>
+    <script src="../js/goplay_home.js"></script>
+    <script src="../scripts/societyCreate.js"></script>
+
 </body>
 
 </html>

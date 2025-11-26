@@ -4,54 +4,80 @@
 <head>
     <meta charset="UTF-8">
     <title>Detalhes do Society – GoPlay</title>
-    <link rel="stylesheet" href="../css/goplay.css">
+
+    <!-- ESSENCIAL PARA FICAR RESPONSIVO -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="../css/goplay_home.css">
+    <link rel="stylesheet" href="../css/society-detalhe.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
-<body class="with-sidebar">
+<body>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+
+        <ul>
+            <li onclick="location.href='home.html'"><i class="fa fa-house"></i> Início</li>
+            <li onclick="location.href='societies.html'"><i class="fa fa-eye"></i> Ver Societies</li>
+            <li onclick="location.href='society-create.html'"><i class="fa fa-plus"></i> Cadastrar Society</li>
+            <li onclick="location.href='times.html'"><i class="fa fa-futbol"></i> Times</li>
+            <li onclick="location.href='jogadores.html'"><i class="fa fa-people-group"></i> Jogadores</li>
+            <li onclick="location.href='pagamentos.html'"><i class="fa fa-credit-card"></i> Pagamentos</li>
+            <li onclick="location.href='perfil.html'"><i class="fa fa-user"></i> Perfil</li>
+            <li onclick="location.href='campos.html'"><i class="fa fa-map"></i> Campos</li>
+            <li onclick="location.href='cardapio.html'"><i class="fa fa-utensils"></i> Cardápio</li>
+        </ul>
+    </aside>
+
+    <div id="overlay" class="overlay"></div>
 
     <!-- HEADER -->
-    <header>
-        <div class="menu-icon">☰</div>
+    <header class="topbar">
+        <button id="menuBtn" class="menu-btn">
+            <i class="fa fa-bars"></i>
+        </button>
+        <h1 class="title">Detalhes do Society</h1>
     </header>
 
-    <!-- MENU -->
-    <div class="sidebar" id="menuLateral">
-        <div class="sidebar-title">MENU</div>
-
-        <a href="home.html">🏠 Início</a>
-        <a href="societies.html">👀 Ver Societies</a>
-        <a href="society-create.html">➕ Cadastrar Society</a>
-        <a href="times.html">⚽ Times</a>
-        <a href="jogadores.html">🧑‍🤝‍🧑 Jogadores</a>
-        <a href="pagamentos.html">💳 Pagamentos</a>
-        <a href="convites.html">✉️ Convites</a>
-        <a href="perfil.html">👤 Perfil</a>
-        <a href="campos.html">🌱 Campos</a>
-        <a href="cardapio.html">🍔 Cardápio</a>
-    </div>
-
     <!-- CONTEÚDO -->
-    <div class="container">
+    <main class="content">
 
-        <div class="card-title">Detalhes do Society</div>
+        <h2 class="section-title"><i class="fa fa-map-pin"></i> Informações do Society</h2>
 
-        <div id="societyInfo" class="card">
-            Carregando dados...
+        <div id="societyInfo" class="info-card">
+            Carregando informações...
         </div>
 
-        <div class="card">
+        <h2 class="section-title"><i class="fa fa-gear"></i> Gerenciamento</h2>
 
-            <button class="btn" onclick="irCampos()">🌱 Gerenciar Campos</button>
-            <button class="btn" onclick="irCardapio()">🍔 Gerenciar Cardápio</button>
-            <button class="btn" onclick="irJogadores()">🧑‍🤝‍🧑 Jogadores</button>
-            <button class="btn" onclick="irPagamentos()">💳 Pagamentos</button>
-            <button class="btn" onclick="irConvites()">✉️ Convites</button>
+        <div class="buttons-area">
+
+            <button class="btn-manage" onclick="irCampos()">
+                <i class="fa fa-map"></i> Gerenciar Campos
+            </button>
+
+            <button class="btn-manage" onclick="irCardapio()">
+                <i class="fa fa-utensils"></i> Gerenciar Cardápio
+            </button>
+
+            <button class="btn-manage" onclick="irJogadores()">
+                <i class="fa fa-people-group"></i> Jogadores
+            </button>
+
+            <button class="btn-manage" onclick="irPagamentos()">
+                <i class="fa fa-credit-card"></i> Pagamentos
+            </button>
 
         </div>
 
-    </div>
+    </main>
 
-    <script src="../scripts/menu.js"></script>
+    <script src="../js/goplay_home.js"></script>
     <script src="../scripts/societyDetalhe.js"></script>
 
 </body>

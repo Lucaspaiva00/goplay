@@ -1,0 +1,118 @@
+/* ================================
+      LAYOUT DA TELA CAMPOS
+   ================================ */
+
+/* Limite de largura do conteúdo */
+.content {
+    max-width: 900px;
+    margin: 100px auto 40px;
+    padding: 20px;
+}
+
+/* Título da página */
+.page-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: #031a35;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Card padrão */
+.card {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 25px;
+}
+
+/* Card de lista de campos */
+#listaCampos .campo-item {
+    background: #f8f9fc;
+    padding: 18px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #e5e5e5;
+}
+
+#listaCampos strong {
+    font-size: 18px;
+    color: #052748;
+}
+
+/* Inputs */
+.input {
+    width: 96%;
+    padding: 14px;
+    margin-top: 10px;
+    border-radius: 10px;
+    border: 1px solid #d8dbe2;
+    font-size: 15px;
+    outline: none;
+    transition: .2s;
+    background: #ffffff;
+}
+
+.input:focus {
+    border-color: #052748;
+    box-shadow: 0 0 0 2px rgba(5, 39, 72, 0.15);
+}
+
+/* Botão principal */
+.btn {
+    width: 100%;
+    padding: 15px;
+    background: #052748;
+    color: #fff;
+    border: none;
+    margin-top: 20px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.btn:hover {
+    background: #031a35;
+}
+
+/* ================================
+      RESPONSIVIDADE
+   ================================ */
+
+@media (max-width: 768px) {
+
+    .content {
+        padding: 15px;
+        margin-top: 90px;
+    }
+
+    .page-title {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 480px) {
+
+    .page-title {
+        font-size: 20px;
+    }
+
+    .card {
+        padding: 18px;
+    }
+
+    .input {
+        font-size: 14px;
+        padding: 12px;
+    }
+
+    .btn {
+        font-size: 15px;
+        padding: 13px;
+    }
+}

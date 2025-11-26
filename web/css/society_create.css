@@ -1,0 +1,132 @@
+/* ============================
+      LAYOUT GERAL
+============================ */
+
+.content {
+    max-width: 900px;
+    margin: 100px auto 40px;
+    padding: 20px;
+}
+
+.page-title {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 25px;
+    color: #031a35;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card {
+    background: #fff;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+    /* Garantindo que nada vaze */
+    box-sizing: border-box;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 25px 0 10px;
+    color: #052748;
+}
+
+/* ============================
+      INPUTS PREMIUM
+============================ */
+
+.input {
+    width: 100%;
+    padding: 14px;
+    margin-top: 10px;
+    border-radius: 10px;
+    border: 1px solid #dcdfe6;
+    font-size: 15px;
+    outline: none;
+    transition: .2s;
+    background: #fff;
+
+    /* CORREÇÃO FUNDAMENTAL */
+    box-sizing: border-box;
+}
+
+.input:focus {
+    border-color: #052748;
+    box-shadow: 0 0 0 2px rgba(5, 39, 72, 0.15);
+}
+
+.textarea {
+    height: 90px;
+    resize: none;
+
+    /* Correção no mobile */
+    box-sizing: border-box;
+}
+
+/* ============================
+      BOTÃO
+============================ */
+
+.btn {
+    width: 100%;
+    padding: 15px;
+    background: #052748;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 17px;
+    margin-top: 30px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: .2s;
+
+    box-sizing: border-box;
+}
+
+.btn:hover {
+    background: #031a35;
+}
+
+/* ============================
+      RESPONSIVO
+============================ */
+
+@media (max-width: 768px) {
+    .content {
+        padding: 15px;
+        margin-top: 90px;
+    }
+
+    .page-title {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 480px) {
+
+    .content {
+        padding: 10px;
+    }
+
+    .page-title {
+        font-size: 20px;
+    }
+
+    .card {
+        padding: 20px;
+        border-radius: 14px;
+    }
+
+    .input {
+        font-size: 14px;
+        padding: 12px;
+    }
+
+    .textarea {
+        height: 80px;
+    }
+}

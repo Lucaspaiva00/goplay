@@ -1,0 +1,109 @@
+/* ================================
+        CARDÁPIO – LAYOUT
+================================ */
+
+.content {
+    max-width: 900px;
+    margin: 100px auto 40px;
+    padding: 20px;
+}
+
+.page-title {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 25px;
+    color: #031a35;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Card padrão */
+.card {
+    background: #fff;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 25px;
+}
+
+/* Itens do cardápio */
+.cardapio-item {
+    background: #f7f9fc;
+    border: 1px solid #e3e5e9;
+    padding: 18px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+}
+
+.cardapio-item strong {
+    font-size: 18px;
+    color: #052748;
+}
+
+/* Inputs */
+.input {
+    width: 100%;
+    padding: 14px;
+    margin-top: 10px;
+    border-radius: 10px;
+    border: 1px solid #dcdfe6;
+    font-size: 15px;
+    outline: none;
+    transition: .2s;
+    background: #fff;
+}
+
+.input:focus {
+    border-color: #052748;
+    box-shadow: 0 0 0 2px rgba(5, 39, 72, 0.15);
+}
+
+/* Botão Premium GoPlay */
+.btn {
+    width: 100%;
+    padding: 15px;
+    background: #052748;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    margin-top: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: .2s;
+}
+
+.btn:hover {
+    background: #031a35;
+}
+
+/* ================================
+        RESPONSIVO
+================================ */
+
+@media (max-width: 768px) {
+    .content {
+        padding: 15px;
+        margin-top: 90px;
+    }
+
+    .page-title {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-title {
+        font-size: 20px;
+    }
+
+    .card {
+        padding: 18px;
+    }
+
+    .btn {
+        font-size: 15px;
+        padding: 13px;
+    }
+}
