@@ -158,4 +158,24 @@ const leave = async (req, res) => {
     }
 };
 
-module.exports = { create, list, listByOwner, details, join, leave };
+const listBySociety = async (req, res) => {
+    try {
+        const { societyId } = req.params;
+
+        const times = await prisma.time.findMany({
+            where: { societyId: Number(societyId) },
+            include: {
+                jogadores: { select: { id: true, nome: true } }
+            }
+        });
+
+        return res.status(200).json(times);
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error: "Erro ao listar times do society." });
+    }
+};
+
+
+module.exports = { create, list, listByOwner, details, join, leave, listBySociety };

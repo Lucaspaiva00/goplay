@@ -45,6 +45,22 @@ if (!window.menuLoaded) {
 
     function sair() {
         localStorage.removeItem("usuarioLogado");
+        localStorage.removeItem("societyId");
+        localStorage.removeItem("societyOwnerId");
         window.location.href = "login.html";
+    }
+
+    // 🔥 SALVAR SOCIETY DO DONO
+    if (usuarioLogado.tipo === "DONO_SOCIETY") {
+        fetch(`http://localhost:3000/society/owner/${usuarioLogado.id}`)
+            .then(res => res.json())
+            .then(lista => {
+                if (lista.length > 0) {
+                    const society = lista[0];
+
+                    localStorage.setItem("societyId", society.id);
+                    localStorage.setItem("societyOwnerId", usuarioLogado.id);
+                }
+            });
     }
 }

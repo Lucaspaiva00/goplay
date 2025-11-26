@@ -132,6 +132,7 @@ CREATE TABLE `Campeonato` (
     `nome` VARCHAR(191) NOT NULL,
     `tipo` ENUM('MATA_MATA', 'GRUPOS') NOT NULL,
     `maxTimes` INTEGER NOT NULL,
+    `roundAtual` INTEGER NOT NULL DEFAULT 1,
     `campeaoId` INTEGER NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
@@ -156,8 +157,8 @@ CREATE TABLE `Jogo` (
     `timeBId` INTEGER NOT NULL,
     `golsA` INTEGER NULL,
     `golsB` INTEGER NULL,
-    `finalizado` BOOLEAN NOT NULL DEFAULT false,
     `vencedorId` INTEGER NULL,
+    `finalizado` BOOLEAN NOT NULL DEFAULT false,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -212,6 +213,3 @@ ALTER TABLE `Jogo` ADD CONSTRAINT `Jogo_timeAId_fkey` FOREIGN KEY (`timeAId`) RE
 
 -- AddForeignKey
 ALTER TABLE `Jogo` ADD CONSTRAINT `Jogo_timeBId_fkey` FOREIGN KEY (`timeBId`) REFERENCES `Time`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Jogo` ADD CONSTRAINT `Jogo_vencedorId_fkey` FOREIGN KEY (`vencedorId`) REFERENCES `Time`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

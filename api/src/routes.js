@@ -24,6 +24,7 @@ router.get('/society/:id', societycontroller.readById);
 router.post('/time', timecontroller.create);
 router.get('/time', timecontroller.list);
 router.get('/time/dono/:donoId', timecontroller.listByOwner);
+router.get('/time/society/:societyId', timecontroller.listBySociety);
 router.get('/time/:timeId', timecontroller.details);
 router.post('/time/entrar', timecontroller.join);
 router.post('/time/sair', timecontroller.leave);
@@ -43,11 +44,11 @@ router.get('/campos/:societyId', campocontroller.list);
 
 router.post('/convite', convitecontroller.convidar);
 
-router.post('/campeonato', campeonatoController.create);
-router.get('/campeonato/society/:societyId', campeonatoController.listBySociety);
-router.post('/campeonato/:id/add-time', campeonatoController.addTime);
-router.post('/campeonato/:id/gerar-chaves', campeonatoController.generateBracket);
-router.get('/campeonato/:id/jogos', campeonatoController.listGames);
-router.post('/campeonato/jogo/:jogoId/finalizar', campeonatoController.finalizarJogo);
+router.post("/campeonato", campeonatoController.create);
+router.get("/campeonato/society/:societyId", campeonatoController.listBySociety);
+router.post("/campeonato/:id/add-time", campeonatoController.addTime);
+router.post("/campeonato/:id/gerar-chaves", campeonatoController.generateBracket);
+router.get("/campeonato/:id/jogos", campeonatoController.listGames);
+router.post("/campeonato/jogo/:id/finalizar", campeonatoController.finalizarJogo);
 
 module.exports = router;

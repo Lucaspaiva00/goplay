@@ -138,7 +138,6 @@ model Time {
   jogosMandante       Jogo[]           @relation("JogoTimeA")
   jogosVisitante      Jogo[]           @relation("JogoTimeB")
   campeonatosVencidos Campeonato[]     @relation("CampeaoTime")
-  jogos               Jogo[]
 }
 
 model Pagamento {
@@ -185,9 +184,10 @@ model Campeonato {
   societyId Int
   society   Society @relation(fields: [societyId], references: [id])
 
-  nome     String
-  tipo     TipoCampeonato
-  maxTimes Int
+  nome       String
+  tipo       TipoCampeonato
+  maxTimes   Int
+  roundAtual Int            @default(1)
 
   campeaoId Int?
   campeao   Time? @relation("CampeaoTime", fields: [campeaoId], references: [id])
@@ -220,11 +220,8 @@ model Jogo {
   timeBId Int
   timeB   Time @relation("JogoTimeB", fields: [timeBId], references: [id])
 
-  golsA Int?
-  golsB Int?
-
-  finalizado Boolean @default(false)
-
+  golsA      Int?
+  golsB      Int?
   vencedorId Int?
-  vencedor   Time? @relation(fields: [vencedorId], references: [id])
+  finalizado Boolean @default(false)
 }
