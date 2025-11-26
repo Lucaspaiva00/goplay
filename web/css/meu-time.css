@@ -1,0 +1,43 @@
+.time-info-card {
+    background: #ffffff;
+    padding: 20px 24px;
+    border-radius: 8px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+    margin-bottom: 24px;
+}
+
+.subtitle {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.player-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.player-item {
+    background: white;
+    padding: 14px 18px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.btn-danger {
+    width: 100%;
+    background: #b91c1c;
+    color: white;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}

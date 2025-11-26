@@ -28,6 +28,7 @@ router.get('/time/society/:societyId', timecontroller.listBySociety);
 router.get('/time/:timeId', timecontroller.details);
 router.post('/time/entrar', timecontroller.join);
 router.post('/time/sair', timecontroller.leave);
+router.get("/time/details/by-player/:usuarioId", timecontroller.getTimeByPlayer);
 
 router.post('/society/player', societyplayerscontroller.add);
 

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Times Disponíveis – GoPlay</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- LAYOUT GLOBAL (sidebar, topbar, etc) -->
+    <link rel="stylesheet" href="../css/goplay_home.css">
+
+    <!-- CSS ESPECÍFICO DA PÁGINA -->
+    <link rel="stylesheet" href="../css/times-disponiveis.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+        <ul id="menuDynamic"></ul>
+    </aside>
+
+    <!-- OVERLAY MOBILE -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <h1 class="title">
+            <i class="fa fa-users"></i>
+            Times disponíveis
+        </h1>
+    </header>
+
+    <!-- CONTEÚDO -->
+    <div class="main-wrapper">
+        <main class="content">
+            <div class="times-wrapper">
+                <div id="listaTimes" class="lista-times"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- JS -->
+    <script src="../scripts/menu.js"></script>
+    <script src="../js/timesDisponiveis.js"></script>
+</body>
+
+</html>

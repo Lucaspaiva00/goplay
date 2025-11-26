@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Meu Time – GoPlay</title>
+
+    <!-- LAYOUT GLOBAL -->
+    <link rel="stylesheet" href="../css/goplay_home.css">
+
+    <!-- CSS ESPECÍFICO (se quiser adicionar depois) -->
+    <link rel="stylesheet" href="../css/meu-time.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- JS -->
+    <script defer src="../scripts/menu.js"></script>
+    <script defer src="../js/meuTime.js"></script>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+        <ul id="menuDynamic"></ul>
+    </aside>
+
+    <!-- OVERLAY MOBILE -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <h1 class="title">
+            <i class="fa fa-user-group"></i>
+            Meu Time
+        </h1>
+    </header>
+
+    <!-- CONTEÚDO -->
+    <div class="main-wrapper">
+        <main class="content">
+
+            <!-- Dados do time -->
+            <div class="time-info-card" id="dadosTime"></div>
+
+            <h3 class="subtitle">Jogadores</h3>
+
+            <!-- Lista de jogadores -->
+            <div id="listaJogadores" class="player-list"></div>
+
+            <!-- Botão Sair do time -->
+            <button id="sair" class="btn-danger">Sair do time</button>
+
+        </main>
+    </div>
+
+</body>
+
+</html>

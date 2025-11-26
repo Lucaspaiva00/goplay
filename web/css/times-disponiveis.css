@@ -1,0 +1,134 @@
+/* CONTAINER GERAL */
+.times-wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* LISTA */
+.lista-times {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+/* CARD */
+.time-card {
+    background: #ffffff;
+    width: 100%;
+    border-radius: 8px;
+    padding: 22px 26px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+    transition: transform 0.2s;
+}
+
+.time-card:hover {
+    transform: translateY(-2px);
+}
+
+/* NOME DO TIME */
+.time-nome {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 6px;
+}
+
+/* LOCAL */
+.time-local {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 20px;
+}
+
+/* BOTÃO */
+.time-btn {
+    width: 100%;
+    border: none;
+    border-radius: 999px;
+    padding: 14px 22px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    background: #072f57;
+    color: #ffffff;
+    transition: 0.2s;
+}
+
+.time-btn:hover {
+    filter: brightness(1.1);
+}
+
+/* ===========================
+   📱 RESPONSIVIDADE MOBILE
+=========================== */
+@media (max-width: 1024px) {
+    .times-wrapper {
+        padding: 16px;
+    }
+
+    .time-card {
+        padding: 18px 20px;
+    }
+}
+
+@media (max-width: 768px) {
+
+    /* Sidebar recolhida (padrão GoPlay) */
+    .sidebar {
+        transform: translateX(-100%);
+        position: fixed;
+        z-index: 999;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .overlay.show {
+        display: block;
+    }
+
+    /* Conteúdo */
+    .times-wrapper {
+        padding: 14px;
+    }
+
+    .time-card {
+        padding: 16px 18px;
+    }
+
+    .time-nome {
+        font-size: 17px;
+    }
+
+    .time-local {
+        font-size: 13px;
+    }
+
+    .time-btn {
+        font-size: 14px;
+        padding: 12px 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .time-card {
+        padding: 14px 16px;
+    }
+
+    .time-nome {
+        font-size: 16px;
+    }
+
+    .time-local {
+        font-size: 12px;
+        margin-bottom: 14px;
+    }
+
+    .time-btn {
+        padding: 12px 16px;
+        font-size: 13px;
+    }
+}

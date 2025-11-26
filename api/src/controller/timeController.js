@@ -177,5 +177,41 @@ const listBySociety = async (req, res) => {
     }
 };
 
+const getTimeByPlayer = async (req, res) => {
+    try {
+        const usuarioId = Number(req.params.usuarioId);
 
-module.exports = { create, list, listByOwner, details, join, leave, listBySociety };
+        // pegar o jogador
+        const jogador = await prisma.usuario.findUnique({
+            where: { id: usuarioId },
+            include: { timeRelacionado: true }
+        });
+
+        if (!jogador || !jogador.timeRelacionadoId) {
+            return res.json({ time: null });
+        }
+
+        // pegar o time completo
+        const time = await prisma.time.findUnique({
+            where: { id: jogador.timeRelacionadoId },
+            include: {
+                jogadores: {
+                    select: {
+                        id: true,
+                        nome: true,
+                        posicaoCampo: true
+                    }
+                }
+            }
+        });
+
+        return res.json({ time });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error: "Erro ao buscar time do jogador." });
+    }
+};
+
+
+module.exports = { create, list, listByOwner, details, join, leave, listBySociety, getTimeByPlayer };
