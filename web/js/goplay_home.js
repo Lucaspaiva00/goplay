@@ -1,8 +1,15 @@
 const sidebar = document.getElementById("sidebar");
 const menuBtn = document.getElementById("menuBtn");
 const overlay = document.getElementById("overlay");
-const usuario = JSON.parse(localStorage.getItem("usuarioCadastrado"));
-// Abre e fecha ao clicar no sanduíche
+
+// Usuário correto
+const usuario = JSON.parse(localStorage.getItem("usuarioLogado"));
+
+if (!usuario) {
+    window.location.href = "login.html";
+}
+
+// Abre/fecha o menu
 menuBtn.addEventListener("click", () => {
     sidebar.classList.toggle("open");
     overlay.classList.toggle("show");
@@ -13,7 +20,3 @@ overlay.addEventListener("click", () => {
     sidebar.classList.remove("open");
     overlay.classList.remove("show");
 });
-
-if (usuario && usuario.nome) {
-    document.getElementById("msgBemVindo").innerHTML = `👋 Bem-vindo, ${usuario.nome}!`;
-}

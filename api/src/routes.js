@@ -13,15 +13,23 @@ const campocontroller = require("./controller/campoController");
 const convitecontroller = require("./controller/conviteController");
 const campeonatoController = require("./controller/campeonatoController")
 
-router.post('/usuarios', usuariocontroller.create);
-router.post('/login', usuariocontroller.login);
+
+router.post("/usuarios", usuariocontroller.create);
+router.post("/login", usuariocontroller.login);
+router.get("/usuarios/:id", usuariocontroller.readOne);
+router.put("/usuarios/:id", usuariocontroller.update);
 
 router.post('/society', societycontroller.create);
 router.get('/society/owner/:usuarioId', societycontroller.readByOwner);
 router.get('/society/:id', societycontroller.readById);
 
-router.post('/times', timecontroller.create);
-router.get('/times/:id', timecontroller.getTime);
+router.post('/time', timecontroller.create);            // criar time
+router.get('/time', timecontroller.list);               // listar todos os times
+router.get('/time/dono/:donoId', timecontroller.listByOwner); // listar times por dono
+router.get('/time/:timeId', timecontroller.details);    // detalhes do time
+router.post('/time/entrar', timecontroller.join);       // jogador entrar
+router.post('/time/sair', timecontroller.leave);        // jogador sair
+
 
 router.post('/society/player', societyplayerscontroller.add);
 

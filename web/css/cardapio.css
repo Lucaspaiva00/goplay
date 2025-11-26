@@ -2,12 +2,14 @@
         CARDÁPIO – LAYOUT
 ================================ */
 
-.content {
+/* Container exclusivo desta página */
+.content-cardapio {
     max-width: 900px;
-    margin: 100px auto 40px;
+    margin: 40px auto;
     padding: 20px;
 }
 
+/* Título da página */
 .page-title {
     font-size: 26px;
     font-weight: 700;
@@ -59,7 +61,7 @@
     box-shadow: 0 0 0 2px rgba(5, 39, 72, 0.15);
 }
 
-/* Botão Premium GoPlay */
+/* Botão Premium – GoPlay */
 .btn {
     width: 100%;
     padding: 15px;
@@ -83,7 +85,8 @@
 ================================ */
 
 @media (max-width: 768px) {
-    .content {
+
+    .content-cardapio {
         padding: 15px;
         margin-top: 90px;
     }
@@ -94,6 +97,7 @@
 }
 
 @media (max-width: 480px) {
+
     .page-title {
         font-size: 20px;
     }

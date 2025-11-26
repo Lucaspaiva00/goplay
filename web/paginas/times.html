@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Times – GoPlay</title>
+
+    <!-- CSS global padrão -->
+    <link rel="stylesheet" href="../css/goplay_home.css">
+    <link rel="stylesheet" href="../css/times.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header class="topbar">
+        <button id="menuBtn" class="menu-btn">
+            <i class="fa fa-bars"></i>
+        </button>
+        <h1 class="title">Times</h1>
+    </header>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+
+        <ul id="menuDynamic"></ul>
+
+    </aside>
+
+    <!-- OVERLAY -->
+    <div id="overlay" class="overlay"></div>
+
+    <!-- CONTEÚDO -->
+    <main class="content">
+
+        <h2 class="page-title">⚽ Meus Times</h2>
+        <!-- NOVO TIME -->
+        <section class="card">
+            <h3 class="section-title">Criar novo time</h3>
+
+            <input id="nome" class="input" placeholder="Nome do time">
+            <input id="brasao" class="input" placeholder="URL do brasão (opcional)">
+            <textarea id="descricao" class="input textarea" placeholder="Descrição"></textarea>
+            <input id="estado" class="input" placeholder="Estado (ex: SP)">
+            <input id="cidade" class="input" placeholder="Cidade">
+            <input id="modalidade" class="input" placeholder="Modalidade (ex: Society / Futsal)">
+
+            <button class="btn" onclick="salvarTime()">Salvar Time</button>
+        </section>
+        <!-- LISTA -->
+        <section id="listaTimes" class="card">
+            Carregando times...
+        </section>
+
+
+
+    </main>
+
+    <!-- JS -->
+    <script src="../js/goplay_home.js"></script>
+    <script src="../scripts/times.js"></script>
+    <script src="../scripts/menu.js"></script>
+
+</body>
+
+</html>

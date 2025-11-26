@@ -14,8 +14,8 @@ CREATE TABLE `Usuario` (
     `nascimento` DATETIME(3) NULL,
     `goleiro` BOOLEAN NULL,
     `sexo` VARCHAR(191) NULL,
-    `timeRelacionadoId` INTEGER NULL,
     `tipo` ENUM('PLAYER', 'DONO_TIME', 'DONO_SOCIETY') NOT NULL DEFAULT 'PLAYER',
+    `timeRelacionadoId` INTEGER NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -83,11 +83,10 @@ CREATE TABLE `Time` (
     `estado` VARCHAR(191) NULL,
     `cidade` VARCHAR(191) NULL,
     `modalidade` VARCHAR(191) NULL,
-    `donoId` INTEGER NULL,
+    `donoId` INTEGER NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
-    UNIQUE INDEX `Time_donoId_key`(`donoId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -175,7 +174,7 @@ ALTER TABLE `Cardapio` ADD CONSTRAINT `Cardapio_societyId_fkey` FOREIGN KEY (`so
 ALTER TABLE `Campo` ADD CONSTRAINT `Campo_societyId_fkey` FOREIGN KEY (`societyId`) REFERENCES `Society`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Time` ADD CONSTRAINT `Time_donoId_fkey` FOREIGN KEY (`donoId`) REFERENCES `Usuario`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `Time` ADD CONSTRAINT `Time_donoId_fkey` FOREIGN KEY (`donoId`) REFERENCES `Usuario`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Pagamento` ADD CONSTRAINT `Pagamento_usuarioId_fkey` FOREIGN KEY (`usuarioId`) REFERENCES `Usuario`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

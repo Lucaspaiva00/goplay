@@ -2,14 +2,13 @@
       LAYOUT DA TELA CAMPOS
    ================================ */
 
-/* Limite de largura do conteúdo */
-.content {
+.content-campos {
     max-width: 900px;
-    margin: 100px auto 40px;
+    margin: 40px auto;
     padding: 20px;
 }
 
-/* Título da página */
+/* Título */
 .page-title {
     font-size: 26px;
     font-weight: 700;
@@ -29,7 +28,7 @@
     margin-bottom: 25px;
 }
 
-/* Card de lista de campos */
+/* Card da lista */
 #listaCampos .campo-item {
     background: #f8f9fc;
     padding: 18px;
@@ -45,7 +44,7 @@
 
 /* Inputs */
 .input {
-    width: 96%;
+    width: 100%;
     padding: 14px;
     margin-top: 10px;
     border-radius: 10px;
@@ -61,7 +60,7 @@
     box-shadow: 0 0 0 2px rgba(5, 39, 72, 0.15);
 }
 
-/* Botão principal */
+/* Botão */
 .btn {
     width: 100%;
     padding: 15px;
@@ -81,12 +80,12 @@
 }
 
 /* ================================
-      RESPONSIVIDADE
+      RESPONSIVO
    ================================ */
 
 @media (max-width: 768px) {
 
-    .content {
+    .content-campos {
         padding: 15px;
         margin-top: 90px;
     }

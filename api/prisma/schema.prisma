@@ -24,18 +24,12 @@ enum TipoCampeonato {
   GRUPOS
 }
 
-//
-// ──────────────────────────────────────────────
-// USUÁRIO
-// ──────────────────────────────────────────────
-//
-
 model Usuario {
   id           Int       @id @default(autoincrement())
   nome         String
   cpf          String?   @unique
   email        String    @unique
-  senha        String // necessário para login
+  senha        String
   telefone     String?
   pernaMelhor  String?
   posicaoCampo String?
@@ -46,16 +40,13 @@ model Usuario {
   goleiro      Boolean?
   sexo         String?
 
-  // Dono de um time (1:1)
-  timeDono Time? @relation("TimeDono")
+  tipo TipoUsuario @default(PLAYER)
 
-  // Jogador vinculado a um time (N:1)
+  times Time[] @relation("TimeDono")
+
   timeRelacionadoId Int?
   timeRelacionado   Time? @relation("TimeJogadores", fields: [timeRelacionadoId], references: [id])
 
-  tipo TipoUsuario @default(PLAYER)
-
-  // 1 usuário → vários societies
   societies Society[] @relation("UsuarioSocieties")
 
   pagamentos     Pagamento[]
@@ -65,12 +56,6 @@ model Usuario {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
-//
-// ──────────────────────────────────────────────
-// SOCIETY
-// ──────────────────────────────────────────────
-//
 
 model Society {
   id        Int     @id @default(autoincrement())
@@ -97,19 +82,11 @@ model Society {
   campos         Campo[]
   societyPlayers SocietyPlayer[]
   pagamentos     Pagamento[]
-
-  // 🔥 campeonatos desse society
-  campeonatos Campeonato[]
+  campeonatos    Campeonato[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
-//
-// ──────────────────────────────────────────────
-// CARDÁPIO
-// ──────────────────────────────────────────────
-//
 
 model Cardapio {
   id        Int     @id @default(autoincrement())
@@ -121,12 +98,6 @@ model Cardapio {
 
   createdAt DateTime @default(now())
 }
-
-//
-// ──────────────────────────────────────────────
-// CAMPOS
-// ──────────────────────────────────────────────
-//
 
 model Campo {
   id        Int     @id @default(autoincrement())
@@ -143,12 +114,6 @@ model Campo {
   createdAt DateTime @default(now())
 }
 
-//
-// ──────────────────────────────────────────────
-// TIME
-// ──────────────────────────────────────────────
-//
-
 model Time {
   id         Int     @id @default(autoincrement())
   nome       String
@@ -158,34 +123,19 @@ model Time {
   cidade     String?
   modalidade String?
 
-  // Dono do time (1:1)
-  donoId Int?     @unique
-  dono   Usuario? @relation("TimeDono", fields: [donoId], references: [id])
+  donoId Int
+  dono   Usuario @relation("TimeDono", fields: [donoId], references: [id])
 
-  // Jogadores desse time
   jogadores Usuario[] @relation("TimeJogadores")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // times inscritos em campeonatos (tabela de junção)
-  timeCampeonatos TimeCampeonato[]
-
-  // jogos em que esse time é mandante
-  jogosMandante Jogo[] @relation("JogoTimeA")
-
-  // jogos em que esse time é visitante
-  jogosVisitante Jogo[] @relation("JogoTimeB")
-
-  // campeonatos que esse time venceu
-  campeonatosVencidos Campeonato[] @relation("CampeaoTime")
+  timeCampeonatos     TimeCampeonato[]
+  jogosMandante       Jogo[]           @relation("JogoTimeA")
+  jogosVisitante      Jogo[]           @relation("JogoTimeB")
+  campeonatosVencidos Campeonato[]     @relation("CampeaoTime")
 }
-
-//
-// ──────────────────────────────────────────────
-// PAGAMENTOS
-// ──────────────────────────────────────────────
-//
 
 model Pagamento {
   id        Int     @id @default(autoincrement())
@@ -202,12 +152,6 @@ model Pagamento {
   createdAt DateTime @default(now())
 }
 
-//
-// ──────────────────────────────────────────────
-// RELAÇÃO N:N – SOCIETY x USUÁRIOS (JOGADORES)
-// ──────────────────────────────────────────────
-//
-
 model SocietyPlayer {
   id Int @id @default(autoincrement())
 
@@ -219,12 +163,6 @@ model SocietyPlayer {
 
   createdAt DateTime @default(now())
 }
-
-//
-// ──────────────────────────────────────────────
-// NOTIFICAÇÕES
-// ──────────────────────────────────────────────
-//
 
 model Notificacao {
   id        Int     @id @default(autoincrement())
@@ -238,12 +176,6 @@ model Notificacao {
   createdAt DateTime @default(now())
 }
 
-//
-// ──────────────────────────────────────────────
-// CAMPEONATO / TIMES / JOGOS
-// ──────────────────────────────────────────────
-//
-
 model Campeonato {
   id        Int     @id @default(autoincrement())
   societyId Int
@@ -253,7 +185,6 @@ model Campeonato {
   tipo     TipoCampeonato
   maxTimes Int
 
-  // time campeão (opcional) – relação nomeada
   campeaoId Int?
   campeao   Time? @relation("CampeaoTime", fields: [campeaoId], references: [id])
 
@@ -277,7 +208,7 @@ model Jogo {
   campeonatoId Int
   campeonato   Campeonato @relation(fields: [campeonatoId], references: [id])
 
-  round   Int // 1 = oitavas, 2 = quartas, 3 = semi, 4 = final...
+  round   Int
   timeAId Int
   timeA   Time @relation("JogoTimeA", fields: [timeAId], references: [id])
 
@@ -286,5 +217,5 @@ model Jogo {
 
   golsA      Int?
   golsB      Int?
-  vencedorId Int? // apenas o id, sem relação obrigatória
+  vencedorId Int?
 }

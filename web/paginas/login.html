@@ -4,32 +4,25 @@
 <head>
     <meta charset="UTF-8">
     <title>Entrar – GoPlay</title>
-    <link rel="stylesheet" href="../css/goplay.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/auth.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
-<body>
+<body class="auth-body">
 
-    <header>
-        <div class="menu-icon" style="opacity:0; cursor:default;">☰</div>
-    </header>
+    <div class="auth-container">
 
-    <div class="container">
+        <h1 class="auth-title">Entrar no GoPlay</h1>
 
-        <div class="card-title center">Bem-vindo ao GoPlay!</div>
+        <input id="email" class="input" placeholder="E-mail" type="email">
+        <input id="senha" class="input" type="password" placeholder="Senha">
 
-        <div class="card">
-            <input id="email" class="input" placeholder="E-mail">
-            <input id="senha" class="input" type="password" placeholder="Senha">
+        <button class="btn" onclick="login()">Entrar</button>
 
-            <button class="btn" onclick="login()">Entrar</button>
-
-            <div class="center" style="margin-top:10px;">
-                <a href="usuarios.html" style="text-decoration:none; color:#009246;">
-                    Criar uma conta →
-                </a>
-            </div>
-        </div>
-
+        <p class="auth-link">
+            Não tem conta? <a href="usuarios.html">Criar agora</a>
+        </p>
     </div>
 
     <script src="../scripts/login.js"></script>

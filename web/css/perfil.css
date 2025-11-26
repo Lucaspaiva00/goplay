@@ -24,7 +24,7 @@ body {
     position: fixed;
     top: 0;
     left: -260px;
-    transition: 0.3s ease;
+    transition: .3s ease;
     z-index: 999;
     padding-top: 20px;
 }
@@ -51,19 +51,16 @@ body {
     align-items: center;
     gap: 12px;
     font-size: 16px;
-    transition: 0.3s;
+    transition: .3s;
 }
 
-.sidebar ul li:hover {
-    background: rgba(255, 255, 255, 0.08);
-}
-
+.sidebar ul li:hover,
 .sidebar ul li.active {
     background: rgba(255, 255, 255, 0.15);
 }
 
 /* ============================================
-   OVERLAY (MOBILE)
+   OVERLAY MOBILE
 ============================================ */
 .overlay {
     position: fixed;
@@ -100,7 +97,6 @@ body {
     border: none;
     font-size: 26px;
     cursor: pointer;
-    padding: 8px;
 }
 
 .title {
@@ -111,17 +107,17 @@ body {
 }
 
 /* ============================================
-   CONTENT GLOBAL (Padrão esquerda)
+   CONTENT
 ============================================ */
 .content {
-    padding: 40px 40px;
-    margin-left: 0;
+    padding: 30px;
     width: 100%;
-    max-width: 1100px;
-    /* Largura padrão dashboard */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-@media(min-width: 900px) {
+@media (min-width: 900px) {
     .sidebar {
         left: 0;
     }
@@ -136,68 +132,70 @@ body {
 }
 
 /* ============================================
-   HOME – CENTRALIZADA PREMIUM
+   PAGE ELEMENTS
 ============================================ */
-.content.home-center {
+.page-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 28px;
+    color: #031a35;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    max-width: none;
-    width: 100%;
+    gap: 10px;
 }
 
-/* CARDS */
-.welcome-card {
-    background: #0a2f4d;
-    color: #fff;
-    padding: 28px;
-    border-radius: 16px;
-    text-align: center;
-    width: 90%;
-    max-width: 900px;
-    margin: 20px auto;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
-}
-
-.action-card {
+.card {
     background: #fff;
-    padding: 28px;
-    border-radius: 16px;
-    width: 90%;
+    padding: 32px;
+    border-radius: 18px;
+    width: 100%;
     max-width: 900px;
-    margin: 30px auto;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.10);
-    text-align: center;
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 25px 0 12px;
+    color: #052748;
+}
+
+.input {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid #dce0e7;
+    margin-top: 10px;
+    font-size: 16px;
+    transition: .2s;
+}
+
+.input:focus {
+    border-color: #052748;
+    box-shadow: 0 0 0 2px rgba(5, 39, 72, 0.18);
+}
+
+.checkbox-label {
+    margin-top: 15px;
+    font-size: 16px;
+    display: flex;
+    gap: 10px;
 }
 
 .btn {
     width: 100%;
-    max-width: 600px;
-    padding: 15px;
-    border-radius: 12px;
+    padding: 16px;
+    background: #052748;
+    color: white;
     border: none;
-    cursor: pointer;
+    border-radius: 12px;
     font-size: 18px;
-    transition: 0.3s;
-    margin: 0 auto 16px auto;
+    margin-top: 30px;
+    cursor: pointer;
     font-weight: 600;
-    display: block;
+    transition: .2s;
 }
 
-.btn.green {
-    background: #0dbf45;
-    color: #fff;
-}
-
-.btn.green:hover {
-    background: #0a9c38;
-}
-
-.btn.navy {
-    background: #0a2f4d;
-    color: #fff;
-}
-
-.btn.navy:hover {
-    background: #061f33;
+.btn:hover {
+    background: #031a35;
 }

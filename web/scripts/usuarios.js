@@ -1,19 +1,18 @@
 const BASE_URL = "http://localhost:3000";
 
-function criarUsuario() {
+function criarConta() {
+    const nome = document.getElementById("nome").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const senha = document.getElementById("senha").value.trim();
+    const telefone = document.getElementById("telefone").value.trim();
+    const tipo = document.getElementById("tipo").value;
 
-    const data = {
-        nome: nome.value.trim(),
-        email: email.value.trim(),
-        senha: senha.value.trim(),
-        telefone: telefone.value.trim(),
-        tipo: "DONO_SOCIETY" // padrão para seu app
-    };
-
-    if (!data.nome || !data.email || !data.senha) {
+    if (!nome || !email || !senha || !tipo) {
         alert("Preencha todos os campos obrigatórios!");
         return;
     }
+
+    const data = { nome, email, senha, telefone, tipo };
 
     fetch(`${BASE_URL}/usuarios`, {
         method: "POST",

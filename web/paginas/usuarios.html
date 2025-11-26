@@ -4,40 +4,37 @@
 <head>
     <meta charset="UTF-8">
     <title>Criar Conta – GoPlay</title>
-    <link rel="stylesheet" href="../css/goplay.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/auth.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
-<body class="with-sidebar">
+<body class="auth-body">
 
-    <header>
-        <div class="menu-icon">☰</div>
-    </header>
+    <div class="auth-container">
 
-    <div class="sidebar" id="menuLateral">
-        <div class="sidebar-title">MENU</div>
+        <h1 class="auth-title">Criar Conta</h1>
 
-        <a href="login.html">➡️ Já tenho conta</a>
+        <select id="tipo" class="input">
+            <option value="">Selecione o tipo de conta</option>
+            <option value="DONO_SOCIETY">Dono de Society</option>
+            <option value="DONO_TIME">Dono de Time</option>
+            <option value="PLAYER">Jogador</option>
+        </select>
+
+        <input id="nome" class="input" placeholder="Nome completo">
+        <input id="email" class="input" placeholder="E-mail" type="email">
+        <input id="senha" class="input" placeholder="Senha" type="password">
+        <input id="telefone" class="input" placeholder="Telefone (opcional)">
+
+        <button class="btn" onclick="criarConta()">Criar Conta</button>
+
+        <p class="auth-link">
+            Já tem conta? <a href="login.html">Entrar</a>
+        </p>
     </div>
 
-    <div class="container">
-
-        <div class="card-title">Criar Conta</div>
-
-        <div class="card">
-
-            <input id="nome" class="input" placeholder="Nome completo">
-            <input id="email" class="input" placeholder="E-mail">
-            <input id="senha" class="input" type="password" placeholder="Senha">
-            <input id="telefone" class="input" placeholder="Telefone (opcional)">
-
-            <button class="btn" onclick="criarUsuario()">Criar Conta</button>
-
-        </div>
-
-    </div>
-
-    <script src="../scripts/menu.js" defer></script>
-    <script src="../scripts/usuarios.js" defer></script>
+    <script src="../scripts/usuarios.js"></script>
 
 </body>
 

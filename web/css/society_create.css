@@ -1,13 +1,17 @@
-/* ============================
-      LAYOUT GERAL
-============================ */
+/* ============================================
+   LAYOUT GERAL – Cadastrar Society
+=============================================== */
 
-.content {
+/* .content {
     max-width: 900px;
     margin: 100px auto 40px;
-    padding: 20px;
-}
+    /* CENTRALIZA igual nas outras telas */
+    /* padding: 20px;
+    display: block; */
+    /* sobrescreve o flex do goplay_home.css */
+/*} */
 
+/* Título da página */
 .page-title {
     font-size: 26px;
     font-weight: 700;
@@ -18,16 +22,17 @@
     gap: 10px;
 }
 
+/* Card Premium */
 .card {
     background: #fff;
     padding: 30px;
     border-radius: 16px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-
-    /* Garantindo que nada vaze */
+    margin-bottom: 25px;
     box-sizing: border-box;
 }
 
+/* Títulos das seções */
 .section-title {
     font-size: 18px;
     font-weight: 700;
@@ -35,11 +40,12 @@
     color: #052748;
 }
 
-/* ============================
-      INPUTS PREMIUM
-============================ */
+/* ============================================
+   INPUTS PREMIUM
+=============================================== */
 
-.input {
+.input,
+.textarea {
     width: 100%;
     padding: 14px;
     margin-top: 10px;
@@ -49,33 +55,30 @@
     outline: none;
     transition: .2s;
     background: #fff;
-
-    /* CORREÇÃO FUNDAMENTAL */
     box-sizing: border-box;
 }
 
-.input:focus {
+.input:focus,
+.textarea:focus {
     border-color: #052748;
-    box-shadow: 0 0 0 2px rgba(5, 39, 72, 0.15);
+    box-shadow: 0 0 0 2px rgba(5, 39, 72, 0.18);
 }
 
+/* Textarea */
 .textarea {
     height: 90px;
-    resize: none;
-
-    /* Correção no mobile */
-    box-sizing: border-box;
+    resize: vertical;
 }
 
-/* ============================
-      BOTÃO
-============================ */
+/* ============================================
+   BOTÃO PREMIUM
+=============================================== */
 
 .btn {
     width: 100%;
     padding: 15px;
     background: #052748;
-    color: white;
+    color: #fff;
     border: none;
     border-radius: 10px;
     font-size: 17px;
@@ -83,7 +86,6 @@
     cursor: pointer;
     font-weight: 600;
     transition: .2s;
-
     box-sizing: border-box;
 }
 
@@ -91,9 +93,9 @@
     background: #031a35;
 }
 
-/* ============================
-      RESPONSIVO
-============================ */
+/* ============================================
+   RESPONSIVIDADE
+=============================================== */
 
 @media (max-width: 768px) {
     .content {
@@ -104,10 +106,13 @@
     .page-title {
         font-size: 22px;
     }
+
+    .card {
+        padding: 24px;
+    }
 }
 
 @media (max-width: 480px) {
-
     .content {
         padding: 10px;
     }
@@ -118,15 +123,16 @@
 
     .card {
         padding: 20px;
-        border-radius: 14px;
     }
 
-    .input {
+    .input,
+    .textarea {
         font-size: 14px;
         padding: 12px;
     }
 
-    .textarea {
-        height: 80px;
+    .btn {
+        padding: 14px;
+        font-size: 16px;
     }
 }

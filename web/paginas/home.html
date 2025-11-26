@@ -3,9 +3,14 @@
 
 <head>
     <meta charset="UTF-8">
+    <title>GoPlay – Home</title>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoPlay - Home</title>
+
+    <!-- CSS global -->
     <link rel="stylesheet" href="../css/goplay_home.css">
+
+    <!-- Ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
@@ -17,53 +22,33 @@
             <h2>GoPlay</h2>
         </div>
 
-        <ul>
-            <li onclick="location.href='home.html'"><i class="fa fa-house"></i> Início</li>
-            <li onclick="location.href='societies.html'"><i class="fa fa-eye"></i> Ver Societies</li>
-            <li onclick="location.href='cadastrosociety.html'"><i class="fa fa-plus"></i> Cadastrar Society</li>
-            <li onclick="location.href='times.html'"><i class="fa fa-futbol"></i> Times</li>
-            <li onclick="location.href='jogadores.html'"><i class="fa fa-people-group"></i> Jogadores</li>
-            <li onclick="location.href='pagamentos.html'"><i class="fa fa-credit-card"></i> Pagamentos</li>
-            <li onclick="location.href='perfil.html'"><i class="fa fa-user"></i> Perfil</li>
-            <li onclick="location.href='campos.html'"><i class="fa fa-map"></i> Campos</li>
-            <li onclick="location.href='cardapio.html'"><i class="fa fa-utensils"></i> Cardápio</li>
-
-        </ul>
+        <!-- MENU DINÂMICO -->
+        <ul id="menuDynamic"></ul>
     </aside>
+
+    <!-- OVERLAY -->
     <div id="overlay" class="overlay"></div>
 
+    <!-- HEADER -->
+    <header class="topbar">
+        <button id="menuBtn" class="menu-btn">
+            <i class="fa fa-bars"></i>
+        </button>
+        <h1 class="title">Início</h1>
+    </header>
+
     <!-- CONTEÚDO -->
-    <main class="content">
+    <main class="content" id="homeContent">
 
-        <!-- NAV SUPERIOR -->
-        <header class="topbar">
-            <div id="menuBtn" class="menu-btn">
-                <i class="fa fa-bars"></i>
-            </div>
-
-            <span class="title">GoPlay</span>
-        </header>
-
-        <section class="welcome-box">
-            <h2 id="msgBemVindo">👋 Bem-vindo!</h2>
-            <p>Que bom ter você aqui no GoPlay.</p>
-        </section>
-
-        <section class="action-box">
-            <h3>O que deseja fazer agora?</h3>
-
-            <button class="btn btn-green" onclick="location.href='societies.html'">
-                👀 Explorar Societies
-            </button>
-
-            <button class="btn btn-dark" onclick="location.href='society-create.html'">
-                ➕ Cadastrar meu Society
-            </button>
-        </section>
+        <!-- aqui o JS vai montar tudo dinamicamente -->
 
     </main>
 
-    <script src="../js/goplay_home.js"></script>
+    <!-- JS -->
+    <script src="../js/goplay_home.js"></script>     
+    <script src="../scripts/menu.js"></script>
+    <script src="../scripts/home.js"></script>
+
 </body>
 
 </html>
