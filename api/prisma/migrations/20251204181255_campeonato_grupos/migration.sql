@@ -132,6 +132,7 @@ CREATE TABLE `Campeonato` (
     `nome` VARCHAR(191) NOT NULL,
     `tipo` ENUM('MATA_MATA', 'GRUPOS') NOT NULL,
     `maxTimes` INTEGER NOT NULL,
+    `faseAtual` VARCHAR(191) NOT NULL DEFAULT 'GRUPOS',
     `roundAtual` INTEGER NOT NULL DEFAULT 1,
     `campeaoId` INTEGER NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -149,16 +150,54 @@ CREATE TABLE `TimeCampeonato` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `Grupo` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `nome` VARCHAR(191) NOT NULL,
+    `campeonatoId` INTEGER NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `TimeGrupo` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `grupoId` INTEGER NOT NULL,
+    `timeId` INTEGER NOT NULL,
+    `pontos` INTEGER NOT NULL DEFAULT 0,
+    `vitorias` INTEGER NOT NULL DEFAULT 0,
+    `empates` INTEGER NOT NULL DEFAULT 0,
+    `derrotas` INTEGER NOT NULL DEFAULT 0,
+    `golsPro` INTEGER NOT NULL DEFAULT 0,
+    `golsContra` INTEGER NOT NULL DEFAULT 0,
+    `saldoGols` INTEGER NOT NULL DEFAULT 0,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `Jogo` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `campeonatoId` INTEGER NOT NULL,
     `round` INTEGER NOT NULL,
+    `grupoId` INTEGER NULL,
     `timeAId` INTEGER NOT NULL,
     `timeBId` INTEGER NOT NULL,
     `golsA` INTEGER NULL,
     `golsB` INTEGER NULL,
     `vencedorId` INTEGER NULL,
     `finalizado` BOOLEAN NOT NULL DEFAULT false,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `EstatisticaJogo` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `jogoId` INTEGER NOT NULL,
+    `jogadorId` INTEGER NOT NULL,
+    `gols` INTEGER NOT NULL DEFAULT 0,
+    `amarelos` INTEGER NOT NULL DEFAULT 0,
+    `vermelhos` INTEGER NOT NULL DEFAULT 0,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -206,10 +245,28 @@ ALTER TABLE `TimeCampeonato` ADD CONSTRAINT `TimeCampeonato_campeonatoId_fkey` F
 ALTER TABLE `TimeCampeonato` ADD CONSTRAINT `TimeCampeonato_timeId_fkey` FOREIGN KEY (`timeId`) REFERENCES `Time`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `Grupo` ADD CONSTRAINT `Grupo_campeonatoId_fkey` FOREIGN KEY (`campeonatoId`) REFERENCES `Campeonato`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `TimeGrupo` ADD CONSTRAINT `TimeGrupo_grupoId_fkey` FOREIGN KEY (`grupoId`) REFERENCES `Grupo`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `TimeGrupo` ADD CONSTRAINT `TimeGrupo_timeId_fkey` FOREIGN KEY (`timeId`) REFERENCES `Time`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `Jogo` ADD CONSTRAINT `Jogo_campeonatoId_fkey` FOREIGN KEY (`campeonatoId`) REFERENCES `Campeonato`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Jogo` ADD CONSTRAINT `Jogo_grupoId_fkey` FOREIGN KEY (`grupoId`) REFERENCES `Grupo`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Jogo` ADD CONSTRAINT `Jogo_timeAId_fkey` FOREIGN KEY (`timeAId`) REFERENCES `Time`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Jogo` ADD CONSTRAINT `Jogo_timeBId_fkey` FOREIGN KEY (`timeBId`) REFERENCES `Time`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `EstatisticaJogo` ADD CONSTRAINT `EstatisticaJogo_jogoId_fkey` FOREIGN KEY (`jogoId`) REFERENCES `Jogo`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `EstatisticaJogo` ADD CONSTRAINT `EstatisticaJogo_jogadorId_fkey` FOREIGN KEY (`jogadorId`) REFERENCES `Usuario`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

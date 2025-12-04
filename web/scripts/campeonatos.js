@@ -1,45 +1,31 @@
 const BASE_URL = "http://localhost:3000";
 
-document.addEventListener("DOMContentLoaded", carregarCampeonatos);
-
-function carregarCampeonatos() {
+document.addEventListener("DOMContentLoaded", () => {
     const societyId = localStorage.getItem("societyId");
+    carregarCampeonatos(societyId);
+});
 
-    if (!societyId) {
-        document.getElementById("listaCampeonatos").innerHTML =
-            "<p class='sem-campeonatos'>Nenhum society selecionado.</p>";
-        return;
-    }
-
+function carregarCampeonatos(societyId) {
     fetch(`${BASE_URL}/campeonato/society/${societyId}`)
         .then(res => res.json())
         .then(lista => {
             const div = document.getElementById("listaCampeonatos");
 
-            if (!lista || lista.length === 0) {
-                div.innerHTML = "<p class='sem-campeonatos'>Nenhum campeonato cadastrado.</p>";
+            if (!lista.length) {
+                div.innerHTML = "<p>Nenhum campeonato criado ainda.</p>";
                 return;
             }
 
             div.innerHTML = lista.map(c => `
-                <div class="card-campeonato">
-
+                <div class="card-campeonato" onclick="abrirDetalhe(${c.id})">
                     <h3>${c.nome}</h3>
-                    <div class="tipo">${c.tipo.replace("_", " ")}</div>
-
-                    <div class="times">
-                        Times inscritos: <b>${c.times.length}</b>
-                    </div>
-
-                    <button class="card-btn" onclick="abrir(${c.id})">
-                        Gerenciar
-                    </button>
-
+                    <p>${c.tipo} - ${c.times.length} time(s)</p>
                 </div>
             `).join("");
-        });
+        })
+        .catch(() => alert("Erro ao carregar campeonatos"));
 }
 
-function abrir(id) {
-    window.location.href = `campeonato-detalhe.html?campeonatoId=${id}`;
+function abrirDetalhe(id) {
+    location.href = `campeonato-detalhe.html?campeonatoId=${id}`;
 }

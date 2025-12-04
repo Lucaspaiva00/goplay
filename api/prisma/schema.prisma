@@ -42,19 +42,16 @@ model Usuario {
 
   tipo TipoUsuario @default(PLAYER)
 
-  // Dono de times
   times Time[] @relation("TimeDono")
 
-  // Jogador em um time
   timeRelacionadoId Int?
   timeRelacionado   Time? @relation("TimeJogadores", fields: [timeRelacionadoId], references: [id])
 
-  // Dono de societies
-  societies Society[] @relation("UsuarioSocieties")
-
+  societies      Society[]         @relation("UsuarioSocieties")
   pagamentos     Pagamento[]
   notificacoes   Notificacao[]
   societyPlayers SocietyPlayer[]
+  estatisticas   EstatisticaJogo[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -138,6 +135,7 @@ model Time {
   jogosMandante       Jogo[]           @relation("JogoTimeA")
   jogosVisitante      Jogo[]           @relation("JogoTimeB")
   campeonatosVencidos Campeonato[]     @relation("CampeaoTime")
+  timeGrupos          TimeGrupo[]
 }
 
 model Pagamento {
@@ -187,13 +185,15 @@ model Campeonato {
   nome       String
   tipo       TipoCampeonato
   maxTimes   Int
+  faseAtual  String         @default("GRUPOS")
   roundAtual Int            @default(1)
 
   campeaoId Int?
   campeao   Time? @relation("CampeaoTime", fields: [campeaoId], references: [id])
 
-  times TimeCampeonato[]
-  jogos Jogo[]
+  times  TimeCampeonato[]
+  grupos Grupo[]
+  jogos  Jogo[]
 
   createdAt DateTime @default(now())
 }
@@ -207,12 +207,41 @@ model TimeCampeonato {
   time   Time @relation(fields: [timeId], references: [id])
 }
 
+model Grupo {
+  id           Int        @id @default(autoincrement())
+  nome         String
+  campeonatoId Int
+  campeonato   Campeonato @relation(fields: [campeonatoId], references: [id])
+
+  timesGrupo TimeGrupo[]
+  jogos      Jogo[]
+}
+
+model TimeGrupo {
+  id      Int   @id @default(autoincrement())
+  grupoId Int
+  grupo   Grupo @relation(fields: [grupoId], references: [id])
+
+  timeId Int
+  time   Time @relation(fields: [timeId], references: [id])
+
+  pontos     Int @default(0)
+  vitorias   Int @default(0)
+  empates    Int @default(0)
+  derrotas   Int @default(0)
+  golsPro    Int @default(0)
+  golsContra Int @default(0)
+  saldoGols  Int @default(0)
+}
+
 model Jogo {
   id           Int        @id @default(autoincrement())
   campeonatoId Int
   campeonato   Campeonato @relation(fields: [campeonatoId], references: [id])
 
-  round Int
+  round   Int
+  grupoId Int?
+  grupo   Grupo? @relation(fields: [grupoId], references: [id])
 
   timeAId Int
   timeA   Time @relation("JogoTimeA", fields: [timeAId], references: [id])
@@ -224,4 +253,19 @@ model Jogo {
   golsB      Int?
   vencedorId Int?
   finalizado Boolean @default(false)
+
+  estatisticas EstatisticaJogo[]
+}
+
+model EstatisticaJogo {
+  id     Int  @id @default(autoincrement())
+  jogoId Int
+  jogo   Jogo @relation(fields: [jogoId], references: [id])
+
+  jogadorId Int
+  jogador   Usuario @relation(fields: [jogadorId], references: [id])
+
+  gols      Int @default(0)
+  amarelos  Int @default(0)
+  vermelhos Int @default(0)
 }

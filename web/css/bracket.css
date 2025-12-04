@@ -1,0 +1,49 @@
+.centered-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #f3f5f9;
+    gap: 25px;
+}
+
+.alert-info {
+    background: #fff;
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-size: 17px;
+    color: #3c4859;
+}
+
+.round {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.match {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 8px;
+    background: #eef2f6;
+}
+
+.match.winner {
+    background: #d8ffd6;
+    font-weight: bold;
+}
+
+.btn-primary {
+    background: #0a2240;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+}

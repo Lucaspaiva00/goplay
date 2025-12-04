@@ -1,0 +1,6 @@
+1 Cadastro do formulario de society dividir por etapa
+2 Tela de campos botão de cadastrar colocar como um poupup
+3 Jogador pode entrar em mais de um time 
+4 Focar no campeonato (Enviar convites para os times aceitarem
+participar ou nao, o usuario preenche as datas disponiveis)
+chaveamento aparecer somente após a fase de grupos
