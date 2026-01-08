@@ -2,12 +2,14 @@
 <html lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Detalhes do Campeonato – GoPlay</title>
-    <link rel="stylesheet" href="../css/perfil.css">
-    <link rel="stylesheet" href="../css/campeonato-detalhe.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <link rel="stylesheet" href="../css/perfil.css" />
+    <link rel="stylesheet" href="../css/campeonato-detalhe.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
 </head>
 
 <body>
@@ -22,69 +24,177 @@
 
     <div class="overlay" id="overlay"></div>
 
-    <!-- TOPBAR -->
+    <!-- TOPBAR (mantém a estrutura do seu projeto) -->
     <header class="topbar">
-        <h1 class="title" id="titulo">Carregando...</h1>
+        <h1 class="title">Campeonato</h1>
     </header>
 
     <main class="content">
+        <div class="page-wrap">
 
-        <!-- NAV TABS -->
-        <div class="tabs-container">
-            <button class="tab active" data-tab="tab-times" disabled>Times</button>
-            <button class="tab" data-tab="tab-grupos" disabled>Grupos</button>
-            <button class="tab" data-tab="tab-jogos" disabled>Jogos</button>
-            <button class="tab" data-tab="tab-mata" disabled>Final</button>
+            <!-- Header do campeonato -->
+            <div class="header-bar">
+                <div class="header-left">
+                    <button class="back-btn" id="btnVoltar" title="Voltar">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+
+                    <div class="title-wrap">
+                        <h1 id="titulo">Carregando...</h1>
+                        <small id="subtitulo">Detalhes e gerenciamento</small>
+                    </div>
+                </div>
+
+                <div class="header-actions">
+                    <button class="btn btn-light" id="btnAtualizar">
+                        <i class="fa-solid fa-rotate-right"></i> Atualizar
+                    </button>
+
+                    <button class="btn btn-outline" id="btnVerChaveamento" style="display:none;">
+                        <i class="fa-solid fa-diagram-project"></i> Ver chaveamento
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navegação sem “fluxo” -->
+            <div class="section-nav">
+                <button class="nav-pill active" data-target="sec-times">
+                    <i class="fa-solid fa-users"></i> Times
+                </button>
+                <button class="nav-pill" data-target="sec-grupos">
+                    <i class="fa-solid fa-layer-group"></i> Grupos
+                </button>
+                <button class="nav-pill" data-target="sec-jogos">
+                    <i class="fa-solid fa-futbol"></i> Jogos
+                </button>
+                <button class="nav-pill" data-target="sec-final">
+                    <i class="fa-solid fa-trophy"></i> Chaveamento
+                </button>
+            </div>
+
+            <!-- Seções -->
+            <div class="grid">
+
+                <!-- TIMES -->
+                <section id="sec-times" class="section active card span-2">
+                    <div class="card-head">
+                        <h2 class="card-title">
+                            <i class="fa-solid fa-users"></i> Times no campeonato
+                        </h2>
+                        <span class="chip" id="chipTimes">0 time(s)</span>
+                    </div>
+
+                    <div id="listaTimes" class="list"></div>
+
+                    <div class="divider"></div>
+
+                    <div class="field-row">
+                        <div>
+                            <label for="timeId">Adicionar time (selecionar)</label>
+                            <select id="timeId">
+                                <option value="">Carregando...</option>
+                            </select>
+                        </div>
+
+                        <button class="btn btn-primary" id="btnAddTime">
+                            <i class="fa-solid fa-plus"></i> Adicionar
+                        </button>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="field-row">
+                        <div>
+                            <label for="novoTimeNome">Ou digitar o nome do time (criar agora)</label>
+                            <input id="novoTimeNome" type="text" placeholder="Ex: Real Jaguariúna"
+                                style="width:100%; padding:12px 12px; border-radius:12px; border:1px solid #dbe3ef; outline:none; background:#fff;" />
+                            <small class="muted" style="display:block; margin-top:6px;">
+                                Digite e clique em “Criar e adicionar”. (Ele será criado e já entra no campeonato)
+                            </small>
+                        </div>
+
+                        <button class="btn btn-primary" id="btnCriarEAddTime">
+                            <i class="fa-solid fa-pen-to-square"></i> Criar e adicionar
+                        </button>
+                    </div>
+
+
+
+                    <div class="divider"></div>
+
+                    <!-- Botões “condicionais”: aparecem quando fizer sentido, sem disabled -->
+                    <div class="actions-row">
+                        <button class="btn btn-primary" id="btnGerarGrupos" style="display:none;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Gerar grupos
+                        </button>
+                    </div>
+                </section>
+
+                <!-- GRUPOS -->
+                <section id="sec-grupos" class="section card">
+                    <div class="card-head">
+                        <h2 class="card-title">
+                            <i class="fa-solid fa-layer-group"></i> Grupos
+                        </h2>
+                        <span class="chip" id="chipGrupos">0 grupo(s)</span>
+                    </div>
+
+                    <div id="listaGrupos" class="list"></div>
+
+                    <div class="divider"></div>
+
+                    <div class="actions-row">
+                        <button class="btn btn-primary" id="btnGerarJogosGrupos" style="display:none;">
+                            <i class="fa-solid fa-futbol"></i> Gerar jogos (grupos)
+                        </button>
+                    </div>
+                </section>
+
+                <!-- JOGOS -->
+                <section id="sec-jogos" class="section card">
+                    <div class="card-head">
+                        <h2 class="card-title">
+                            <i class="fa-solid fa-futbol"></i> Jogos
+                        </h2>
+                        <span class="chip" id="chipJogos">0 jogo(s)</span>
+                    </div>
+
+                    <div id="listaJogos" class="list"></div>
+
+                    <div class="divider"></div>
+
+                    <div class="actions-row">
+                        <button class="btn btn-primary" id="btnGerarMataMata" style="display:none;">
+                            <i class="fa-solid fa-trophy"></i> Gerar mata-mata
+                        </button>
+                    </div>
+                </section>
+
+                <!-- FINAL -->
+                <section id="sec-final" class="section card span-2">
+                    <div class="card-head">
+                        <h2 class="card-title">
+                            <i class="fa-solid fa-trophy"></i> Chaveamento
+                        </h2>
+                        <span class="chip" id="chipFinal">Chaveamento</span>
+                    </div>
+
+                    <div class="empty" id="finalInfo">
+                        Quando existir chaveamento, você pode abrir aqui.
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="actions-row">
+                        <button class="btn btn-primary" id="btnAbrirBracket">
+                            <i class="fa-solid fa-diagram-project"></i> Abrir chaveamento
+                        </button>
+                    </div>
+                </section>
+
+            </div>
+
         </div>
-
-        <!-- CONTEÚDOS -->
-        <section id="tab-times" class="tab-content active">
-            <div class="card">
-                <h2 class="card-title">Times inscritos</h2>
-                <div id="listaTimes"></div>
-
-                <label class="label">Adicionar time</label>
-                <select id="timeId" class="input">
-                    <option value="">Selecione...</option>
-                </select>
-
-                <button class="btn-primary" onclick="addTime()">Adicionar time</button>
-                <button id="btnGerarGrupos" class="btn-primary btn-disabled" disabled onclick="gerarGrupos()">
-                    Gerar grupos automaticamente
-                </button>
-            </div>
-        </section>
-
-        <section id="tab-grupos" class="tab-content">
-            <div class="card">
-                <h2 class="card-title">Classificação – Grupos</h2>
-                <div id="listaGrupos"></div>
-                <button id="btnGerarJogosGrupos" class="btn-primary btn-disabled" disabled onclick="gerarJogosGrupos()">
-                    Gerar jogos da fase de grupos
-                </button>
-            </div>
-        </section>
-
-        <section id="tab-jogos" class="tab-content">
-            <div class="card">
-                <h2 class="card-title">Jogos</h2>
-                <div id="listaJogos"></div>
-                <button id="btnGerarMataMata" class="btn-primary btn-disabled" disabled onclick="gerarMataMata()">
-                    Gerar mata-mata
-                </button>
-                <button id="btnVerChaveamento" class="btn-primary" style="display:none;" onclick="abrirBracket()">
-                    Ver chaveamento
-                </button>
-            </div>
-        </section>
-
-        <section id="tab-mata" class="tab-content">
-            <div class="card">
-                <h2 class="card-title">Chaveamento Final</h2>
-                <button class="btn-primary" onclick="abrirBracket()">Ver chaveamento</button>
-            </div>
-        </section>
-
     </main>
 
     <script src="../scripts/menu.js"></script>

@@ -1,105 +1,267 @@
-.content {
-    padding: 20px 40px;
+/* =========================
+   CAMPEONATO DETALHE - FIX LAYOUT
+   1 coluna + centralizado (sem quebrar ao trocar abas)
+   ========================= */
+
+.page-wrap{
+  padding: 22px;
+  max-width: 980px;
+  margin: 0 auto;
 }
 
-.tabs-container {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 25px;
+/* Header */
+.header-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  flex-wrap:wrap;
+  background:#fff;
+  border-radius:14px;
+  padding:16px 18px;
+  box-shadow:0 8px 24px rgba(16,24,40,.08);
+  margin-bottom:16px;
+  margin-top: 3em;
 }
 
-.tab {
-    background: #d8dde4;
-    color: #333;
-    border: none;
-    padding: 12px 22px;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: not-allowed;
-    opacity: .6;
+.header-left{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:240px;
 }
 
-.tab.active {
-    background: #0a2240;
-    color: #fff;
-    cursor: pointer;
-    opacity: 1;
+.back-btn{
+  width:42px;
+  height:42px;
+  border-radius:12px;
+  border:1px solid #e5e7eb;
+  background:#fff;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
 }
 
-.tab-content {
-    display: none;
+.title-wrap{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
 }
 
-.tab-content.active {
-    display: block;
+.title-wrap h1{
+  font-size:18px;
+  margin:0;
 }
 
-.card {
-    background: #fff;
-    padding: 25px;
-    border-radius: 12px;
-    margin-bottom: 25px;
-    width: 100%;
-    max-width: 850px;
-    box-shadow: 0 4px 14px rgba(0,0,0,.08);
+.title-wrap small{
+  color:#64748b;
 }
 
-#listaTimes p {
-    font-size: 15px;
-    margin: 4px 0;
+.header-actions{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
 }
 
-.grupo-box {
-    background: #edf2f6;
-    padding: 10px 15px;
-    border-radius: 10px;
-    margin-bottom: 12px;
+.btn{
+  border:0;
+  cursor:pointer;
+  padding:10px 14px;
+  border-radius:12px;
+  font-weight:600;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
 }
 
-.jogo-card {
-    background: #edf2f6;
-    padding: 16px;
-    border-radius: 10px;
-    margin-bottom: 12px;
+.btn-primary{ background:#0b2b4c; color:#fff; }
+.btn-light{ background:#f1f5f9; color:#0b2b4c; }
+.btn-outline{ background:#fff; color:#0b2b4c; border:1px solid #dbe3ef; }
+
+.btn:active{ transform:translateY(1px); }
+
+/* Navegação */
+.section-nav{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:14px;
 }
 
-.match-title {
-    font-size: 17px;
-    font-weight: bold;
-    margin-bottom: 6px;
+.nav-pill{
+  border:1px solid #dbe3ef;
+  background:#fff;
+  color:#0b2b4c;
+  padding:10px 12px;
+  border-radius:999px;
+  cursor:pointer;
+  font-weight:700;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
 }
 
-.status-finalizado {
-    background: #16a34a;
-    color: #fff;
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 14px;
+.nav-pill.active{
+  background:#0b2b4c;
+  color:#fff;
+  border-color:#0b2b4c;
 }
 
-input {
-    width: 48%;
-    padding: 8px;
-    border-radius: 6px;
-    border: 1px solid #c9ced4;
-    margin-right: 2%;
+/* ✅ AQUI é o FIX: nada de 2 colunas */
+.grid{
+  display:block; /* em vez de grid com colunas */
 }
 
-.btn-primary {
-    background: #0a2240;
-    color: #fff;
-    width: 100%;
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
-    margin-top: 10px;
-    cursor: pointer;
-}
-.btn-primary:hover {
-    background: #112f52;
+/* Cards */
+.card{
+  width:100%;
+  background:#fff;
+  border-radius:16px;
+  padding:16px 16px;
+  box-shadow:0 8px 24px rgba(16,24,40,.08);
+  border:1px solid rgba(15,23,42,.06);
 }
 
-.btn-disabled {
-    background: #9fa6b2!important;
-    cursor: not-allowed!important;
+.card-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+
+.card-title{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  margin:0;
+  font-size:16px;
+}
+
+.muted{ color:#64748b; font-weight:600; }
+
+.divider{
+  height:1px;
+  background:#eef2f6;
+  margin:12px 0;
+}
+
+/* Listas */
+.list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.item{
+  border:1px solid #eef2f6;
+  border-radius:14px;
+  padding:12px 12px;
+  background:#fff;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+
+.item strong{ font-size:14px; }
+
+.chip{
+  font-size:12px;
+  font-weight:800;
+  padding:6px 10px;
+  border-radius:999px;
+  background:#f1f5f9;
+  color:#0b2b4c;
+}
+
+/* Jogos */
+.match{
+  border:1px solid #eef2f6;
+  border-radius:16px;
+  padding:14px;
+  background:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.match-main{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.match-title{ font-weight:900; }
+
+.match-sub{
+  color:#64748b;
+  font-weight:600;
+  font-size:12px;
+}
+
+.score-inputs{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.score-inputs input{
+  width:80px;
+  padding:10px 10px;
+  border-radius:12px;
+  border:1px solid #dbe3ef;
+  outline:none;
+}
+
+.empty{
+  padding:14px;
+  border-radius:14px;
+  background:#f8fafc;
+  border:1px dashed #dbe3ef;
+  color:#0b2b4c;
+  font-weight:700;
+}
+
+/* Seções */
+.section{ display:none; }
+.section.active{ display:block; }
+
+.actions-row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.field-row{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:10px;
+}
+
+@media (min-width: 700px){
+  .field-row{
+    grid-template-columns: 1fr auto;
+    align-items:end;
+  }
+}
+
+label{
+  font-weight:800;
+  color:#0b2b4c;
+}
+
+select{
+  width:100%;
+  padding:12px 12px;
+  border-radius:12px;
+  border:1px solid #dbe3ef;
+  outline:none;
+  background:#fff;
 }

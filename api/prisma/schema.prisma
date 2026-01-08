@@ -84,6 +84,9 @@ model Society {
   pagamentos     Pagamento[]
   campeonatos    Campeonato[]
 
+  // times do society
+  times Time[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -123,6 +126,9 @@ model Time {
   cidade     String?
   modalidade String?
 
+  societyId Int
+  society   Society @relation(fields: [societyId], references: [id])
+
   donoId Int
   dono   Usuario @relation("TimeDono", fields: [donoId], references: [id])
 
@@ -131,11 +137,18 @@ model Time {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  timeCampeonatos     TimeCampeonato[]
-  jogosMandante       Jogo[]           @relation("JogoTimeA")
-  jogosVisitante      Jogo[]           @relation("JogoTimeB")
-  campeonatosVencidos Campeonato[]     @relation("CampeaoTime")
-  timeGrupos          TimeGrupo[]
+  timeCampeonatos TimeCampeonato[]
+  jogosMandante   Jogo[]           @relation("JogoTimeA")
+  jogosVisitante  Jogo[]           @relation("JogoTimeB")
+
+  // campeão / vice (relacionamentos diferentes)
+  campeonatosVencidos Campeonato[] @relation("CampeaoTime")
+  campeonatosVice     Campeonato[] @relation("ViceCampeaoTime")
+
+  timeGrupos TimeGrupo[]
+
+  // impede time duplicado por nome dentro do mesmo society
+  @@unique([societyId, nome])
 }
 
 model Pagamento {
@@ -182,14 +195,19 @@ model Campeonato {
   societyId Int
   society   Society @relation(fields: [societyId], references: [id])
 
-  nome       String
-  tipo       TipoCampeonato
-  maxTimes   Int
-  faseAtual  String         @default("GRUPOS")
-  roundAtual Int            @default(1)
+  nome     String
+  tipo     TipoCampeonato
+  maxTimes Int
+
+  // GRUPOS | MATA_MATA | FINALIZADO
+  faseAtual  String @default("GRUPOS")
+  roundAtual Int    @default(1)
 
   campeaoId Int?
   campeao   Time? @relation("CampeaoTime", fields: [campeaoId], references: [id])
+
+  viceCampeaoId Int?
+  viceCampeao   Time? @relation("ViceCampeaoTime", fields: [viceCampeaoId], references: [id])
 
   times  TimeCampeonato[]
   grupos Grupo[]
@@ -205,6 +223,8 @@ model TimeCampeonato {
 
   timeId Int
   time   Time @relation(fields: [timeId], references: [id])
+
+  @@unique([campeonatoId, timeId])
 }
 
 model Grupo {
@@ -232,6 +252,8 @@ model TimeGrupo {
   golsPro    Int @default(0)
   golsContra Int @default(0)
   saldoGols  Int @default(0)
+
+  @@unique([grupoId, timeId])
 }
 
 model Jogo {

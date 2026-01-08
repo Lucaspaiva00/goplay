@@ -54,18 +54,16 @@ router.get('/campos/:societyId', campocontroller.list);
 // Convite
 router.post('/convite', convitecontroller.convidar);
 
-// CAMPEONATO — GRUPOS
+// CAMPEONATO
 router.post("/campeonato", campeonatoController.create);
 router.get("/campeonato/society/:societyId", campeonatoController.listBySociety);
 router.get("/campeonato/:id", campeonatoController.readOne);
 router.post("/campeonato/:id/add-time", campeonatoController.addTime);
 router.post("/campeonato/:id/gerar-grupos", campeonatoController.generateGroups);
 router.post("/campeonato/:id/gerar-jogos-grupos", campeonatoController.generateGroupMatches);
-// router.get("/campeonato/:id/jogos", campeonatoController.listGames);
+router.post("/campeonato/:id/gerar-mata-mata", campeonatoController.generateMataMata);
 router.post("/campeonato/jogo/:id/finalizar", campeonatoController.finalizarJogo);
 router.get("/campeonato/:id/bracket", campeonatoController.getBracket);
-
-
 
 
 module.exports = router;

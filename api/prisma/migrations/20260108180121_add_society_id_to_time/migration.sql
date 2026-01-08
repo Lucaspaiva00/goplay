@@ -83,10 +83,12 @@ CREATE TABLE `Time` (
     `estado` VARCHAR(191) NULL,
     `cidade` VARCHAR(191) NULL,
     `modalidade` VARCHAR(191) NULL,
+    `societyId` INTEGER NOT NULL,
     `donoId` INTEGER NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
+    UNIQUE INDEX `Time_societyId_nome_key`(`societyId`, `nome`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -146,6 +148,7 @@ CREATE TABLE `TimeCampeonato` (
     `campeonatoId` INTEGER NOT NULL,
     `timeId` INTEGER NOT NULL,
 
+    UNIQUE INDEX `TimeCampeonato_campeonatoId_timeId_key`(`campeonatoId`, `timeId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -171,6 +174,7 @@ CREATE TABLE `TimeGrupo` (
     `golsContra` INTEGER NOT NULL DEFAULT 0,
     `saldoGols` INTEGER NOT NULL DEFAULT 0,
 
+    UNIQUE INDEX `TimeGrupo_grupoId_timeId_key`(`grupoId`, `timeId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -213,6 +217,9 @@ ALTER TABLE `Cardapio` ADD CONSTRAINT `Cardapio_societyId_fkey` FOREIGN KEY (`so
 
 -- AddForeignKey
 ALTER TABLE `Campo` ADD CONSTRAINT `Campo_societyId_fkey` FOREIGN KEY (`societyId`) REFERENCES `Society`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Time` ADD CONSTRAINT `Time_societyId_fkey` FOREIGN KEY (`societyId`) REFERENCES `Society`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Time` ADD CONSTRAINT `Time_donoId_fkey` FOREIGN KEY (`donoId`) REFERENCES `Usuario`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

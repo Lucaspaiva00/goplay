@@ -2,22 +2,98 @@
 <html lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chaveamento Final – GoPlay</title>
-    <link rel="stylesheet" href="../css/bracket.css">
+
+    <!-- CSS padrão do projeto -->
+    <link rel="stylesheet" href="../css/perfil.css" />
+    <link rel="stylesheet" href="../css/bracket.css" />
+
+    <!-- Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <!-- (Opcional) seu css antigo do bracket, se quiser manter algo -->
+    <link rel="stylesheet" href="../css/bracket.css" />
+
 </head>
 
-<body class="centered-screen">
-    <h1>Chaveamento Final</h1>
+<body>
 
-    <div id="mensagem"></div>
-    <div id="bracket" class="bracket"></div>
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+        <ul id="menuDynamic"></ul>
+    </aside>
 
-    <button onclick="history.back()" class="btn-primary">← Voltar</button>
+    <div class="overlay" id="overlay"></div>
 
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <h1 class="title">Chaveamento</h1>
+    </header>
+
+    <main class="content">
+        <div class="page-wrap">
+
+            <!-- Header do chaveamento -->
+            <div class="header-bar">
+                <div class="header-left">
+                    <button class="back-btn" id="btnVoltar" title="Voltar">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+
+                    <div class="title-wrap">
+                        <h1 id="tituloPagina">Chaveamento Final</h1>
+                        <small id="subtituloPagina">Acompanhe as rodadas do mata-mata</small>
+                    </div>
+                </div>
+
+                <div class="header-actions" style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <!-- Esses botões podem existir aqui OU serem criados pelo bracket.js.
+                         Vamos deixar aqui também, e o bracket.js não duplicará (ele checa id). -->
+                    <button class="btn btn-light" id="btnRefreshBracket">
+                        <i class="fa-solid fa-rotate-right"></i> Atualizar
+                    </button>
+
+                    <button class="btn btn-primary" id="btnBackBracket">
+                        <i class="fa-solid fa-arrow-left"></i> Voltar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Conteúdo -->
+            <section class="card">
+                <div id="mensagem"></div>
+                <div id="bracket" class="bracket"></div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Menu padrão -->
+    <script src="../scripts/menu.js"></script>
+
+    <!-- bracket.js (o melhorado que te passei) -->
     <script src="../scripts/bracket.js"></script>
 
-</body>
+    <script>
+        // Voltar usando o padrão do sistema
+        document.getElementById("btnVoltar").addEventListener("click", () => history.back());
 
+        // Se o bracket.js já adiciona eventos, beleza.
+        // Mas aqui garantimos que, caso você mantenha os botões no HTML, eles funcionem.
+        document.getElementById("btnBackBracket").addEventListener("click", () => history.back());
+
+        // O botão atualizar chama a função do bracket.js. Se não existir global, só recarrega a página.
+        document.getElementById("btnRefreshBracket").addEventListener("click", () => {
+            if (typeof loadBracket === "function") loadBracket();
+            else location.reload();
+        });
+    </script>
+
+</body>
 
 </html>
