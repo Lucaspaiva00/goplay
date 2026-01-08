@@ -1,11 +1,7 @@
 /******************************************************
- * bracket.js — VERSÃO PROFISSIONAL (COMPLETA)
- * - Loading / erro / vazio
- * - Agrupa por rounds
- * - Destaque de vencedor (quando finalizado)
- * - Tratamento de empate
- * - Nome “humano” das fases (Oitavas/Quartas/Semi/Final)
- * - Não quebra se não existir botão no HTML
+ * bracket.js — ATUALIZADO (BOTÃO “DETALHES” EM CADA JOGO)
+ * - Mantém tudo
+ * - Adiciona botão Detalhes em cada card do jogo
  ******************************************************/
 
 const BASE_URL = "http://localhost:3000";
@@ -28,8 +24,6 @@ const BASE_URL = "http://localhost:3000";
     if (btnAtualizar) btnAtualizar.addEventListener("click", () => loadBracket(true));
     if (btnVoltar) btnVoltar.addEventListener("click", () => history.back());
 
-    // Se seu HTML simples tiver só um botão onclick="history.back()", tudo bem.
-
     // ==========================
     // Helpers de UI
     // ==========================
@@ -46,16 +40,17 @@ const BASE_URL = "http://localhost:3000";
             warn: "padding:12px 14px;border-radius:12px;border:1px solid #ffe4b5;background:#fff7e6;color:#5a3a00;",
             error: "padding:12px 14px;border-radius:12px;border:1px solid #ffd0d0;background:#fff2f2;color:#7a0b0b;",
             ok: "padding:12px 14px;border-radius:12px;border:1px solid #cfead5;background:#f2fff5;color:#0b5a1a;",
-            loading: "padding:12px 14px;border-radius:12px;border:1px solid #e6eaf2;background:#fafbff;color:#223;"
+            loading: "padding:12px 14px;border-radius:12px;border:1px solid #e6eaf2;background:#fafbff;color:#223;",
         };
 
-        const label = {
-            info: "Info",
-            warn: "Aviso",
-            error: "Erro",
-            ok: "Ok",
-            loading: "Carregando"
-        }[type] || "Info";
+        const label =
+            {
+                info: "Info",
+                warn: "Aviso",
+                error: "Erro",
+                ok: "Ok",
+                loading: "Carregando",
+            }[type] || "Info";
 
         elMsg.innerHTML = `
       <div style="${styles[type] || styles.info}">
@@ -104,19 +99,22 @@ const BASE_URL = "http://localhost:3000";
     // “Nome humano” da rodada
     // ==========================
     function getRoundLabel(roundNumber, totalRounds) {
-        // Quando dá pra inferir fases, fica mais profissional:
-        // totalRounds=1 => Final
-        // 2 => Semi, Final
-        // 3 => Quartas, Semi, Final
-        // 4 => Oitavas, Quartas, Semi, Final
         const n = Number(roundNumber);
-
         if (!Number.isFinite(n)) return `Rodada ${roundNumber}`;
 
         if (totalRounds === 1) return "Final";
         if (totalRounds === 2) return n === 1 ? "Semifinal" : "Final";
         if (totalRounds === 3) return n === 1 ? "Quartas" : n === 2 ? "Semifinal" : "Final";
-        if (totalRounds >= 4) return n === 1 ? "Oitavas" : n === totalRounds - 2 ? "Quartas" : n === totalRounds - 1 ? "Semifinal" : n === totalRounds ? "Final" : `Rodada ${roundNumber}`;
+        if (totalRounds >= 4)
+            return n === 1
+                ? "Oitavas"
+                : n === totalRounds - 2
+                    ? "Quartas"
+                    : n === totalRounds - 1
+                        ? "Semifinal"
+                        : n === totalRounds
+                            ? "Final"
+                            : `Rodada ${roundNumber}`;
 
         return `Rodada ${roundNumber}`;
     }
@@ -170,7 +168,7 @@ const BASE_URL = "http://localhost:3000";
             .sort((a, b) => a[0] - b[0])
             .map(([round, list]) => ({
                 round,
-                jogos: list.sort((x, y) => Number(x.id) - Number(y.id))
+                jogos: list.sort((x, y) => Number(x.id) - Number(y.id)),
             }));
 
         const totalRounds = rounds.length;
@@ -312,7 +310,7 @@ const BASE_URL = "http://localhost:3000";
         body.appendChild(mid);
         body.appendChild(sideB);
 
-        // Observação de empate
+        // Observação
         const note = document.createElement("div");
         note.style.marginTop = "8px";
         note.style.fontSize = "12px";
@@ -330,7 +328,7 @@ const BASE_URL = "http://localhost:3000";
             note.style.color = "#223";
         }
 
-        // Borda levemente destacada quando finalizado
+        // Borda destacada quando finalizado
         if (meta.finalizado) {
             box.style.border = "1px solid #cfead5";
             box.style.background = "#fbfffc";
@@ -339,6 +337,16 @@ const BASE_URL = "http://localhost:3000";
         box.appendChild(header);
         box.appendChild(body);
         box.appendChild(note);
+
+        // ✅ BOTÃO DETALHES (NOVO)
+        const btn = document.createElement("button");
+        btn.className = "btn btn-light";
+        btn.style.marginTop = "10px";
+        btn.innerHTML = `<i class="fa-solid fa-eye"></i> Detalhes`;
+        btn.addEventListener("click", () => {
+            location.href = `jogo-detalhe.html?jogoId=${j.id}`;
+        });
+        box.appendChild(btn);
 
         return box;
     }

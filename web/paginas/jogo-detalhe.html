@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Detalhes do Jogo – GoPlay</title>
+
+    <link rel="stylesheet" href="../css/perfil.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+        <ul id="menuDynamic"></ul>
+    </aside>
+
+    <div class="overlay" id="overlay"></div>
+
+    <header class="topbar">
+        <h1 class="title">Jogo</h1>
+    </header>
+
+    <main class="content">
+        <div class="page-wrap">
+
+            <div class="header-bar">
+                <div class="header-left">
+                    <button class="back-btn" id="btnVoltar" title="Voltar">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+
+                    <div class="title-wrap">
+                        <h1 id="tituloJogo">Carregando...</h1>
+                        <small id="subtituloJogo">Detalhes do jogo</small>
+                    </div>
+                </div>
+
+                <div class="header-actions">
+                    <button class="btn btn-light" id="btnAtualizar">
+                        <i class="fa-solid fa-rotate-right"></i> Atualizar
+                    </button>
+                </div>
+            </div>
+
+            <section class="card" style="padding:14px;">
+                <div id="msg"></div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;">
+                    <div style="border:1px solid #e8eef7;border-radius:14px;padding:12px;">
+                        <div style="font-weight:800;margin-bottom:8px;">📊 Estatísticas — Time A</div>
+                        <div id="statsA"></div>
+                    </div>
+
+                    <div style="border:1px solid #e8eef7;border-radius:14px;padding:12px;">
+                        <div style="font-weight:800;margin-bottom:8px;">📊 Estatísticas — Time B</div>
+                        <div id="statsB"></div>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;">
+                    <div style="border:1px solid #e8eef7;border-radius:14px;padding:12px;">
+                        <div style="font-weight:800;margin-bottom:8px;">👥 Elenco / Escalação — Time A</div>
+                        <div id="elencoA"></div>
+                    </div>
+
+                    <div style="border:1px solid #e8eef7;border-radius:14px;padding:12px;">
+                        <div style="font-weight:800;margin-bottom:8px;">👥 Elenco / Escalação — Time B</div>
+                        <div id="elencoB"></div>
+                    </div>
+                </div>
+
+                <div style="border:1px solid #e8eef7;border-radius:14px;padding:12px; margin-top:12px;">
+                    <div style="font-weight:800;margin-bottom:8px;">🕒 Eventos do jogo</div>
+
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                        <select id="evTipo" style="padding:10px;border-radius:12px;border:1px solid #dbe3ef;">
+                            <option value="GOL">GOL</option>
+                            <option value="CARTAO_AMARELO">Cartão Amarelo</option>
+                            <option value="CARTAO_VERMELHO">Cartão Vermelho</option>
+                            <option value="CHUTE">Chute</option>
+                            <option value="CHUTE_NO_GOL">Chute no gol</option>
+                            <option value="ESCANTEIO">Escanteio</option>
+                            <option value="LATERAL">Lateral</option>
+                            <option value="FALTA">Falta</option>
+                            <option value="SUBSTITUICAO">Substituição</option>
+                            <option value="OBSERVACAO">Observação</option>
+                        </select>
+
+                        <input id="evMinuto" type="number" min="0" placeholder="Minuto (opcional)"
+                            style="padding:10px;border-radius:12px;border:1px solid #dbe3ef;width:160px;" />
+
+                        <select id="evTime" style="padding:10px;border-radius:12px;border:1px solid #dbe3ef;"></select>
+
+                        <select id="evJogador"
+                            style="padding:10px;border-radius:12px;border:1px solid #dbe3ef; min-width:220px;">
+                            <option value="">Jogador (opcional)</option>
+                        </select>
+
+                        <input id="evDetalhe" placeholder="Detalhe (opcional)"
+                            style="padding:10px;border-radius:12px;border:1px solid #dbe3ef; flex:1; min-width:220px;" />
+
+                        <button class="btn btn-primary" id="btnAddEvento">
+                            <i class="fa-solid fa-plus"></i> Registrar
+                        </button>
+                    </div>
+
+                    <div id="listaEventos"></div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script src="../scripts/menu.js"></script>
+    <script src="../scripts/jogoDetalhe.js"></script>
+</body>
+
+</html>

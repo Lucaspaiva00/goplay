@@ -24,6 +24,26 @@ enum TipoCampeonato {
   GRUPOS
 }
 
+enum DesempateTipo {
+  PENALTIS
+  WO
+  MELHOR_CAMPANHA
+  OUTRO
+}
+
+enum EventoTipo {
+  GOL
+  CARTAO_AMARELO
+  CARTAO_VERMELHO
+  CHUTE
+  CHUTE_NO_GOL
+  ESCANTEIO
+  LATERAL
+  FALTA
+  SUBSTITUICAO
+  OBSERVACAO
+}
+
 model Usuario {
   id           Int       @id @default(autoincrement())
   nome         String
@@ -44,14 +64,21 @@ model Usuario {
 
   times Time[] @relation("TimeDono")
 
+  // jogador pertence a um time (modelo atual seu)
   timeRelacionadoId Int?
   timeRelacionado   Time? @relation("TimeJogadores", fields: [timeRelacionadoId], references: [id])
 
-  societies      Society[]         @relation("UsuarioSocieties")
+  societies      Society[]       @relation("UsuarioSocieties")
   pagamentos     Pagamento[]
   notificacoes   Notificacao[]
   societyPlayers SocietyPlayer[]
-  estatisticas   EstatisticaJogo[]
+
+  // antigo (mantido)
+  estatisticas EstatisticaJogo[]
+
+  // novo (detalhes do jogo)
+  jogoEventos  JogoEvento[]
+  jogosAtuacao JogoJogador[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -84,7 +111,6 @@ model Society {
   pagamentos     Pagamento[]
   campeonatos    Campeonato[]
 
-  // times do society
   times Time[]
 
   createdAt DateTime @default(now())
@@ -141,13 +167,17 @@ model Time {
   jogosMandante   Jogo[]           @relation("JogoTimeA")
   jogosVisitante  Jogo[]           @relation("JogoTimeB")
 
-  // campeão / vice (relacionamentos diferentes)
   campeonatosVencidos Campeonato[] @relation("CampeaoTime")
   campeonatosVice     Campeonato[] @relation("ViceCampeaoTime")
 
   timeGrupos TimeGrupo[]
 
-  // impede time duplicado por nome dentro do mesmo society
+  // novos
+  tabelaCampeonatos TabelaCampeonato[]
+  jogoStats         JogoEstatisticaTime[]
+  jogoJogadores     JogoJogador[]
+  jogoEventos       JogoEvento[]
+
   @@unique([societyId, nome])
 }
 
@@ -213,6 +243,9 @@ model Campeonato {
   grupos Grupo[]
   jogos  Jogo[]
 
+  // novo: tabela geral do campeonato
+  tabela TabelaCampeonato[]
+
   createdAt DateTime @default(now())
 }
 
@@ -271,12 +304,29 @@ model Jogo {
   timeBId Int
   timeB   Time @relation("JogoTimeB", fields: [timeBId], references: [id])
 
-  golsA      Int?
-  golsB      Int?
+  golsA Int?
+  golsB Int?
+
+  // vencedor direto (mata-mata) OU nulo (grupo empate)
   vencedorId Int?
+
+  // NOVO: desempate (quando empate no mata-mata)
+  desempateTipo DesempateTipo?
+  penaltisA     Int?
+  penaltisB     Int?
+
+  observacao String?
+  dataHora   DateTime?
+
   finalizado Boolean @default(false)
 
+  // antigo (mantido)
   estatisticas EstatisticaJogo[]
+
+  // NOVO: detalhes
+  estatisticasTimes JogoEstatisticaTime[]
+  eventos           JogoEvento[]
+  jogadoresAtuacao  JogoJogador[]
 }
 
 model EstatisticaJogo {
@@ -290,4 +340,103 @@ model EstatisticaJogo {
   gols      Int @default(0)
   amarelos  Int @default(0)
   vermelhos Int @default(0)
+}
+
+//
+// ✅ NOVO: Tabela geral do campeonato (campanha do time)
+//
+model TabelaCampeonato {
+  id Int @id @default(autoincrement())
+
+  campeonatoId Int
+  campeonato   Campeonato @relation(fields: [campeonatoId], references: [id])
+
+  timeId Int
+  time   Time @relation(fields: [timeId], references: [id])
+
+  pontos     Int @default(0)
+  vitorias   Int @default(0)
+  empates    Int @default(0)
+  derrotas   Int @default(0)
+  golsPro    Int @default(0)
+  golsContra Int @default(0)
+  saldoGols  Int @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([campeonatoId, timeId])
+}
+
+//
+// ✅ NOVO: Estatística por TIME dentro do jogo
+//
+model JogoEstatisticaTime {
+  id Int @id @default(autoincrement())
+
+  jogoId Int
+  jogo   Jogo @relation(fields: [jogoId], references: [id])
+
+  timeId Int
+  time   Time @relation(fields: [timeId], references: [id])
+
+  chutes      Int @default(0)
+  chutesNoGol Int @default(0)
+  escanteios  Int @default(0)
+  laterais    Int @default(0)
+  faltas      Int @default(0)
+  posse       Int @default(0) // 0..100 (opcional)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([jogoId, timeId])
+}
+
+//
+// ✅ NOVO: Quem jogou (escalação / atuação)
+//
+model JogoJogador {
+  id Int @id @default(autoincrement())
+
+  jogoId Int
+  jogo   Jogo @relation(fields: [jogoId], references: [id])
+
+  timeId Int
+  time   Time @relation(fields: [timeId], references: [id])
+
+  jogadorId Int
+  jogador   Usuario @relation(fields: [jogadorId], references: [id])
+
+  titular      Boolean @default(false)
+  entrouMinuto Int?
+  saiuMinuto   Int?
+
+  @@unique([jogoId, jogadorId])
+}
+
+//
+// ✅ NOVO: Eventos do jogo (timeline simples)
+//
+model JogoEvento {
+  id Int @id @default(autoincrement())
+
+  jogoId Int
+  jogo   Jogo @relation(fields: [jogoId], references: [id])
+
+  tipo EventoTipo
+
+  minuto Int?
+
+  timeId Int?
+  time   Time? @relation(fields: [timeId], references: [id])
+
+  jogadorId Int?
+  jogador   Usuario? @relation(fields: [jogadorId], references: [id])
+
+  // para substituição
+  jogadorSaindoId   Int?
+  jogadorEntrandoId Int?
+
+  detalhe String?
+
+  createdAt DateTime @default(now())
 }

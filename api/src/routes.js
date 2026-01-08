@@ -11,6 +11,7 @@ const cardapiocontroller = require("./controller/cardapioController");
 const campocontroller = require("./controller/campoController");
 const convitecontroller = require("./controller/conviteController");
 const campeonatoController = require("./controller/campeonatoController");
+const jogoController = require("./controller/jogoController");
 
 // Usuário
 router.post("/usuarios", usuariocontroller.create);
@@ -64,6 +65,13 @@ router.post("/campeonato/:id/gerar-jogos-grupos", campeonatoController.generateG
 router.post("/campeonato/:id/gerar-mata-mata", campeonatoController.generateMataMata);
 router.post("/campeonato/jogo/:id/finalizar", campeonatoController.finalizarJogo);
 router.get("/campeonato/:id/bracket", campeonatoController.getBracket);
+
+
+// JOGO (DETALHES)
+router.get("/jogo/:id", jogoController.readOne);
+router.put("/jogo/:id/stats", jogoController.updateStats);
+router.post("/jogo/:id/escalacao", jogoController.addLineup);
+router.post("/jogo/:id/evento", jogoController.addEvento);
 
 
 module.exports = router;

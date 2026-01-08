@@ -1,3 +1,8 @@
+/************************************************************
+ * campeonatoDetalhe.js — ATUALIZADO (COM BOTÃO “DETALHES”)
+ * - Adiciona botão Detalhes em cada jogo (abre jogo-detalhe.html?jogoId=ID)
+ ************************************************************/
+
 const BASE_URL = "http://localhost:3000";
 
 let campeonatoId = null;
@@ -77,10 +82,13 @@ function setLoading(loading) {
 function showInlineMessage(el, type, title, desc) {
     // type: info | warn | error | success
     const icon =
-        type === "success" ? "fa-circle-check" :
-            type === "warn" ? "fa-triangle-exclamation" :
-                type === "error" ? "fa-circle-xmark" :
-                    "fa-circle-info";
+        type === "success"
+            ? "fa-circle-check"
+            : type === "warn"
+                ? "fa-triangle-exclamation"
+                : type === "error"
+                    ? "fa-circle-xmark"
+                    : "fa-circle-info";
 
     el.innerHTML = `
     <div style="
@@ -105,7 +113,11 @@ async function safeFetchJSON(url, options = {}) {
     const res = await fetch(url, options);
     const text = await res.text().catch(() => "");
     let data = null;
-    try { data = text ? JSON.parse(text) : null; } catch { /* ignore */ }
+    try {
+        data = text ? JSON.parse(text) : null;
+    } catch {
+        /* ignore */
+    }
 
     if (!res.ok) {
         const msg = data?.error || data?.message || text || `Erro HTTP ${res.status}`;
@@ -166,7 +178,6 @@ function ajustarAcoesSemFluxo(c) {
     btnGerarMataMata.style.display = temJogos ? "inline-flex" : "none";
 }
 
-
 // ============================
 // TIMES
 // ============================
@@ -205,9 +216,7 @@ async function carregarSelectTimes() {
 
         const times = await safeFetchJSON(`${BASE_URL}/time/society/${societyId}`);
 
-        const inscritos = new Set(
-            (campeonatoAtual?.times || []).map((t) => t?.time?.id).filter(Boolean)
-        );
+        const inscritos = new Set((campeonatoAtual?.times || []).map((t) => t?.time?.id).filter(Boolean));
 
         select.innerHTML = `<option value="">Selecione...</option>`;
 
@@ -234,7 +243,7 @@ async function addTime() {
         await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/add-time`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ timeId: Number(timeId) })
+            body: JSON.stringify({ timeId: Number(timeId) }),
         });
 
         await carregarDetalhes();
@@ -274,8 +283,8 @@ async function criarEAdicionarTime() {
             body: JSON.stringify({
                 nome,
                 societyId: Number(societyId),
-                donoId
-            })
+                donoId,
+            }),
         });
 
         const timeId = novoTime?.id;
@@ -284,7 +293,7 @@ async function criarEAdicionarTime() {
         await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/add-time`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ timeId: Number(timeId) })
+            body: JSON.stringify({ timeId: Number(timeId) }),
         });
 
         input.value = "";
@@ -319,11 +328,13 @@ function renderGrupos(c) {
             <div class="muted" style="font-size:12px; margin-top:4px;">Times</div>
             <div style="margin-top:8px; display:flex; flex-direction:column; gap:6px;">
               ${times
-                    .map((tg) => `
+                    .map(
+                        (tg) => `
                   <div style="padding:10px; border:1px solid #eef2f6; border-radius:12px;">
                     ${tg?.time?.nome ?? "Time"}
                   </div>
-                `)
+                `
+                    )
                     .join("")}
             </div>
           </div>
@@ -390,6 +401,11 @@ function renderJogos(c) {
           <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
             ${status}
 
+            <!-- ✅ BOTÃO DETALHES (NOVO) -->
+            <button class="btn btn-light" onclick="abrirDetalhesJogo(${j.id})">
+              <i class="fa-solid fa-eye"></i> Detalhes
+            </button>
+
             ${j.finalizado
                     ? ``
                     : `
@@ -421,7 +437,7 @@ async function finalizarJogo(id) {
         await safeFetchJSON(`${BASE_URL}/campeonato/jogo/${id}/finalizar`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ golsA, golsB })
+            body: JSON.stringify({ golsA, golsB }),
         });
 
         await carregarDetalhes();
@@ -448,7 +464,6 @@ async function gerarMataMata() {
 async function renderFinal(c) {
     const finalInfo = document.getElementById("finalInfo");
     const btnVerChaveamento = document.getElementById("btnVerChaveamento");
-
 
     // ✅ se já finalizou, mostra campeão/vice
     if (c.faseAtual === "FINALIZADO") {
@@ -504,4 +519,9 @@ async function renderFinal(c) {
 
 function abrirBracket() {
     location.href = `campeonato-bracket.html?campeonatoId=${campeonatoId}`;
+}
+
+/** ✅ NOVO: abrir detalhes do jogo */
+function abrirDetalhesJogo(jogoId) {
+    location.href = `jogo-detalhe.html?jogoId=${jogoId}`;
 }

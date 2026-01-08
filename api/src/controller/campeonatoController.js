@@ -2,6 +2,78 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 // ============================
+// Helpers (Tabela Geral)
+// ============================
+async function ensureTabelaRow(campeonatoId, timeId) {
+    const row = await prisma.tabelaCampeonato.findUnique({
+        where: { campeonatoId_timeId: { campeonatoId, timeId } },
+    });
+
+    if (row) return row;
+
+    return prisma.tabelaCampeonato.create({
+        data: { campeonatoId, timeId },
+    });
+}
+
+async function atualizarTabelaGeral(jogo) {
+    // Atualiza campanha para QUALQUER jogo (grupo e mata-mata)
+    const { campeonatoId, timeAId, timeBId } = jogo;
+
+    const golsA = Number.isFinite(jogo.golsA) ? jogo.golsA : null;
+    const golsB = Number.isFinite(jogo.golsB) ? jogo.golsB : null;
+    if (golsA === null || golsB === null) return;
+
+    // garante linhas
+    const rowA = await ensureTabelaRow(campeonatoId, timeAId);
+    const rowB = await ensureTabelaRow(campeonatoId, timeBId);
+
+    // pontos
+    let ptsA = 0, ptsB = 0;
+    let vitA = 0, vitB = 0;
+    let empA = 0, empB = 0;
+    let derA = 0, derB = 0;
+
+    if (golsA > golsB) {
+        ptsA = 3; ptsB = 0;
+        vitA = 1; derB = 1;
+    } else if (golsB > golsA) {
+        ptsB = 3; ptsA = 0;
+        vitB = 1; derA = 1;
+    } else {
+        // empate: 1 ponto cada
+        ptsA = 1; ptsB = 1;
+        empA = 1; empB = 1;
+    }
+
+    await prisma.tabelaCampeonato.update({
+        where: { id: rowA.id },
+        data: {
+            golsPro: rowA.golsPro + golsA,
+            golsContra: rowA.golsContra + golsB,
+            saldoGols: rowA.saldoGols + (golsA - golsB),
+            pontos: rowA.pontos + ptsA,
+            vitorias: rowA.vitorias + vitA,
+            empates: rowA.empates + empA,
+            derrotas: rowA.derrotas + derA,
+        },
+    });
+
+    await prisma.tabelaCampeonato.update({
+        where: { id: rowB.id },
+        data: {
+            golsPro: rowB.golsPro + golsB,
+            golsContra: rowB.golsContra + golsA,
+            saldoGols: rowB.saldoGols + (golsB - golsA),
+            pontos: rowB.pontos + ptsB,
+            vitorias: rowB.vitorias + vitB,
+            empates: rowB.empates + empB,
+            derrotas: rowB.derrotas + derB,
+        },
+    });
+}
+
+// ============================
 // Criar campeonato
 // ============================
 const create = async (req, res) => {
@@ -17,6 +89,8 @@ const create = async (req, res) => {
                 nome,
                 tipo,
                 maxTimes: Number(maxTimes),
+                faseAtual: "GRUPOS",
+                roundAtual: 1,
             },
         });
 
@@ -40,6 +114,7 @@ const readOne = async (req, res) => {
                 campeao: true,
                 viceCampeao: true,
                 times: { include: { time: true } },
+                tabela: { include: { time: true }, orderBy: [{ pontos: "desc" }, { saldoGols: "desc" }, { golsPro: "desc" }] },
                 grupos: {
                     include: {
                         timesGrupo: { include: { time: true } },
@@ -103,6 +178,9 @@ const addTime = async (req, res) => {
                 timeId: Number(timeId),
             },
         });
+
+        // já cria a linha na tabela geral (pra campanha aparecer desde cedo)
+        await ensureTabelaRow(Number(id), Number(timeId));
 
         res.json(novo);
     } catch (err) {
@@ -202,7 +280,7 @@ const generateGroupMatches = async (req, res) => {
 
             for (let i = 0; i < times.length; i++) {
                 for (let j = i + 1; j < times.length; j++) {
-                    await prisma.jogo.create({
+                    const jogo = await prisma.jogo.create({
                         data: {
                             campeonatoId,
                             grupoId: g.id,
@@ -210,6 +288,15 @@ const generateGroupMatches = async (req, res) => {
                             timeAId: times[i],
                             timeBId: times[j],
                         },
+                    });
+
+                    // já cria stats por time pro jogo (detalhes)
+                    await prisma.jogoEstatisticaTime.createMany({
+                        data: [
+                            { jogoId: jogo.id, timeId: jogo.timeAId },
+                            { jogoId: jogo.id, timeId: jogo.timeBId },
+                        ],
+                        skipDuplicates: true,
                     });
                 }
             }
@@ -230,7 +317,7 @@ const generateGroupMatches = async (req, res) => {
 // ============================
 // Atualiza classificação (somente jogos de grupos)
 // ============================
-async function atualizarClassificacao(jogo) {
+async function atualizarClassificacaoGrupos(jogo) {
     const grupoId = jogo.grupoId;
     if (!grupoId) return;
 
@@ -274,10 +361,7 @@ async function atualizarClassificacao(jogo) {
 }
 
 // ============================
-// ✅ Gerar mata-mata
-// - Se tipo = GRUPOS => usa top2 por grupo
-// - Se tipo = MATA_MATA => usa inscritos direto
-// - Evita repetição simples quando houver 2 grupos (1A x 2B, 1B x 2A)
+// Gerar mata-mata (igual o seu, mas já cria stats por time)
 // ============================
 const generateMataMata = async (req, res) => {
     try {
@@ -287,11 +371,7 @@ const generateMataMata = async (req, res) => {
             where: { id: campeonatoId },
             include: {
                 times: true,
-                grupos: {
-                    include: {
-                        timesGrupo: true,
-                    },
-                },
+                grupos: { include: { timesGrupo: true } },
             },
         });
 
@@ -300,18 +380,13 @@ const generateMataMata = async (req, res) => {
         const jaTemMataMata = await prisma.jogo.findFirst({
             where: { campeonatoId, grupoId: null },
         });
-        if (jaTemMataMata) {
-            return res.status(400).json({ error: "Mata-mata já foi gerado." });
-        }
+        if (jaTemMataMata) return res.status(400).json({ error: "Mata-mata já foi gerado." });
 
-        // ====== pega participantes ======
         let participantes = [];
 
         if (campeonato.tipo === "MATA_MATA") {
-            // direto dos inscritos
             participantes = campeonato.times.map((t) => t.timeId);
         } else {
-            // por grupos: top2 de cada grupo
             const grupos = campeonato.grupos || [];
             if (!grupos.length) return res.status(400).json({ error: "Gere os grupos primeiro." });
 
@@ -328,22 +403,15 @@ const generateMataMata = async (req, res) => {
             }
         }
 
-        // remove duplicados
         participantes = Array.from(new Set(participantes));
+        if (participantes.length < 2) return res.status(400).json({ error: "Não há times suficientes para mata-mata." });
 
-        if (participantes.length < 2) {
-            return res.status(400).json({ error: "Não há times suficientes para mata-mata." });
-        }
-
-        // potência de 2 (2,4,8,16)
         const potencias = [16, 8, 4, 2];
         const n = potencias.find((p) => participantes.length >= p) || 2;
         participantes = participantes.slice(0, n);
 
-        // ====== montar pares ======
         let pares = [];
 
-        // Se tem exatamente 2 grupos e conseguimos inferir 1º/2º de cada, fazemos cruzado
         if (campeonato.tipo === "GRUPOS" && (campeonato.grupos?.length || 0) === 2 && participantes.length === 4) {
             const [gA, gB] = campeonato.grupos;
 
@@ -358,7 +426,6 @@ const generateMataMata = async (req, res) => {
             const b = rank(gB);
 
             if (a.length >= 2 && b.length >= 2) {
-                // 1A vs 2B e 1B vs 2A
                 pares = [
                     [a[0].timeId, b[1].timeId],
                     [b[0].timeId, a[1].timeId],
@@ -366,7 +433,6 @@ const generateMataMata = async (req, res) => {
             }
         }
 
-        // fallback: embaralha e faz 1vsúltimo
         if (!pares.length) {
             participantes.sort(() => Math.random() - 0.5);
             for (let i = 0; i < participantes.length / 2; i++) {
@@ -374,16 +440,17 @@ const generateMataMata = async (req, res) => {
             }
         }
 
-        // cria jogos round 1
         for (const [timeAId, timeBId] of pares) {
-            await prisma.jogo.create({
-                data: {
-                    campeonatoId,
-                    grupoId: null,
-                    round: 1,
-                    timeAId,
-                    timeBId,
-                },
+            const jogo = await prisma.jogo.create({
+                data: { campeonatoId, grupoId: null, round: 1, timeAId, timeBId },
+            });
+
+            await prisma.jogoEstatisticaTime.createMany({
+                data: [
+                    { jogoId: jogo.id, timeId: jogo.timeAId },
+                    { jogoId: jogo.id, timeId: jogo.timeBId },
+                ],
+                skipDuplicates: true,
             });
         }
 
@@ -400,16 +467,21 @@ const generateMataMata = async (req, res) => {
 };
 
 // ============================
-// ✅ Finalizar jogo
-// - grupos: atualiza tabela
-// - mata-mata: avança rounds automaticamente
-// - quando final terminar: define campeao/vice e FINALIZA campeonato
+// ✅ Finalizar jogo (MELHORADO)
+// - Grupo: empate ok
+// - Mata-mata: empate permitido, MAS exige vencedorId + desempateTipo
 // ============================
 const finalizarJogo = async (req, res) => {
     try {
         const jogoId = Number(req.params.id);
         const golsA = Number(req.body.golsA);
         const golsB = Number(req.body.golsB);
+
+        const vencedorIdBody = req.body.vencedorId ? Number(req.body.vencedorId) : null;
+        const desempateTipo = req.body.desempateTipo || null; // "PENALTIS" | "WO" | "MELHOR_CAMPANHA" | "OUTRO"
+        const penaltisA = Number.isFinite(Number(req.body.penaltisA)) ? Number(req.body.penaltisA) : null;
+        const penaltisB = Number.isFinite(Number(req.body.penaltisB)) ? Number(req.body.penaltisB) : null;
+        const observacao = req.body.observacao ? String(req.body.observacao) : null;
 
         if (!Number.isFinite(golsA) || !Number.isFinite(golsB)) {
             return res.status(400).json({ error: "Informe golsA e golsB corretamente." });
@@ -422,22 +494,34 @@ const finalizarJogo = async (req, res) => {
 
         if (!jogoAtual) return res.status(404).json({ error: "Jogo não encontrado." });
 
-        // empate permitido em grupos, mas NÃO em mata-mata
         const isMataMata = jogoAtual.grupoId === null;
-
-        if (isMataMata && golsA === golsB) {
-            return res.status(400).json({ error: "Empate não permitido em mata-mata. Defina vencedor (pênaltis/WO) e informe placar final." });
-        }
 
         let vencedorId = null;
         let perdedorId = null;
 
-        if (golsA > golsB) {
-            vencedorId = jogoAtual.timeAId;
-            perdedorId = jogoAtual.timeBId;
-        } else if (golsB > golsA) {
-            vencedorId = jogoAtual.timeBId;
-            perdedorId = jogoAtual.timeAId;
+        if (!isMataMata) {
+            // grupos
+            if (golsA > golsB) vencedorId = jogoAtual.timeAId;
+            else if (golsB > golsA) vencedorId = jogoAtual.timeBId;
+            else vencedorId = null;
+        } else {
+            // mata-mata
+            if (golsA > golsB) vencedorId = jogoAtual.timeAId;
+            else if (golsB > golsA) vencedorId = jogoAtual.timeBId;
+            else {
+                // empate -> exige vencedor manual
+                if (!vencedorIdBody) {
+                    return res.status(400).json({
+                        error: "Empate no mata-mata: informe vencedorId e desempateTipo (PENALTIS/WO/MELHOR_CAMPANHA).",
+                    });
+                }
+                if (![jogoAtual.timeAId, jogoAtual.timeBId].includes(vencedorIdBody)) {
+                    return res.status(400).json({ error: "vencedorId inválido para este jogo." });
+                }
+                vencedorId = vencedorIdBody;
+            }
+
+            perdedorId = vencedorId === jogoAtual.timeAId ? jogoAtual.timeBId : jogoAtual.timeAId;
         }
 
         const jogo = await prisma.jogo.update({
@@ -447,17 +531,23 @@ const finalizarJogo = async (req, res) => {
                 golsB,
                 vencedorId,
                 finalizado: true,
+                desempateTipo: isMataMata && golsA === golsB ? desempateTipo : null,
+                penaltisA: isMataMata && golsA === golsB ? penaltisA : null,
+                penaltisB: isMataMata && golsA === golsB ? penaltisB : null,
+                observacao,
             },
         });
 
-        await atualizarClassificacao(jogo);
+        // grupos: tabela por grupo
+        await atualizarClassificacaoGrupos(jogo);
 
-        // ====== se não for mata-mata, acabou aqui ======
-        if (!isMataMata) {
-            return res.json({ ok: true });
-        }
+        // geral: tabela do campeonato (campanha)
+        await atualizarTabelaGeral(jogo);
 
-        // ====== mata-mata: verifica se round atual terminou ======
+        // se não é mata-mata -> acabou
+        if (!isMataMata) return res.json({ ok: true });
+
+        // mata-mata: checar se round terminou
         const campeonatoId = jogo.campeonatoId;
         const roundAtual = jogo.round;
 
@@ -467,44 +557,34 @@ const finalizarJogo = async (req, res) => {
         });
 
         const todosFinalizados = jogosDoRound.every((j) => j.finalizado);
-
         if (!todosFinalizados) {
             return res.json({ ok: true, mensagem: "Jogo finalizado. Aguardando os demais jogos do round." });
         }
 
-        // vencedores do round
         const vencedores = jogosDoRound.map((j) => j.vencedorId).filter(Boolean);
 
-        // ====== se só sobrou 1 vencedor => FINAL do campeonato ======
-        if (vencedores.length === 1) {
-            // esse jogo finalizado é a final (último jogo criado)
+        // FINAL = round com 1 jogo
+        if (jogosDoRound.length === 1) {
+            const finalGame = jogosDoRound[0];
+            const campeaoId = finalGame.vencedorId;
+            const viceId = campeaoId === finalGame.timeAId ? finalGame.timeBId : finalGame.timeAId;
+
             await prisma.campeonato.update({
                 where: { id: campeonatoId },
-                data: {
-                    faseAtual: "FINALIZADO",
-                    campeaoId: vencedorId,
-                    viceCampeaoId: perdedorId,
-                },
+                data: { faseAtual: "FINALIZADO", campeaoId, viceCampeaoId: viceId },
             });
 
-            return res.json({
-                ok: true,
-                mensagem: "Campeonato finalizado!",
-                campeaoId: vencedorId,
-                viceCampeaoId: perdedorId,
-            });
+            return res.json({ ok: true, mensagem: "Campeonato finalizado!", campeaoId, viceCampeaoId: viceId });
         }
 
-        // ====== cria próximo round ======
+        // cria próximo round
         const proximoRound = roundAtual + 1;
-
-        // garante que é par (mata-mata correto)
         if (vencedores.length % 2 !== 0) {
             return res.status(400).json({ error: "Quantidade de vencedores ímpar. Verifique jogos do round." });
         }
 
         for (let i = 0; i < vencedores.length; i += 2) {
-            await prisma.jogo.create({
+            const novoJogo = await prisma.jogo.create({
                 data: {
                     campeonatoId,
                     grupoId: null,
@@ -512,6 +592,14 @@ const finalizarJogo = async (req, res) => {
                     timeAId: vencedores[i],
                     timeBId: vencedores[i + 1],
                 },
+            });
+
+            await prisma.jogoEstatisticaTime.createMany({
+                data: [
+                    { jogoId: novoJogo.id, timeId: novoJogo.timeAId },
+                    { jogoId: novoJogo.id, timeId: novoJogo.timeBId },
+                ],
+                skipDuplicates: true,
             });
         }
 
@@ -528,21 +616,15 @@ const finalizarJogo = async (req, res) => {
 };
 
 // ============================
-// Bracket: mata-mata = grupoId null
+// Bracket
 // ============================
 const getBracket = async (req, res) => {
     try {
         const campeonatoId = Number(req.params.id);
 
         const jogos = await prisma.jogo.findMany({
-            where: {
-                campeonatoId,
-                grupoId: null,
-            },
-            include: {
-                timeA: true,
-                timeB: true,
-            },
+            where: { campeonatoId, grupoId: null },
+            include: { timeA: true, timeB: true },
             orderBy: [{ round: "asc" }, { id: "asc" }],
         });
 
