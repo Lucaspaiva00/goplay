@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Campos (Visualização) – GoPlay</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="../css/goplay_home.css">
+    <link rel="stylesheet" href="../css/campos.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body class="with-sidebar">
+
+    <header class="topbar">
+        <button id="menuBtn" class="menu-btn">
+            <i class="fa fa-bars"></i>
+        </button>
+    </header>
+
+    <aside id="sidebar" class="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+        <ul id="menuDynamic"></ul>
+    </aside>
+
+    <div id="overlay" class="overlay"></div>
+
+    <main class="content">
+
+        <section class="card"
+            style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div>
+                <h3 style="margin:0;"><i class="fa-solid fa-seedling"></i> Campos do Society</h3>
+                <div style="opacity:.75;font-size:12px;margin-top:4px;">Apenas visualização.</div>
+            </div>
+            <button class="btn" onclick="history.back()" style="max-width:220px;">
+                <i class="fa-solid fa-arrow-left"></i> Voltar
+            </button>
+        </section>
+
+        <h2 class="page-title">🌱 Campos cadastrados</h2>
+
+        <section id="listaCampos" class="card">
+            Carregando campos...
+        </section>
+
+    </main>
+
+    <script src="../js/goplay_home.js"></script>
+    <script src="../scripts/menu.js"></script>
+    <script src="../scripts/campos-view.js"></script>
+
+</body>
+
+</html>

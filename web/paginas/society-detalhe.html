@@ -4,8 +4,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Detalhes do Society – GoPlay</title>
-
-    <!-- ESSENCIAL PARA FICAR RESPONSIVO -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="../css/goplay_home.css">
@@ -15,27 +13,21 @@
 
 <body>
 
-    <!-- SIDEBAR -->
     <aside id="sidebar" class="sidebar">
         <div class="logo-area">
             <h2>GoPlay</h2>
         </div>
-
         <ul id="menuDynamic"></ul>
-
     </aside>
 
     <div id="overlay" class="overlay"></div>
 
-    <!-- HEADER -->
     <header class="topbar">
         <button id="menuBtn" class="menu-btn">
             <i class="fa fa-bars"></i>
         </button>
-        <h1 class="title">Detalhes do Society</h1>
     </header>
 
-    <!-- CONTEÚDO -->
     <main class="content">
 
         <h2 class="section-title"><i class="fa fa-map-pin"></i> Informações do Society</h2>
@@ -44,25 +36,19 @@
             Carregando informações...
         </div>
 
-        <h2 class="section-title"><i class="fa fa-gear"></i> Gerenciamento</h2>
+        <h2 class="section-title"><i class="fa fa-gear"></i> Acessos</h2>
 
         <div class="buttons-area">
 
-            <button class="btn-manage" onclick="irCampos()">
-                <i class="fa fa-map"></i> Gerenciar Campos
-            </button>
+            <div id="avisoPermissao" style="display:none; margin:10px 0; color:#b45309; font-weight:800;"></div>
 
-            <button class="btn-manage" onclick="irCardapio()">
-                <i class="fa fa-utensils"></i> Gerenciar Cardápio
-            </button>
+            <!-- Visualização (todos podem entrar) -->
+            <button id="btnCampos" class="btn navy" onclick="irCampos()">Ver Campos</button>
+            <button id="btnCardapio" class="btn navy" onclick="irCardapio()">Ver Cardápio</button>
+            <button id="btnJogadores" class="btn navy" onclick="irJogadores()">Ver Jogadores</button>
 
-            <button class="btn-manage" onclick="irJogadores()">
-                <i class="fa fa-people-group"></i> Jogadores
-            </button>
-
-            <button class="btn-manage" onclick="irPagamentos()">
-                <i class="fa fa-credit-card"></i> Pagamentos
-            </button>
+            <!-- Pagamentos varia por perfil -->
+            <button id="btnPagamentos" class="btn navy" onclick="irPagamentos()">Pagamentos</button>
 
         </div>
 
