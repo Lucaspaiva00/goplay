@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>GoPlay – Agendar Horário</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- CSS global -->
+    <link rel="stylesheet" href="../css/goplay_home.css" />
+
+    <!-- Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <style>
+        /* Só o necessário para esta tela (mantendo padrão) */
+        .page-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: #052845;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .muted {
+            color: #6b7280;
+            margin-bottom: 18px;
+            font-size: 14px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.10);
+            margin-bottom: 16px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 14px;
+            align-items: end;
+        }
+
+        @media (max-width: 900px) {
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        label {
+            font-weight: 700;
+            color: #111827;
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        select,
+        input {
+            width: 100%;
+            padding: 12px 12px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            outline: none;
+            font-size: 14px;
+        }
+
+        select:focus,
+        input:focus {
+            border-color: #93c5fd;
+            box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.35);
+        }
+
+        .btn-wide {
+            width: 100%;
+            max-width: none;
+            margin: 0;
+        }
+
+        .horarios {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .slot {
+            border: 1px solid #e5e7eb;
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            text-align: center;
+            transition: 0.15s;
+            user-select: none;
+        }
+
+        .slot:hover {
+            transform: translateY(-1px);
+        }
+
+        .slot.ocupado {
+            background: #fee2e2;
+            color: #7f1d1d;
+            cursor: not-allowed;
+            opacity: 0.95;
+        }
+
+        .slot.livre {
+            background: #ecfdf5;
+            color: #065f46;
+        }
+
+        .slot.selected {
+            outline: 3px solid rgba(37, 99, 235, 0.35);
+            border-color: #2563eb;
+            background: #eff6ff;
+            color: #1e3a8a;
+        }
+
+        .row-info {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            font-size: 14px;
+            color: #374151;
+            margin-top: 6px;
+        }
+
+        .chip {
+            background: #f3f4f6;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+        <ul id="menuDynamic"></ul>
+    </aside>
+
+    <!-- OVERLAY -->
+    <div id="overlay" class="overlay"></div>
+
+    <!-- HEADER -->
+    <header class="topbar">
+        <button id="menuBtn" class="menu-btn">
+            <i class="fa fa-bars"></i>
+        </button>
+        <h1 class="title">Agendar Horário</h1>
+    </header>
+
+    <!-- CONTEÚDO -->
+    <main class="content">
+
+        <div class="page-title">
+            <i class="fa-solid fa-calendar-check"></i>
+            <span>Agendar Horário</span>
+        </div>
+        <div class="muted">Escolha o campo, a data e um horário de 1 hora.</div>
+
+        <div class="card">
+            <div class="row-info" id="resumoTopo" style="display:none;">
+                <span class="chip" id="chipTime">Time: -</span>
+                <span class="chip" id="chipSociety">Society: -</span>
+            </div>
+
+            <div class="grid-3" style="margin-top:12px;">
+                <div>
+                    <label>Time</label>
+                    <select id="timeId"></select>
+                </div>
+
+                <div>
+                    <label>Campo</label>
+                    <select id="campoId"></select>
+                </div>
+
+                <div>
+                    <label>Data</label>
+                    <input type="date" id="data" />
+                </div>
+            </div>
+
+            <div style="margin-top:14px;">
+                <button class="btn navy btn-wide" id="btnBuscar">
+                    <i class="fa-solid fa-magnifying-glass"></i> Buscar horários
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-bottom:10px;">Horários disponíveis</h3>
+            <div id="horarios" class="horarios"></div>
+        </div>
+
+        <div class="card" id="acao" style="display:none;">
+            <h3 style="margin-bottom:10px;">Confirmar Agendamento</h3>
+            <button class="btn green btn-wide" id="btnAgendar">
+                <i class="fa-solid fa-circle-check"></i> Agendar e gerar pagamento
+            </button>
+        </div>
+
+    </main>
+
+    <!-- JS base -->
+    <script src="../js/goplay_home.js"></script>
+    <script src="../scripts/menu.js"></script>
+
+    <!-- JS da tela -->
+    <script src="../scripts/time-agendamento.js"></script>
+</body>
+
+</html>

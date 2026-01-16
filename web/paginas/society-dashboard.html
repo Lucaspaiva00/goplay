@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Dashboard Society - GoPlay</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6fb;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 6px;
+        }
+
+        .muted {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+
+        th {
+            background: #f8fafc;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .PENDENTE {
+            background: #fff7e6;
+            color: #92400e;
+        }
+
+        .CONFIRMADO {
+            background: #ecfdf5;
+            color: #065f46;
+        }
+
+        .PAGO {
+            background: #ecfdf5;
+            color: #065f46;
+        }
+
+        button {
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-confirmar {
+            background: #16a34a;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🏟️ Dashboard da Society</h1>
+    <p class="muted">Agenda, pagamentos e controle financeiro</p>
+
+    <div class="grid">
+
+        <!-- AGENDA -->
+        <div class="card">
+            <h3>📅 Agenda de Hoje</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Campo</th>
+                        <th>Hora</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="agendaHoje"></tbody>
+            </table>
+        </div>
+
+        <!-- PAGAMENTOS -->
+        <div class="card">
+            <h3>💰 Pagamentos</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Campo</th>
+                        <th>Valor</th>
+                        <th>Status</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody id="pagamentos"></tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script src="../js/society-dashboard.js"></script>
+</body>
+
+</html>

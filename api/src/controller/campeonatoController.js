@@ -29,21 +29,31 @@ async function atualizarTabelaGeral(jogo) {
     const rowB = await ensureTabelaRow(campeonatoId, timeBId);
 
     // pontos
-    let ptsA = 0, ptsB = 0;
-    let vitA = 0, vitB = 0;
-    let empA = 0, empB = 0;
-    let derA = 0, derB = 0;
+    let ptsA = 0,
+        ptsB = 0;
+    let vitA = 0,
+        vitB = 0;
+    let empA = 0,
+        empB = 0;
+    let derA = 0,
+        derB = 0;
 
     if (golsA > golsB) {
-        ptsA = 3; ptsB = 0;
-        vitA = 1; derB = 1;
+        ptsA = 3;
+        ptsB = 0;
+        vitA = 1;
+        derB = 1;
     } else if (golsB > golsA) {
-        ptsB = 3; ptsA = 0;
-        vitB = 1; derA = 1;
+        ptsB = 3;
+        ptsA = 0;
+        vitB = 1;
+        derA = 1;
     } else {
         // empate: 1 ponto cada
-        ptsA = 1; ptsB = 1;
-        empA = 1; empB = 1;
+        ptsA = 1;
+        ptsB = 1;
+        empA = 1;
+        empB = 1;
     }
 
     await prisma.tabelaCampeonato.update({
@@ -114,13 +124,25 @@ const readOne = async (req, res) => {
                 campeao: true,
                 viceCampeao: true,
                 times: { include: { time: true } },
-                tabela: { include: { time: true }, orderBy: [{ pontos: "desc" }, { saldoGols: "desc" }, { golsPro: "desc" }] },
+
+                // ✅ tabela geral já vem ordenada
+                tabela: {
+                    include: { time: true },
+                    orderBy: [
+                        { pontos: "desc" },
+                        { saldoGols: "desc" },
+                        { golsPro: "desc" },
+                        { vitorias: "desc" },
+                    ],
+                },
+
                 grupos: {
                     include: {
                         timesGrupo: { include: { time: true } },
                         jogos: { include: { timeA: true, timeB: true } },
                     },
                 },
+
                 jogos: { include: { timeA: true, timeB: true } },
             },
         });
@@ -179,7 +201,7 @@ const addTime = async (req, res) => {
             },
         });
 
-        // já cria a linha na tabela geral (pra campanha aparecer desde cedo)
+        // ✅ já cria linha na tabela geral
         await ensureTabelaRow(Number(id), Number(timeId));
 
         res.json(novo);
@@ -290,7 +312,7 @@ const generateGroupMatches = async (req, res) => {
                         },
                     });
 
-                    // já cria stats por time pro jogo (detalhes)
+                    // stats por time pro jogo (detalhes)
                     await prisma.jogoEstatisticaTime.createMany({
                         data: [
                             { jogoId: jogo.id, timeId: jogo.timeAId },
@@ -361,7 +383,7 @@ async function atualizarClassificacaoGrupos(jogo) {
 }
 
 // ============================
-// Gerar mata-mata (igual o seu, mas já cria stats por time)
+// Gerar mata-mata (já cria stats)
 // ============================
 const generateMataMata = async (req, res) => {
     try {
@@ -404,7 +426,8 @@ const generateMataMata = async (req, res) => {
         }
 
         participantes = Array.from(new Set(participantes));
-        if (participantes.length < 2) return res.status(400).json({ error: "Não há times suficientes para mata-mata." });
+        if (participantes.length < 2)
+            return res.status(400).json({ error: "Não há times suficientes para mata-mata." });
 
         const potencias = [16, 8, 4, 2];
         const n = potencias.find((p) => participantes.length >= p) || 2;
@@ -467,9 +490,7 @@ const generateMataMata = async (req, res) => {
 };
 
 // ============================
-// ✅ Finalizar jogo (MELHORADO)
-// - Grupo: empate ok
-// - Mata-mata: empate permitido, MAS exige vencedorId + desempateTipo
+// ✅ Finalizar jogo
 // ============================
 const finalizarJogo = async (req, res) => {
     try {
@@ -509,10 +530,10 @@ const finalizarJogo = async (req, res) => {
             if (golsA > golsB) vencedorId = jogoAtual.timeAId;
             else if (golsB > golsA) vencedorId = jogoAtual.timeBId;
             else {
-                // empate -> exige vencedor manual
                 if (!vencedorIdBody) {
                     return res.status(400).json({
-                        error: "Empate no mata-mata: informe vencedorId e desempateTipo (PENALTIS/WO/MELHOR_CAMPANHA).",
+                        error:
+                            "Empate no mata-mata: informe vencedorId e desempateTipo (PENALTIS/WO/MELHOR_CAMPANHA).",
                     });
                 }
                 if (![jogoAtual.timeAId, jogoAtual.timeBId].includes(vencedorIdBody)) {
@@ -541,7 +562,7 @@ const finalizarJogo = async (req, res) => {
         // grupos: tabela por grupo
         await atualizarClassificacaoGrupos(jogo);
 
-        // geral: tabela do campeonato (campanha)
+        // geral: tabela do campeonato
         await atualizarTabelaGeral(jogo);
 
         // se não é mata-mata -> acabou
@@ -635,6 +656,44 @@ const getBracket = async (req, res) => {
     }
 };
 
+// ============================
+// ✅ RANKING (mesma estrutura, usando tabelaCampeonato)
+// ============================
+const ranking = async (req, res) => {
+    try {
+        const campeonatoId = Number(req.params.id);
+
+        const tabela = await prisma.tabelaCampeonato.findMany({
+            where: { campeonatoId },
+            include: { time: true },
+            orderBy: [
+                { pontos: "desc" },
+                { saldoGols: "desc" },
+                { golsPro: "desc" },
+                { vitorias: "desc" },
+            ],
+        });
+
+        const resp = tabela.map((r) => ({
+            timeId: r.timeId,
+            nome: r.time?.nome || "Time",
+            pontos: r.pontos,
+            jogos: (r.vitorias + r.empates + r.derrotas),
+            vitorias: r.vitorias,
+            empates: r.empates,
+            derrotas: r.derrotas,
+            golsPro: r.golsPro,
+            golsContra: r.golsContra,
+            saldo: r.saldoGols,
+        }));
+
+        res.json(resp);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message || "Erro ao gerar ranking" });
+    }
+};
+
 module.exports = {
     create,
     readOne,
@@ -645,4 +704,5 @@ module.exports = {
     generateMataMata,
     finalizarJogo,
     getBracket,
+    ranking,
 };

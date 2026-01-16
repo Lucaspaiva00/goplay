@@ -1,50 +1,47 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-// Criar campo
 const create = async (req, res) => {
     try {
-        const { societyId, nome, valorAvulso, valorMensal, foto, dimensoes, estiloGramado } = req.body;
+        const { societyId, nome, valorAvulso, valorMensal, dimensoes, gramado, fotoUrl } = req.body;
 
         if (!societyId || !nome) {
-            return res.status(400).json({ error: "SocietyId e nome são obrigatórios." });
+            return res.status(400).json({ error: "societyId e nome são obrigatórios." });
         }
 
         const campo = await prisma.campo.create({
             data: {
                 societyId: Number(societyId),
-                nome,
-                valorAvulso,
-                valorMensal,
-                foto,
-                dimensoes,
-                estiloGramado
-            }
+                nome: nome.trim(),
+                valorAvulso: valorAvulso ? Number(valorAvulso) : null,
+                valorMensal: valorMensal ? Number(valorMensal) : null,
+                dimensoes: dimensoes || null,
+                gramado: gramado || null,
+                fotoUrl: fotoUrl || null,
+            },
         });
 
-        res.status(200).json(campo);
-
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: "Erro ao cadastrar campo." });
+        return res.json(campo);
+    } catch (e) {
+        console.error(e);
+        return res.status(500).json({ error: "Erro ao criar campo." });
     }
 };
 
-// Listar campos do society
-const list = async (req, res) => {
+const listBySociety = async (req, res) => {
     try {
-        const { societyId } = req.params;
+        const societyId = Number(req.params.societyId);
 
         const campos = await prisma.campo.findMany({
-            where: { societyId: Number(societyId) }
+            where: { societyId },
+            orderBy: { id: "desc" },
         });
 
-        res.status(200).json(campos);
-
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: "Erro ao listar campos." });
+        return res.json(campos);
+    } catch (e) {
+        console.error(e);
+        return res.status(500).json({ error: "Erro ao listar campos." });
     }
 };
 
-module.exports = { create, list };
+module.exports = { create, listBySociety };

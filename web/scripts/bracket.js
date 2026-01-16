@@ -1,7 +1,9 @@
 /******************************************************
  * bracket.js — ATUALIZADO (BOTÃO “DETALHES” EM CADA JOGO)
  * - Mantém tudo
- * - Adiciona botão Detalhes em cada card do jogo
+ * - Corrige empate no mata-mata:
+ *   Se gols empatar e existir vencedorId, NÃO mostra aviso de empate.
+ *   Mostra "Vencedor" + desempateTipo (e pênaltis se houver).
  ******************************************************/
 
 const BASE_URL = "http://localhost:3000";
@@ -120,7 +122,7 @@ const BASE_URL = "http://localhost:3000";
     }
 
     // ==========================
-    // Winner/Status
+    // Winner/Status (CORRIGIDO)
     // ==========================
     function getMatchMeta(j) {
         const finalizado = !!j.finalizado;
@@ -130,18 +132,52 @@ const BASE_URL = "http://localhost:3000";
 
         const hasScore = Number.isFinite(golsA) && Number.isFinite(golsB);
 
+        const vencedorId = j.vencedorId ? Number(j.vencedorId) : null;
+        const desempateTipo = j.desempateTipo || null;
+
+        const penaltisA = Number.isFinite(Number(j.penaltisA)) ? Number(j.penaltisA) : null;
+        const penaltisB = Number.isFinite(Number(j.penaltisB)) ? Number(j.penaltisB) : null;
+
         let winner = null; // "A" | "B" | null
-        let empate = false;
+        let empatePlacar = false; // empate no placar
+        let empateSemVencedor = false; // ⚠️ caso errado no mata-mata
 
         if (finalizado && hasScore) {
-            if (golsA > golsB) winner = "A";
-            else if (golsB > golsA) winner = "B";
-            else empate = true;
+            if (golsA > golsB) {
+                winner = "A";
+            } else if (golsB > golsA) {
+                winner = "B";
+            } else {
+                // empate no placar
+                empatePlacar = true;
+
+                // Se existir vencedorId (mata-mata por pênaltis/WO), define winner por vencedorId.
+                if (vencedorId) {
+                    if (vencedorId === Number(j.timeAId)) winner = "A";
+                    else if (vencedorId === Number(j.timeBId)) winner = "B";
+                } else {
+                    // empate no placar e sem vencedorId (incompleto p/ mata-mata)
+                    empateSemVencedor = true;
+                }
+            }
         }
 
         const statusText = finalizado ? "Finalizado" : "Em aberto";
 
-        return { finalizado, golsA, golsB, hasScore, winner, empate, statusText };
+        return {
+            finalizado,
+            golsA,
+            golsB,
+            hasScore,
+            winner,
+            empatePlacar,
+            empateSemVencedor,
+            statusText,
+            vencedorId,
+            desempateTipo,
+            penaltisA,
+            penaltisB,
+        };
     }
 
     // ==========================
@@ -310,15 +346,38 @@ const BASE_URL = "http://localhost:3000";
         body.appendChild(mid);
         body.appendChild(sideB);
 
-        // Observação
+        // Observação (CORRIGIDA)
         const note = document.createElement("div");
         note.style.marginTop = "8px";
         note.style.fontSize = "12px";
-        note.style.opacity = ".8";
+        note.style.opacity = ".9";
 
-        if (meta.finalizado && meta.empate) {
-            note.innerHTML = `⚠️ Empate — defina critério (pênaltis/WO) se necessário.`;
-            note.style.color = "#5a3a00";
+        if (meta.finalizado && meta.empatePlacar) {
+            if (meta.winner) {
+                // empate no placar, mas existe vencedorId (penaltis/WO)
+                const winnerName = meta.winner === "A" ? nomeA : nomeB;
+
+                let extra = "";
+                if (meta.desempateTipo) extra += ` (${escapeHtml(meta.desempateTipo)})`;
+
+                // se tiver pênaltis, mostra placar
+                if (Number.isFinite(meta.penaltisA) && Number.isFinite(meta.penaltisB)) {
+                    const pA = meta.penaltisA ?? "-";
+                    const pB = meta.penaltisB ?? "-";
+                    extra += ` — Pênaltis: ${escapeHtml(pA)} x ${escapeHtml(pB)}`;
+                }
+
+                note.innerHTML = `✅ Vencedor: <strong>${escapeHtml(winnerName)}</strong>${extra}`;
+                note.style.color = "#0b5a1a";
+            } else if (meta.empateSemVencedor) {
+                // empate no placar e sem vencedorId
+                note.innerHTML = `⚠️ Empate — defina vencedor e critério (pênaltis/WO/melhor campanha).`;
+                note.style.color = "#5a3a00";
+            } else {
+                // fallback
+                note.innerHTML = `⚠️ Empate — verifique o jogo.`;
+                note.style.color = "#5a3a00";
+            }
         } else if (meta.finalizado && meta.winner) {
             const winnerName = meta.winner === "A" ? nomeA : nomeB;
             note.innerHTML = `✅ Vencedor: <strong>${escapeHtml(winnerName)}</strong>`;

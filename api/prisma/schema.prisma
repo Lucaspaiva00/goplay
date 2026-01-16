@@ -113,8 +113,9 @@ model Society {
 
   times Time[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  agendamentos Agendamento[]
 }
 
 model Cardapio {
@@ -140,7 +141,9 @@ model Campo {
   dimensoes     String?
   estiloGramado String?
 
-  createdAt DateTime @default(now())
+  createdAt    DateTime      @default(now())
+  agendamentos Agendamento[]
+  pagamentos   Pagamento[]
 }
 
 model Time {
@@ -177,21 +180,39 @@ model Time {
   jogoStats         JogoEstatisticaTime[]
   jogoJogadores     JogoJogador[]
   jogoEventos       JogoEvento[]
+  agendamentos      Agendamento[]
+  pagamentos        Pagamento[]
 
   @@unique([societyId, nome])
 }
 
 model Pagamento {
-  id        Int     @id @default(autoincrement())
+  id Int @id @default(autoincrement())
+
   usuarioId Int
   usuario   Usuario @relation(fields: [usuarioId], references: [id])
 
   societyId Int
   society   Society @relation(fields: [societyId], references: [id])
 
+  // ✅ NOVOS:
+  timeId Int?
+  time   Time? @relation(fields: [timeId], references: [id])
+
+  campoId Int?
+  campo   Campo? @relation(fields: [campoId], references: [id])
+
+  agendamentoId Int?         @unique
+  agendamento   Agendamento? @relation(fields: [agendamentoId], references: [id])
+
   tipo      TipoPagamento
   valor     Float
   descricao String?
+
+  status StatusPagamento @default(PENDENTE)
+  forma  FormaPagamento  @default(PIX)
+
+  pagoEm DateTime?
 
   createdAt DateTime @default(now())
 }
@@ -439,4 +460,53 @@ model JogoEvento {
   detalhe String?
 
   createdAt DateTime @default(now())
+}
+
+enum StatusAgendamento {
+  PENDENTE
+  CONFIRMADO
+  CANCELADO
+}
+
+enum StatusPagamento {
+  PENDENTE
+  PAGO
+  CANCELADO
+}
+
+enum FormaPagamento {
+  PIX
+  DINHEIRO
+  CARTAO
+  TRANSFERENCIA
+  OUTRO
+}
+
+model Agendamento {
+  id Int @id @default(autoincrement())
+
+  societyId Int
+  society   Society @relation(fields: [societyId], references: [id])
+
+  campoId Int
+  campo   Campo @relation(fields: [campoId], references: [id])
+
+  timeId Int
+  time   Time @relation(fields: [timeId], references: [id])
+
+  data       DateTime
+  horaInicio String
+  horaFim    String
+
+  valor Float
+
+  status StatusAgendamento @default(PENDENTE)
+
+  // ✅ relação 1–1 CORRETA
+  pagamento Pagamento?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([societyId, campoId, data])
 }

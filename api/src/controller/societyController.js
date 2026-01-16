@@ -104,5 +104,27 @@ const readById = async (req, res) => {
     }
 };
 
-module.exports = { create, readByOwner, readById };
+// Listar todas as societies (para DONO_TIME / PLAYER escolher)
+const listAll = async (req, res) => {
+    try {
+        const societies = await prisma.society.findMany({
+            select: {
+                id: true,
+                nome: true,
+                cidade: true,
+                estado: true,
+            },
+            orderBy: { id: "desc" },
+        });
+
+        return res.status(200).json(societies);
+    } catch (error) {
+        console.log("ERRO AO LISTAR SOCIETIES:", error);
+        return res.status(500).json({ error: "Erro ao listar societies." });
+    }
+};
+
+
+module.exports = { create, readByOwner, readById, listAll };
+
 

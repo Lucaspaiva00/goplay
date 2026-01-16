@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>GoPlay – Detalhes do Time</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- CSS global -->
+    <link rel="stylesheet" href="../css/goplay_home.css">
+    <!-- (opcional) um css específico se quiser: -->
+    <!-- <link rel="stylesheet" href="../css/time-detalhe.css"> -->
+
+    <!-- Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+
+        <!-- MENU DINÂMICO -->
+        <ul id="menuDynamic"></ul>
+    </aside>
+
+    <!-- OVERLAY -->
+    <div id="overlay" class="overlay"></div>
+
+    <!-- HEADER -->
+    <header class="topbar">
+        <button id="menuBtn" class="menu-btn">
+            <i class="fa fa-bars"></i>
+        </button>
+        <h1 class="title">Detalhes do Time</h1>
+    </header>
+
+    <!-- CONTEÚDO -->
+    <main class="content">
+
+        <h2 class="page-title">⚽ Detalhes do Time</h2>
+
+        <!-- CARD INFO -->
+        <section class="action-card" id="cardInfo">
+            <div id="info">Carregando...</div>
+
+            <div style="margin-top: 18px;">
+                <button class="btn navy" id="btnAgendar">
+                    <i class="fa-solid fa-calendar-check"></i> Agendar Horário
+                </button>
+
+                <button class="btn green" id="btnPagamentos">
+                    <i class="fa-solid fa-money-bill-wave"></i> Ver Pagamentos
+                </button>
+            </div>
+        </section>
+
+        <!-- CARD JOGADORES -->
+        <section class="action-card">
+            <h3 style="margin-bottom:12px;">👥 Jogadores</h3>
+            <div id="listaJogadores">Carregando jogadores...</div>
+        </section>
+
+    </main>
+
+    <!-- JS -->
+    <script src="../js/goplay_home.js"></script>
+    <script src="../scripts/menu.js"></script>
+    <script src="../scripts/time-detalhe.js"></script>
+
+</body>
+
+</html>

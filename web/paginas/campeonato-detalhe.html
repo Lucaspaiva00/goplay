@@ -9,12 +9,9 @@
     <link rel="stylesheet" href="../css/perfil.css" />
     <link rel="stylesheet" href="../css/campeonato-detalhe.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-
 </head>
 
 <body>
-
-    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
         <div class="logo-area">
             <h2>GoPlay</h2>
@@ -24,7 +21,6 @@
 
     <div class="overlay" id="overlay"></div>
 
-    <!-- TOPBAR (mantém a estrutura do seu projeto) -->
     <header class="topbar">
         <h1 class="title">Campeonato</h1>
     </header>
@@ -32,7 +28,6 @@
     <main class="content">
         <div class="page-wrap">
 
-            <!-- Header do campeonato -->
             <div class="header-bar">
                 <div class="header-left">
                     <button class="back-btn" id="btnVoltar" title="Voltar">
@@ -56,7 +51,6 @@
                 </div>
             </div>
 
-            <!-- Navegação sem “fluxo” -->
             <div class="section-nav">
                 <button class="nav-pill active" data-target="sec-times">
                     <i class="fa-solid fa-users"></i> Times
@@ -67,12 +61,17 @@
                 <button class="nav-pill" data-target="sec-jogos">
                     <i class="fa-solid fa-futbol"></i> Jogos
                 </button>
+
+                <!-- ✅ NOVO: RANKING -->
+                <button class="nav-pill" data-target="sec-ranking">
+                    <i class="fa-solid fa-ranking-star"></i> Ranking
+                </button>
+
                 <button class="nav-pill" data-target="sec-final">
                     <i class="fa-solid fa-trophy"></i> Chaveamento
                 </button>
             </div>
 
-            <!-- Seções -->
             <div class="grid">
 
                 <!-- TIMES -->
@@ -118,11 +117,8 @@
                         </button>
                     </div>
 
-
-
                     <div class="divider"></div>
 
-                    <!-- Botões “condicionais”: aparecem quando fizer sentido, sem disabled -->
                     <div class="actions-row">
                         <button class="btn btn-primary" id="btnGerarGrupos" style="display:none;">
                             <i class="fa-solid fa-wand-magic-sparkles"></i> Gerar grupos
@@ -170,6 +166,18 @@
                     </div>
                 </section>
 
+                <!-- ✅ RANKING -->
+                <section id="sec-ranking" class="section card span-2">
+                    <div class="card-head">
+                        <h2 class="card-title">
+                            <i class="fa-solid fa-ranking-star"></i> Ranking
+                        </h2>
+                        <span class="chip" id="chipRanking">0 time(s)</span>
+                    </div>
+
+                    <div id="rankingWrap" class="list"></div>
+                </section>
+
                 <!-- FINAL -->
                 <section id="sec-final" class="section card span-2">
                     <div class="card-head">
@@ -191,7 +199,6 @@
                         </button>
                     </div>
                 </section>
-
             </div>
 
         </div>
@@ -199,7 +206,6 @@
 
     <script src="../scripts/menu.js"></script>
     <script src="../scripts/campeonatoDetalhe.js"></script>
-
 </body>
 
 </html>

@@ -1,8 +1,6 @@
 /************************************************************
- * campeonatoDetalhe.js — ATUALIZADO (COM BOTÃO “DETALHES”)
- * - Adiciona botão Detalhes em cada jogo (abre jogo-detalhe.html?jogoId=ID)
+ * campeonatoDetalhe.js — COM RANKING
  ************************************************************/
-
 const BASE_URL = "http://localhost:3000";
 
 let campeonatoId = null;
@@ -16,12 +14,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    // Navegação de seções
     document.querySelectorAll(".nav-pill").forEach((btn) => {
         btn.addEventListener("click", () => abrirSecao(btn.dataset.target));
     });
 
-    // Ações do header
     document.getElementById("btnVoltar").addEventListener("click", () => {
         location.href = "campeonatos.html";
     });
@@ -33,7 +29,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btnVerChaveamento").addEventListener("click", abrirBracket);
     document.getElementById("btnAbrirBracket").addEventListener("click", abrirBracket);
 
-    // Ações principais
     document.getElementById("btnAddTime").addEventListener("click", addTime);
     document.getElementById("btnCriarEAddTime").addEventListener("click", criarEAdicionarTime);
 
@@ -80,7 +75,6 @@ function setLoading(loading) {
 }
 
 function showInlineMessage(el, type, title, desc) {
-    // type: info | warn | error | success
     const icon =
         type === "success"
             ? "fa-circle-check"
@@ -115,9 +109,7 @@ async function safeFetchJSON(url, options = {}) {
     let data = null;
     try {
         data = text ? JSON.parse(text) : null;
-    } catch {
-        /* ignore */
-    }
+    } catch { }
 
     if (!res.ok) {
         const msg = data?.error || data?.message || text || `Erro HTTP ${res.status}`;
@@ -144,7 +136,9 @@ async function carregarDetalhes(force = false) {
         renderGrupos(c);
         renderJogos(c);
 
-        // ✅ final/chaveamento agora depende de existir bracket
+        // ✅ NOVO: ranking
+        await renderRanking();
+
         await renderFinal(c);
 
         ajustarAcoesSemFluxo(c);
@@ -215,7 +209,6 @@ async function carregarSelectTimes() {
         if (!societyId) throw new Error("societyId não encontrado no campeonato.");
 
         const times = await safeFetchJSON(`${BASE_URL}/time/society/${societyId}`);
-
         const inscritos = new Set((campeonatoAtual?.times || []).map((t) => t?.time?.id).filter(Boolean));
 
         select.innerHTML = `<option value="">Selecione...</option>`;
@@ -387,9 +380,7 @@ function renderJogos(c) {
             const placarA = j.golsA ?? "";
             const placarB = j.golsB ?? "";
 
-            const status = j.finalizado
-                ? `<span class="chip">Finalizado</span>`
-                : `<span class="chip">Em aberto</span>`;
+            const status = j.finalizado ? `<span class="chip">Finalizado</span>` : `<span class="chip">Em aberto</span>`;
 
             return `
         <div class="match">
@@ -401,23 +392,57 @@ function renderJogos(c) {
           <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
             ${status}
 
-            <!-- ✅ BOTÃO DETALHES (NOVO) -->
             <button class="btn btn-light" onclick="abrirDetalhesJogo(${j.id})">
               <i class="fa-solid fa-eye"></i> Detalhes
             </button>
 
-            ${j.finalizado
-                    ? ``
-                    : `
-                  <div class="score-inputs">
-                    <input id="gA${j.id}" type="number" min="0" placeholder="Gols A" />
-                    <input id="gB${j.id}" type="number" min="0" placeholder="Gols B" />
-                    <button class="btn btn-primary" onclick="finalizarJogo(${j.id})">
-                      <i class="fa-solid fa-check"></i> Finalizar
-                    </button>
-                  </div>
-                `
-                }
+           ${j.finalizado ? `` : `
+  <div class="score-inputs" style="flex-wrap:wrap;">
+    <input id="gA${j.id}" type="number" min="0" placeholder="Gols A" />
+    <input id="gB${j.id}" type="number" min="0" placeholder="Gols B" />
+
+    <button class="btn btn-light" onclick="toggleDesempate(${j.id})" title="Usar desempate (se empate no mata-mata)">
+      <i class="fa-solid fa-scale-balanced"></i> Desempate
+    </button>
+
+    <button class="btn btn-primary" onclick="finalizarJogo(${j.id})">
+      <i class="fa-solid fa-check"></i> Finalizar
+    </button>
+
+    <!-- ✅ BLOCO DESEMPATE (aparece quando necessário) -->
+    <div id="desempateBox${j.id}" style="display:none; width:100%; margin-top:10px; padding:12px; border:1px solid #eef2f6; border-radius:12px; background:#fff;">
+      <div class="muted" style="font-size:12px; margin-bottom:10px;">
+        Empate no mata-mata exige vencedor e tipo de desempate.
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <select id="vencedorId${j.id}" style="padding:10px; border-radius:10px; border:1px solid #dbe3ef;">
+          <option value="">Selecione o vencedor...</option>
+          <option value="${j.timeAId}">${j?.timeA?.nome ?? "Time A"}</option>
+          <option value="${j.timeBId}">${j?.timeB?.nome ?? "Time B"}</option>
+        </select>
+
+        <select id="desempateTipo${j.id}" style="padding:10px; border-radius:10px; border:1px solid #dbe3ef;">
+          <option value="">Tipo de desempate...</option>
+          <option value="PENALTIS">Pênaltis</option>
+          <option value="WO">W.O.</option>
+          <option value="MELHOR_CAMPANHA">Melhor campanha</option>
+          <option value="OUTRO">Outro</option>
+        </select>
+
+        <input id="penaltisA${j.id}" type="number" min="0" placeholder="Pênaltis A (opcional)"
+          style="padding:10px; border-radius:10px; border:1px solid #dbe3ef; width:180px;" />
+
+        <input id="penaltisB${j.id}" type="number" min="0" placeholder="Pênaltis B (opcional)"
+          style="padding:10px; border-radius:10px; border:1px solid #dbe3ef; width:180px;" />
+
+        <input id="observacao${j.id}" type="text" placeholder="Observação (opcional)"
+          style="padding:10px; border-radius:10px; border:1px solid #dbe3ef; flex:1; min-width:220px;" />
+      </div>
+    </div>
+  </div>
+`}
+
           </div>
         </div>
       `;
@@ -433,11 +458,44 @@ async function finalizarJogo(id) {
         return alert("Informe os gols corretamente");
     }
 
+    // descobrir se é mata-mata (grupoId null) olhando no campeonatoAtual
+    const jogo = (campeonatoAtual?.jogos || []).find((x) => Number(x.id) === Number(id));
+    const isMataMata = jogo ? (jogo.grupoId === null) : false;
+
+    const payload = { golsA, golsB };
+
+    // ✅ empate no mata-mata -> exige dados extras
+    if (isMataMata && golsA === golsB) {
+        // mostra automaticamente o box
+        const box = document.getElementById(`desempateBox${id}`);
+        if (box) box.style.display = "block";
+
+        const vencedorId = Number(document.getElementById(`vencedorId${id}`)?.value || 0) || null;
+        const desempateTipo = document.getElementById(`desempateTipo${id}`)?.value || null;
+
+        const penaltisAraw = document.getElementById(`penaltisA${id}`)?.value;
+        const penaltisBraw = document.getElementById(`penaltisB${id}`)?.value;
+        const observacao = (document.getElementById(`observacao${id}`)?.value || "").trim() || null;
+
+        const penaltisA = penaltisAraw !== "" ? Number(penaltisAraw) : null;
+        const penaltisB = penaltisBraw !== "" ? Number(penaltisBraw) : null;
+
+        if (!vencedorId || !desempateTipo) {
+            return alert("Empate no mata-mata: selecione o vencedor e o tipo de desempate.");
+        }
+
+        payload.vencedorId = vencedorId;
+        payload.desempateTipo = desempateTipo;
+        payload.penaltisA = Number.isFinite(penaltisA) ? penaltisA : null;
+        payload.penaltisB = Number.isFinite(penaltisB) ? penaltisB : null;
+        payload.observacao = observacao;
+    }
+
     try {
         await safeFetchJSON(`${BASE_URL}/campeonato/jogo/${id}/finalizar`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ golsA, golsB }),
+            body: JSON.stringify(payload),
         });
 
         await carregarDetalhes();
@@ -446,6 +504,7 @@ async function finalizarJogo(id) {
         alert(err?.message || "Não foi possível finalizar o jogo.");
     }
 }
+
 
 async function gerarMataMata() {
     try {
@@ -459,13 +518,67 @@ async function gerarMataMata() {
 }
 
 // ============================
+// ✅ RANKING
+// ============================
+async function renderRanking() {
+    const wrap = document.getElementById("rankingWrap");
+    const chip = document.getElementById("chipRanking");
+    if (!wrap || !chip) return;
+
+    try {
+        const ranking = await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/ranking`);
+        chip.textContent = `${ranking.length} time(s)`;
+
+        if (!ranking.length) {
+            wrap.innerHTML = `<div class="empty">Sem dados no ranking ainda.</div>`;
+            return;
+        }
+
+        wrap.innerHTML = `
+      <div class="item" style="font-weight:700; background:#f7f9fc;">
+        <div style="width:34px;">#</div>
+        <div style="flex:1;">Time</div>
+        <div style="width:50px; text-align:center;">PTS</div>
+        <div style="width:40px; text-align:center;">J</div>
+        <div style="width:40px; text-align:center;">V</div>
+        <div style="width:40px; text-align:center;">E</div>
+        <div style="width:40px; text-align:center;">D</div>
+        <div style="width:55px; text-align:center;">GP</div>
+        <div style="width:55px; text-align:center;">GC</div>
+        <div style="width:55px; text-align:center;">SG</div>
+      </div>
+      ${ranking
+                .map(
+                    (r, i) => `
+        <div class="item">
+          <div style="width:34px;">${i + 1}</div>
+          <div style="flex:1;"><strong>${r.nome}</strong></div>
+          <div style="width:50px; text-align:center;"><strong>${r.pontos}</strong></div>
+          <div style="width:40px; text-align:center;">${r.jogos}</div>
+          <div style="width:40px; text-align:center;">${r.vitorias}</div>
+          <div style="width:40px; text-align:center;">${r.empates}</div>
+          <div style="width:40px; text-align:center;">${r.derrotas}</div>
+          <div style="width:55px; text-align:center;">${r.golsPro}</div>
+          <div style="width:55px; text-align:center;">${r.golsContra}</div>
+          <div style="width:55px; text-align:center;">${r.saldo}</div>
+        </div>
+      `
+                )
+                .join("")}
+    `;
+    } catch (err) {
+        console.error(err);
+        wrap.innerHTML = `<div class="empty">Erro ao carregar ranking.</div>`;
+    }
+}
+
+// ============================
 // FINAL / CHAVEAMENTO
 // ============================
 async function renderFinal(c) {
     const finalInfo = document.getElementById("finalInfo");
     const btnVerChaveamento = document.getElementById("btnVerChaveamento");
 
-    // ✅ se já finalizou, mostra campeão/vice
     if (c.faseAtual === "FINALIZADO") {
         const campeao = c?.campeao?.nome || "—";
         const vice = c?.viceCampeao?.nome || "—";
@@ -481,7 +594,6 @@ async function renderFinal(c) {
         return;
     }
 
-    // tenta ver se existe bracket mesmo
     try {
         const jogos = await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/bracket`);
         const temBracket = Array.isArray(jogos) && jogos.length > 0;
@@ -497,22 +609,11 @@ async function renderFinal(c) {
             return;
         }
 
-        showInlineMessage(
-            finalInfo,
-            "success",
-            "Chaveamento disponível",
-            "Você já pode abrir a tela do chaveamento para acompanhar as rodadas."
-        );
-
+        showInlineMessage(finalInfo, "success", "Chaveamento disponível", "Você já pode abrir a tela do chaveamento.");
         btnVerChaveamento.style.display = "inline-flex";
     } catch (err) {
         console.error(err);
-        showInlineMessage(
-            finalInfo,
-            "warn",
-            "Não consegui verificar o chaveamento agora",
-            "Clique em “Atualizar” ou tente novamente em instantes."
-        );
+        showInlineMessage(finalInfo, "warn", "Não consegui verificar o chaveamento agora", "Clique em “Atualizar”.");
         btnVerChaveamento.style.display = "inline-flex";
     }
 }
@@ -521,7 +622,12 @@ function abrirBracket() {
     location.href = `campeonato-bracket.html?campeonatoId=${campeonatoId}`;
 }
 
-/** ✅ NOVO: abrir detalhes do jogo */
 function abrirDetalhesJogo(jogoId) {
     location.href = `jogo-detalhe.html?jogoId=${jogoId}`;
+}
+
+function toggleDesempate(jogoId) {
+    const box = document.getElementById(`desempateBox${jogoId}`);
+    if (!box) return;
+    box.style.display = box.style.display === "none" ? "block" : "none";
 }

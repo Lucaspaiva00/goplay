@@ -1,61 +1,78 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
-const usuariocontroller = require('./controller/usuarioController');
-const societycontroller = require("./controller/societyController");
-const timecontroller = require("./controller/timeController");
-const societyplayerscontroller = require("./controller/societyPlayerController");
-const pagamentoscontroller = require("./controller/pagamentoController");
-const listagemcontroller = require("./controller/listagemController");
-const cardapiocontroller = require("./controller/cardapioController");
-const campocontroller = require("./controller/campoController");
-const convitecontroller = require("./controller/conviteController");
+const usuarioController = require("./controller/usuarioController");
+const societyController = require("./controller/societyController");
+const timeController = require("./controller/timeController");
+const societyPlayerController = require("./controller/societyPlayerController");
+const listagemController = require("./controller/listagemController");
+const cardapioController = require("./controller/cardapioController");
+const campoController = require("./controller/campoController");
+const conviteController = require("./controller/conviteController");
 const campeonatoController = require("./controller/campeonatoController");
 const jogoController = require("./controller/jogoController");
 
-// Usuário
-router.post("/usuarios", usuariocontroller.create);
-router.post("/login", usuariocontroller.login);
-router.get("/usuarios/:id", usuariocontroller.readOne);
-router.put("/usuarios/:id", usuariocontroller.update);
+const pagamentoController = require("./controller/pagamentoController");
+const agendamentoController = require("./controller/agendamentoController");
 
-// Society
-router.post('/society', societycontroller.create);
-router.get('/society/owner/:usuarioId', societycontroller.readByOwner);
-router.get('/society/:id', societycontroller.readById);
+/* =========================
+   USUÁRIO
+========================= */
+router.post("/usuarios", usuarioController.create);
+router.post("/login", usuarioController.login);
+router.get("/usuarios/:id", usuarioController.readOne);
+router.put("/usuarios/:id", usuarioController.update);
 
-// Time
-router.post('/time', timecontroller.create);
-router.get('/time', timecontroller.list);
-router.get('/time/dono/:donoId', timecontroller.listByOwner);
-router.get('/time/society/:societyId', timecontroller.listBySociety);
-router.get('/time/:timeId', timecontroller.details);
-router.post('/time/entrar', timecontroller.join);
-router.post('/time/sair', timecontroller.leave);
-router.get("/time/details/by-player/:usuarioId", timecontroller.getTimeByPlayer);
+/* =========================
+   SOCIETY
+========================= */
+router.post("/society", societyController.create);
+router.get("/society", societyController.listAll);
+router.get("/society/owner/:usuarioId", societyController.readByOwner);
+router.get("/society/:id", societyController.readById);
 
-// Society Players
-router.post('/society/player', societyplayerscontroller.add);
+/* =========================
+   TIME
+========================= */
+router.post("/time", timeController.create);
+router.get("/time", timeController.list);
+router.get("/time/dono/:donoId", timeController.listByOwner);
+router.get("/time/society/:societyId", timeController.listBySociety);
+router.get("/time/:timeId", timeController.details);
+router.post("/time/entrar", timeController.join);
+router.post("/time/sair", timeController.leave);
+router.get("/time/details/by-player/:usuarioId", timeController.getTimeByPlayer);
 
-// Pagamentos
-router.post('/pagamentos', pagamentoscontroller.create);
-router.get('/pagamentos/society/:societyId', pagamentoscontroller.listBySociety);
+/* =========================
+   SOCIETY PLAYERS
+========================= */
+router.post("/society/player", societyPlayerController.add);
 
-// Gerais
-router.get('/geral', listagemcontroller.geral);
+/* =========================
+   GERAIS
+========================= */
+router.get("/geral", listagemController.geral);
 
-// Cardápio
-router.post('/cardapio', cardapiocontroller.create);
-router.get('/cardapio/:societyId', cardapiocontroller.list);
+/* =========================
+   CARDÁPIO
+========================= */
+router.post("/cardapio", cardapioController.create);
+router.get("/cardapio/:societyId", cardapioController.list);
 
-// Campo
-router.post('/campos', campocontroller.create);
-router.get('/campos/:societyId', campocontroller.list);
+/* =========================
+   CAMPOS
+========================= */
+router.post("/campos", campoController.create);
+router.get("/campos/:societyId", campoController.listBySociety);
 
-// Convite
-router.post('/convite', convitecontroller.convidar);
+/* =========================
+   CONVITE
+========================= */
+router.post("/convite", conviteController.convidar);
 
-// CAMPEONATO
+/* =========================
+   CAMPEONATO
+========================= */
 router.post("/campeonato", campeonatoController.create);
 router.get("/campeonato/society/:societyId", campeonatoController.listBySociety);
 router.get("/campeonato/:id", campeonatoController.readOne);
@@ -65,13 +82,30 @@ router.post("/campeonato/:id/gerar-jogos-grupos", campeonatoController.generateG
 router.post("/campeonato/:id/gerar-mata-mata", campeonatoController.generateMataMata);
 router.post("/campeonato/jogo/:id/finalizar", campeonatoController.finalizarJogo);
 router.get("/campeonato/:id/bracket", campeonatoController.getBracket);
+router.get("/campeonato/:id/ranking", campeonatoController.ranking);
 
-
-// JOGO (DETALHES)
+/* =========================
+   JOGO (DETALHES)
+========================= */
 router.get("/jogo/:id", jogoController.readOne);
 router.put("/jogo/:id/stats", jogoController.updateStats);
 router.post("/jogo/:id/escalacao", jogoController.addLineup);
 router.post("/jogo/:id/evento", jogoController.addEvento);
 
+/* =========================
+   AGENDAMENTOS (Dono do Time agenda)
+========================= */
+router.get("/agendamentos/disponiveis", agendamentoController.horariosDisponiveis);
+router.post("/agendamentos", agendamentoController.create);
+router.get("/agendamentos/time/:timeId", agendamentoController.listByTime);
+router.post("/agendamentos/:id/cancelar", agendamentoController.cancelar);
+
+/* =========================
+   PAGAMENTOS (vinculado ao Agendamento)
+========================= */
+router.post("/pagamentos/agendamento", pagamentoController.createPagamentoAgendamento);
+router.post("/pagamentos/:id/confirmar", pagamentoController.confirmarPagamento);
+router.get("/pagamentos/society/:societyId", pagamentoController.listBySociety);
+router.get("/pagamentos/time/:timeId", pagamentoController.listByTime);
 
 module.exports = router;
