@@ -1,3 +1,4 @@
+// ✅ web/scripts/meus-agendamentos.js  (ARQUIVO TODO)
 const BASE_URL = "http://localhost:3000";
 
 function el(id) { return document.getElementById(id); }
@@ -22,10 +23,56 @@ async function fetchJSON(url, options = {}) {
     return data;
 }
 
-function dtBRDateOnly(yyyyMmDd) {
-    if (!yyyyMmDd) return "-";
-    const x = new Date(`${yyyyMmDd}T00:00:00`);
+// 🔥 tenta pegar a data do jogo independente do nome que veio do backend
+function pickDataJogo(a) {
+    // mais comuns
+    const v =
+        a?.data ??
+        a?.dataJogo ??
+        a?.dia ??
+        a?.data_agenda ??
+        a?.dataAgenda ??
+        a?.dataAgendamento ??
+        a?.agendamento?.data ??
+        a?.agendamentoData ??
+        a?.jogoData ??
+        null;
+
+    return v;
+}
+
+// ✅ aceita "2026-01-16", ISO "2026-01-16T00:00:00.000Z", Date, etc
+function dtBRDateOnly(value) {
+    if (!value) return "-";
+
+    // se já vier Date
+    if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? "-" : value.toLocaleDateString("pt-BR");
+    }
+
+    const s = String(value);
+
+    // se vier "YYYY-MM-DD"
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+        const x = new Date(`${s}T00:00:00`);
+        return Number.isNaN(x.getTime()) ? "-" : x.toLocaleDateString("pt-BR");
+    }
+
+    // se vier ISO com T
+    const x = new Date(s);
     return Number.isNaN(x.getTime()) ? "-" : x.toLocaleDateString("pt-BR");
+}
+
+function getTimeMsFromDateOnly(value) {
+    if (!value) return NaN;
+    const s = String(value);
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+        return new Date(`${s}T00:00:00`).getTime();
+    }
+
+    const d = new Date(s);
+    return d.getTime();
 }
 
 function statusPill(status) {
@@ -42,7 +89,7 @@ async function carregarTimesDoDono() {
     const u = getUsuarioLogado();
     if (!u?.id) throw new Error("Sessão expirada. Faça login novamente.");
 
-    const times = await fetchJSON(`${BASE_URL}/time/dono/${encodeURIComponent(u.id)}`);
+    const times = await fetchJSON(`${BASE_URL}/time/dono/${u.id}`);
     __TIMES__ = times || [];
 
     const sel = el("filtroTime");
@@ -64,13 +111,13 @@ async function carregarAgendamentosBackend() {
     const u = getUsuarioLogado();
     if (!u?.id) throw new Error("Sessão expirada. Faça login novamente.");
 
-    const times = __TIMES__.length ? __TIMES__ : await fetchJSON(`${BASE_URL}/time/dono/${encodeURIComponent(u.id)}`);
+    const times = __TIMES__.length ? __TIMES__ : await fetchJSON(`${BASE_URL}/time/dono/${u.id}`);
     __TIMES__ = times || [];
 
     const all = [];
+
     for (const t of __TIMES__) {
         try {
-            // ✅ backend precisa devolver include society/campo/pagamento (se não vier, ainda renderiza com "-")
             const lista = await fetchJSON(`${BASE_URL}/agendamentos/time/${t.id}`);
             (lista || []).forEach(a => {
                 all.push({
@@ -83,11 +130,17 @@ async function carregarAgendamentosBackend() {
         }
     }
 
-    // ordena por data do jogo desc e horaInicio
+    // ✅ ordena por data do jogo desc e horaInicio
     all.sort((a, b) => {
-        const da = new Date(`${a.data}T00:00:00`).getTime();
-        const db = new Date(`${b.data}T00:00:00`).getTime();
-        if (db !== da) return db - da;
+        const da = getTimeMsFromDateOnly(pickDataJogo(a));
+        const db = getTimeMsFromDateOnly(pickDataJogo(b));
+        if (!Number.isNaN(db) && !Number.isNaN(da) && db !== da) return db - da;
+
+        // fallback: createdAt
+        const ca = new Date(a?.createdAt || 0).getTime();
+        const cb = new Date(b?.createdAt || 0).getTime();
+        if (cb !== ca) return cb - ca;
+
         return String(b.horaInicio || "").localeCompare(String(a.horaInicio || ""));
     });
 
@@ -103,10 +156,11 @@ function aplicarFiltroLocal() {
 
     if (timeId) lista = lista.filter(a => Number(a.timeId) === Number(timeId));
 
+    // filtra por data do jogo (independente do nome do campo)
     if (from) {
         const f = new Date(`${from}T00:00:00`).getTime();
         lista = lista.filter(a => {
-            const t = new Date(`${a.data}T00:00:00`).getTime();
+            const t = getTimeMsFromDateOnly(pickDataJogo(a));
             return !Number.isNaN(t) && t >= f;
         });
     }
@@ -114,7 +168,7 @@ function aplicarFiltroLocal() {
     if (to) {
         const tmax = new Date(`${to}T00:00:00`).getTime();
         lista = lista.filter(a => {
-            const t = new Date(`${a.data}T00:00:00`).getTime();
+            const t = getTimeMsFromDateOnly(pickDataJogo(a));
             return !Number.isNaN(t) && t <= tmax;
         });
     }
@@ -132,8 +186,11 @@ function renderTabela(lista) {
     }
 
     tbody.innerHTML = lista.map(a => {
-        const societyNome = a?.society?.nome || "-";
-        const campoNome = a?.campo?.nome || "-";
+        const societyNome = a?.society?.nome || a?.societyNome || "-";
+        const campoNome = a?.campo?.nome || a?.campoNome || a?.campo || "-";
+
+        const dataJogo = pickDataJogo(a);
+        const dataJogoBR = dtBRDateOnly(dataJogo);
 
         const status = String(a.status || "").toUpperCase();
         const podeCancelar = status !== "CANCELADO";
@@ -141,7 +198,6 @@ function renderTabela(lista) {
             ? `<button class="btn-mini danger" onclick="cancelarAgendamento(${a.id})"><i class="fa-solid fa-ban"></i> Cancelar</button>`
             : "";
 
-        // ✅ tenta pegar pagamento de qualquer forma
         const pagId = a?.pagamento?.id || a?.pagamentoId || null;
         const btnPag = pagId
             ? `<button class="btn-mini ok" onclick="irParaPagamento(${pagId})"><i class="fa-solid fa-receipt"></i> Pagamento</button>`
@@ -149,8 +205,8 @@ function renderTabela(lista) {
 
         return `
       <tr>
-        <td class="nowrap">${dtBRDateOnly(a.data)}</td>
-        <td class="nowrap">${a.horaInicio || "-"} - ${a.horaFim || "-"}</td>
+        <td>${dataJogoBR}</td>
+        <td>${a.horaInicio || "-"} - ${a.horaFim || "-"}</td>
         <td>${societyNome}</td>
         <td>${campoNome}</td>
         <td>${statusPill(a.status)}</td>
@@ -178,7 +234,6 @@ async function cancelarAgendamento(id) {
 }
 
 function irParaPagamento(pagamentoId) {
-    // ✅ aqui é o fluxo certo: abre a tela do link com pagamentoId
     location.href = `pagamentos.html?pagamentoId=${encodeURIComponent(pagamentoId)}`;
 }
 
