@@ -1,12 +1,37 @@
+// ✅ api/src/controller/pagamentoController.js  (ARQUIVO TODO)
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-/**
- * ============================
- * CRIAR PAGAMENTO (AGENDAMENTO)
- * ============================
- * POST /pagamentos/agendamento
- */
+/* =========================
+   GET /pagamentos/:id  ✅ (DETALHE POR LINK)
+========================= */
+const readOne = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const pagamento = await prisma.pagamento.findUnique({
+            where: { id: Number(id) },
+            include: {
+                society: true,
+                time: true,
+                campo: true,
+                agendamento: true,
+                usuario: true,
+            },
+        });
+
+        if (!pagamento) return res.status(404).json({ error: "Pagamento não encontrado." });
+
+        res.json(pagamento);
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: "Erro ao buscar pagamento." });
+    }
+};
+
+/* =========================
+   CRIAR PAGAMENTO (AGENDAMENTO)
+========================= */
 const createPagamentoAgendamento = async (req, res) => {
     try {
         const {
@@ -16,6 +41,7 @@ const createPagamentoAgendamento = async (req, res) => {
             campoId,
             agendamentoId,
             forma = "PIX",
+            recorrente = false,
         } = req.body;
 
         if (!usuarioId || !societyId || !timeId || !campoId || !agendamentoId) {
@@ -24,20 +50,16 @@ const createPagamentoAgendamento = async (req, res) => {
 
         const agendamento = await prisma.agendamento.findUnique({
             where: { id: Number(agendamentoId) },
-            include: { pagamento: true },
+            include: { pagamento: true, campo: true },
         });
 
-        if (!agendamento) {
-            return res.status(404).json({ error: "Agendamento não encontrado." });
-        }
+        if (!agendamento) return res.status(404).json({ error: "Agendamento não encontrado." });
+        if (agendamento.pagamento) return res.status(400).json({ error: "Pagamento já existe." });
 
-        if (agendamento.status !== "PENDENTE") {
-            return res.status(400).json({ error: "Agendamento não está pendente." });
-        }
-
-        if (agendamento.pagamento) {
-            return res.status(400).json({ error: "Pagamento já criado para este agendamento." });
-        }
+        const tipo = recorrente ? "MENSALISTA" : "AVULSO";
+        const valor = recorrente
+            ? Number(agendamento?.campo?.valorMensal || 0)
+            : Number(agendamento?.valor || 0);
 
         const pagamento = await prisma.pagamento.create({
             data: {
@@ -45,28 +67,27 @@ const createPagamentoAgendamento = async (req, res) => {
                 societyId: Number(societyId),
                 timeId: Number(timeId),
                 campoId: Number(campoId),
-                agendamentoId: agendamento.id,
-                tipo: "AVULSO",
-                valor: agendamento.valor,
+                agendamentoId: Number(agendamentoId),
+                tipo,
+                valor,
                 forma,
                 status: "PENDENTE",
-                descricao: `Pagamento horário ${agendamento.horaInicio} às ${agendamento.horaFim}`,
+                descricao: recorrente
+                    ? "Mensalidade de horário fixo"
+                    : `Pagamento horário ${agendamento.horaInicio} às ${agendamento.horaFim}`,
             },
         });
 
-        res.json(pagamento);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Erro ao criar pagamento." });
+        return res.json(pagamento);
+    } catch (e) {
+        console.error(e);
+        return res.status(500).json({ error: "Erro ao criar pagamento." });
     }
 };
 
-/**
- * ============================
- * CONFIRMAR PAGAMENTO
- * ============================
- * POST /pagamentos/:id/confirmar
- */
+/* =========================
+   CONFIRMAR PAGAMENTO
+========================= */
 const confirmarPagamento = async (req, res) => {
     try {
         const { id } = req.params;
@@ -76,24 +97,14 @@ const confirmarPagamento = async (req, res) => {
             include: { agendamento: true },
         });
 
-        if (!pagamento) {
-            return res.status(404).json({ error: "Pagamento não encontrado." });
-        }
+        if (!pagamento) return res.status(404).json({ error: "Pagamento não encontrado." });
+        if (pagamento.status === "PAGO") return res.status(400).json({ error: "Pagamento já confirmado." });
 
-        if (pagamento.status === "PAGO") {
-            return res.status(400).json({ error: "Pagamento já confirmado." });
-        }
-
-        // 1️⃣ Marca pagamento como pago
         await prisma.pagamento.update({
-            where: { id: pagamento.id },
-            data: {
-                status: "PAGO",
-                pagoEm: new Date(),
-            },
+            where: { id: Number(id) },
+            data: { status: "PAGO", pagoEm: new Date() },
         });
 
-        // 2️⃣ Confirma o agendamento automaticamente
         if (pagamento.agendamentoId) {
             await prisma.agendamento.update({
                 where: { id: pagamento.agendamentoId },
@@ -101,70 +112,115 @@ const confirmarPagamento = async (req, res) => {
             });
         }
 
-        res.json({ ok: true });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Erro ao confirmar pagamento." });
+        return res.json({ ok: true });
+    } catch (e) {
+        console.error(e);
+        return res.status(500).json({ error: "Erro ao confirmar pagamento." });
     }
 };
 
-/**
- * ============================
- * LISTAR PAGAMENTOS DA SOCIETY
- * ============================
- * GET /pagamentos/society/:societyId
- */
+/* =========================
+   PAGAMENTOS DO SOCIETY
+========================= */
 const listBySociety = async (req, res) => {
     try {
         const { societyId } = req.params;
 
-        const lista = await prisma.pagamento.findMany({
+        const pagamentos = await prisma.pagamento.findMany({
             where: { societyId: Number(societyId) },
-            include: {
-                time: true,
-                campo: true,
-                agendamento: true,
-                usuario: true,
-            },
+            include: { usuario: true, time: true, campo: true, agendamento: true },
             orderBy: { createdAt: "desc" },
         });
 
-        res.json(lista);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Erro ao listar pagamentos." });
+        return res.json(pagamentos);
+    } catch (e) {
+        console.error(e);
+        return res.status(500).json({ error: "Erro ao listar pagamentos." });
     }
 };
 
-/**
- * ============================
- * LISTAR PAGAMENTOS DO TIME
- * ============================
- * GET /pagamentos/time/:timeId
- */
+/* =========================
+   PAGAMENTOS DO TIME
+========================= */
 const listByTime = async (req, res) => {
     try {
         const { timeId } = req.params;
 
-        const lista = await prisma.pagamento.findMany({
+        const pagamentos = await prisma.pagamento.findMany({
             where: { timeId: Number(timeId) },
-            include: {
-                campo: true,
-                agendamento: true,
-            },
+            include: { campo: true, agendamento: true },
             orderBy: { createdAt: "desc" },
         });
 
-        res.json(lista);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Erro ao listar pagamentos." });
+        return res.json(pagamentos);
+    } catch (e) {
+        console.error(e);
+        return res.status(500).json({ error: "Erro ao listar pagamentos." });
     }
 };
 
+/* =========================
+   MEUS PAGAMENTOS (USUÁRIO)
+========================= */
+const listarPorUsuario = async (req, res) => {
+    try {
+        const { usuarioId } = req.params;
+
+        const pagamentos = await prisma.pagamento.findMany({
+            where: { usuarioId: Number(usuarioId) },
+            include: { society: true, time: true, campo: true, agendamento: true },
+            orderBy: { createdAt: "desc" },
+        });
+
+        const total = pagamentos.reduce((s, p) => s + Number(p.valor || 0), 0);
+        return res.json({ pagamentos, total });
+    } catch (e) {
+        console.error(e);
+        return res.status(500).json({ error: "Erro ao buscar pagamentos do usuário." });
+    }
+};
+
+/* =========================
+   MENSALIDADE (opcional)
+========================= */
+const createMensalidade = async (req, res) => {
+    try {
+        const { usuarioId, societyId, timeId, campoId, valor } = req.body;
+
+        if (!usuarioId || !societyId || !timeId || !campoId || !valor) {
+            return res.status(400).json({ error: "Dados incompletos." });
+        }
+
+        const pagamento = await prisma.pagamento.create({
+            data: {
+                usuarioId: Number(usuarioId),
+                societyId: Number(societyId),
+                timeId: Number(timeId),
+                campoId: Number(campoId),
+                tipo: "MENSALISTA",
+                valor: Number(valor),
+                forma: "PIX",
+                status: "PAGO",
+                pagoEm: new Date(),
+                descricao: "Mensalidade do campo",
+            },
+        });
+
+        return res.json(pagamento);
+    } catch (e) {
+        console.error(e);
+        return res.status(500).json({ error: "Erro ao gerar mensalidade." });
+    }
+};
+
+
+
 module.exports = {
+    readOne,
     createPagamentoAgendamento,
+    createMensalidade,
     confirmarPagamento,
     listBySociety,
     listByTime,
+    listarPorUsuario,
 };

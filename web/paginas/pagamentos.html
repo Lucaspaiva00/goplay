@@ -2,247 +2,291 @@
 <html lang="pt-br">
 
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Pagamentos — GoPlay</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pagamento — GoPlay</title>
 
-    <link rel="stylesheet" href="../css/perfil.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="../css/goplay_home.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
-    <style>
-        .card {
-            background: #fff;
-            border: 1px solid #e8eef7;
-            border-radius: 16px;
-            padding: 14px;
-            box-shadow: 0 6px 18px rgba(16, 24, 40, .06);
-        }
+  <style>
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+    }
 
-        .row {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: end;
-        }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 6px 18px rgba(16, 24, 40, .08);
+      margin: 18px auto;
+    }
 
-        .row>div {
-            flex: 1;
-            min-width: 200px;
-        }
+    .head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 14px;
+    }
 
-        label {
-            display: block;
-            font-size: 12px;
-            opacity: .8;
-            margin-bottom: 6px;
-        }
+    .h {
+      font-weight: 900;
+      font-size: 18px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: #052845;
+    }
 
-        input,
-        select {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 12px;
-            border: 1px solid #dbe3ef;
-            outline: none;
-        }
+    .muted {
+      opacity: .75;
+      font-size: 12px;
+      margin-top: 4px;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0 8px;
-        }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
 
-        td,
-        th {
-            text-align: left;
-            padding: 10px 12px;
-            font-size: 14px;
-        }
+    @media(max-width:900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
 
-        thead th {
-            font-size: 12px;
-            opacity: .7;
-        }
+    .box {
+      border: 1px solid #eef2f6;
+      border-radius: 14px;
+      padding: 14px;
+      background: #fbfdff;
+    }
 
-        tbody tr {
-            background: #fff;
-            border: 1px solid #eef2f6;
-        }
+    .line {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px dashed #e5e7eb;
+      font-size: 14px;
+    }
 
-        tbody tr td:first-child {
-            border-top-left-radius: 12px;
-            border-bottom-left-radius: 12px;
-        }
+    .line:last-child {
+      border-bottom: none;
+    }
 
-        tbody tr td:last-child {
-            border-top-right-radius: 12px;
-            border-bottom-right-radius: 12px;
-        }
+    .k {
+      opacity: .8;
+      font-weight: 800;
+    }
 
-        .chip {
-            font-size: 12px;
-            padding: 6px 10px;
-            border-radius: 999px;
-            border: 1px solid #e6edf7;
-            background: #f7faff;
-            display: inline-flex;
-            gap: 6px;
-            align-items: center;
-        }
+    .v {
+      font-weight: 900;
+      color: #111827;
+      text-align: right;
+    }
 
-        .muted {
-            opacity: .75;
-            font-size: 12px;
-        }
+    .chip {
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #e6edf7;
+      background: #f7faff;
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      font-weight: 900;
+    }
 
-        .right {
-            text-align: right;
-        }
-    </style>
+    .status {
+      font-weight: 900;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+    }
+
+    .status.pendente {
+      background: #fff7ed;
+      border-color: #fed7aa;
+      color: #9a3412;
+    }
+
+    .status.pago {
+      background: #ecfdf5;
+      border-color: #bbf7d0;
+      color: #065f46;
+    }
+
+    .status.cancelado {
+      background: #fee2e2;
+      border-color: #fecaca;
+      color: #7f1d1d;
+    }
+
+    .pixBox {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 14px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .pixKey {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-weight: 900;
+      font-size: 14px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #dbe3ef;
+      background: #f8fafc;
+      word-break: break-all;
+    }
+
+    .rowBtns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    @media(max-width:900px) {
+      .rowBtns {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .btn {
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 900;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn.primary {
+      background: #052845;
+      color: #fff;
+    }
+
+    .btn.secondary {
+      background: #f3f4f6;
+      color: #111827;
+      border: 1px solid #e5e7eb;
+    }
+
+    .btn.ok {
+      background: #16a34a;
+      color: #fff;
+    }
+  </style>
 </head>
 
-<body>
-    <aside class="sidebar" id="sidebar">
-        <div class="logo-area">
-            <h2>GoPlay</h2>
+<body class="with-sidebar">
+  <header class="topbar">
+    <button id="menuBtn" class="menu-btn"><i class="fa fa-bars"></i></button>
+    <h1 class="title">Pagamento</h1>
+  </header>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="logo-area">
+      <h2>GoPlay</h2>
+    </div>
+    <ul id="menuDynamic"></ul>
+  </aside>
+  <div id="overlay" class="overlay"></div>
+
+  <main class="content">
+    <div class="wrap">
+      <div class="card">
+        <div class="head">
+          <div>
+            <div class="h"><i class="fa-solid fa-link"></i> Pagamento por link</div>
+            <div class="muted">Abra, copie o Pix e confirme quando receber.</div>
+          </div>
+          <div class="chip" id="chipId">#-</div>
         </div>
-        <ul id="menuDynamic"></ul>
-    </aside>
-    <div class="overlay" id="overlay"></div>
 
-    <header class="topbar">
-        <h1 class="title">Pagamentos</h1>
-    </header>
+        <div id="msg" class="muted"></div>
 
-    <main class="content">
-        <div class="page-wrap" style="max-width:1100px; margin:0 auto;">
-
-            <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-                    <div>
-                        <div style="font-weight:800;font-size:16px;"><i class="fa-solid fa-receipt"></i> Pagamentos
-                        </div>
-                        <div class="muted">Registre avulso, mensalista e consumo do bar</div>
-                    </div>
-                    <div class="chip" id="chipResumo">0 pagamento(s) • Total R$ 0,00</div>
-                </div>
-
-                <div style="height:12px;"></div>
-
-                <div class="row">
-                    <div>
-                        <label>Society</label>
-                        <select id="societyId"></select>
-                    </div>
-
-                    <div>
-                        <label>Tipo</label>
-                        <select id="filtroTipo">
-                            <option value="">Todos</option>
-                            <option value="AVULSO">Avulso</option>
-                            <option value="MENSALISTA">Mensalista</option>
-                            <option value="CONSUMO_BAR">Consumo Bar</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label>De</label>
-                        <input id="filtroFrom" type="date" />
-                    </div>
-
-                    <div>
-                        <label>Até</label>
-                        <input id="filtroTo" type="date" />
-                    </div>
-
-                    <button class="btn btn-light" id="btnFiltrar">
-                        <i class="fa-solid fa-filter"></i> Filtrar
-                    </button>
-
-                    <button class="btn btn-primary" id="btnAbrirNovo">
-                        <i class="fa-solid fa-plus"></i> Novo pagamento
-                    </button>
-                </div>
-
-                <div style="height:14px;"></div>
-
-                <div id="msg" class="muted"></div>
-
-                <div style="height:8px;"></div>
-
-                <div style="overflow:auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Tipo</th>
-                                <th>Usuário</th>
-                                <th>Descrição</th>
-                                <th class="right">Valor</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbodyPag"></tbody>
-                    </table>
-                </div>
+        <div class="grid" style="margin-top:12px;">
+          <div class="box">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+              <div style="font-weight:900;">Detalhes</div>
+              <div id="statusPill" class="status pendente"><i class="fa-solid fa-hourglass-half"></i> PENDENTE</div>
             </div>
 
-            <div style="height:14px;"></div>
+            <div style="height:10px;"></div>
 
-            <!-- Modal simples -->
-            <div id="modal"
-                style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); padding:18px; z-index:9999;">
-                <div class="card" style="max-width:720px; margin:40px auto;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <div style="font-weight:800;"><i class="fa-solid fa-plus"></i> Novo pagamento</div>
-                        <button class="btn btn-light" id="btnFecharModal"><i class="fa-solid fa-xmark"></i></button>
-                    </div>
+            <div class="line">
+              <div class="k">Society</div>
+              <div class="v" id="societyNome">-</div>
+            </div>
+            <div class="line">
+              <div class="k">Campo</div>
+              <div class="v" id="campoNome">-</div>
+            </div>
+            <div class="line">
+              <div class="k">Time</div>
+              <div class="v" id="timeNome">-</div>
+            </div>
+            <div class="line">
+              <div class="k">Tipo</div>
+              <div class="v" id="tipo">-</div>
+            </div>
+            <div class="line">
+              <div class="k">Jogo</div>
+              <div class="v" id="jogo">-</div>
+            </div>
+            <div class="line">
+              <div class="k">Descrição</div>
+              <div class="v" id="descricao">-</div>
+            </div>
+            <div class="line">
+              <div class="k">Valor</div>
+              <div class="v" id="valor">-</div>
+            </div>
+          </div>
 
-                    <div style="height:12px;"></div>
+          <div class="pixBox">
+            <div style="font-weight:900;"><i class="fa-brands fa-pix"></i> Pix (copia e cola)</div>
+            <div class="muted">Chave Pix do recebedor:</div>
+            <div class="pixKey" id="pixKey">47.051.258/0001-58</div>
 
-                    <div class="row">
-                        <div>
-                            <label>Usuário (quem pagou)</label>
-                            <select id="usuarioId"></select>
-                            <div class="muted">Você pode listar players depois; por enquanto carrega donos/society
-                                players conforme seu fluxo.</div>
-                        </div>
-
-                        <div>
-                            <label>Tipo</label>
-                            <select id="tipo">
-                                <option value="AVULSO">Avulso</option>
-                                <option value="MENSALISTA">Mensalista</option>
-                                <option value="CONSUMO_BAR">Consumo Bar</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label>Valor (R$)</label>
-                            <input id="valor" type="number" min="0" step="0.01" placeholder="Ex: 50.00" />
-                        </div>
-                    </div>
-
-                    <div style="height:10px;"></div>
-
-                    <div>
-                        <label>Descrição (opcional)</label>
-                        <input id="descricao" type="text" placeholder="Ex: mensalidade janeiro / quadra avulsa / bar" />
-                    </div>
-
-                    <div style="height:14px;"></div>
-
-                    <div style="display:flex; gap:10px; justify-content:flex-end;">
-                        <button class="btn btn-light" id="btnCancelar">Cancelar</button>
-                        <button class="btn btn-primary" id="btnSalvar"><i class="fa-solid fa-check"></i> Salvar</button>
-                    </div>
-                </div>
+            <div class="rowBtns">
+              <button class="btn secondary" id="btnCopiar"><i class="fa-solid fa-copy"></i> Copiar Pix</button>
+              <button class="btn primary" id="btnCompartilhar"><i class="fa-solid fa-share-nodes"></i> Compartilhar
+                link</button>
             </div>
 
-        </div>
-    </main>
+            <div style="height:8px;"></div>
 
-    <script src="../scripts/menu.js"></script>
-    <script src="../scripts/pagamentos.js"></script>
+            <button class="btn ok" id="btnConfirmar"><i class="fa-solid fa-circle-check"></i> Confirmar como
+              pago</button>
+            <button class="btn secondary" id="btnVoltar"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="../js/goplay_home.js"></script>
+  <script src="../scripts/menu.js"></script>
+  <script src="../scripts/pagamentos.js"></script>
 </body>
 
 </html>

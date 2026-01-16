@@ -13,7 +13,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
     <style>
-        /* Só o necessário para esta tela (mantendo padrão) */
         .page-title {
             font-size: 28px;
             font-weight: 800;
@@ -70,16 +69,8 @@
             font-size: 14px;
         }
 
-        select:focus,
-        input:focus {
-            border-color: #93c5fd;
-            box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.35);
-        }
-
         .btn-wide {
             width: 100%;
-            max-width: none;
-            margin: 0;
         }
 
         .horarios {
@@ -101,15 +92,10 @@
             user-select: none;
         }
 
-        .slot:hover {
-            transform: translateY(-1px);
-        }
-
         .slot.ocupado {
             background: #fee2e2;
             color: #7f1d1d;
             cursor: not-allowed;
-            opacity: 0.95;
         }
 
         .slot.livre {
@@ -138,6 +124,16 @@
             padding: 6px 10px;
             border-radius: 999px;
             font-weight: 700;
+        }
+
+        .pix-box {
+            margin-top: 12px;
+            padding: 12px;
+            background: #f0fdf4;
+            border: 1px solid #22c55e;
+            border-radius: 12px;
+            color: #065f46;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -209,9 +205,25 @@
 
         <div class="card" id="acao" style="display:none;">
             <h3 style="margin-bottom:10px;">Confirmar Agendamento</h3>
-            <button class="btn green btn-wide" id="btnAgendar">
-                <i class="fa-solid fa-circle-check"></i> Agendar e gerar pagamento
-            </button>
+
+            <!-- MENSAL -->
+            <label style="display:flex;gap:8px;align-items:center;">
+                <input type="checkbox" id="recorrente">
+                Tornar mensal (toda semana neste horário)
+            </label>
+
+            <!-- PIX -->
+            <div class="pix-box">
+                <strong>Pagamento via PIX</strong><br>
+                CNPJ: <b>47.051.258/0001-58</b><br>
+                Nome: <b>Paiva Tech</b>
+            </div>
+
+            <div style="margin-top:14px;">
+                <button class="btn green btn-wide" id="btnAgendar">
+                    <i class="fa-solid fa-circle-check"></i> Agendar e gerar pagamento
+                </button>
+            </div>
         </div>
 
     </main>
@@ -222,6 +234,7 @@
 
     <!-- JS da tela -->
     <script src="../scripts/time-agendamento.js"></script>
+
 </body>
 
 </html>

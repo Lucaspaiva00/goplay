@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Meus Pagamentos — GoPlay</title>
+
+    <link rel="stylesheet" href="../css/goplay_home.css" />
+    <link rel="stylesheet" href="../css/pagamentos.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+
+<body class="with-sidebar">
+    <header class="topbar">
+        <button id="menuBtn" class="menu-btn"><i class="fa fa-bars"></i></button>
+        <h1 class="title">Meus Pagamentos</h1>
+    </header>
+
+    <aside id="sidebar" class="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+        <ul id="menuDynamic"></ul>
+    </aside>
+
+    <div id="overlay" class="overlay"></div>
+
+    <main class="content">
+        <div class="card">
+            <div class="head">
+                <div>
+                    <div class="h"><i class="fa-solid fa-wallet"></i> Meus Pagamentos</div>
+                    <div class="muted">Histórico dos pagamentos gerados por você</div>
+                </div>
+                <div class="chip" id="chipResumo">0 pagamento(s) • Total R$ 0,00</div>
+            </div>
+
+            <div class="filters">
+                <div>
+                    <label>Tipo</label>
+                    <select id="filtroTipo">
+                        <option value="">Todos</option>
+                        <option value="AVULSO">Avulso</option>
+                        <option value="MENSALISTA">Mensalista</option>
+                        <option value="CONSUMO_BAR">Consumo Bar</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>De</label>
+                    <input id="filtroFrom" type="date" />
+                </div>
+
+                <div>
+                    <label>Até</label>
+                    <input id="filtroTo" type="date" />
+                </div>
+
+                <button class="btn" id="btnFiltrar"><i class="fa-solid fa-filter"></i> Filtrar</button>
+            </div>
+
+            <div id="msg" class="muted"></div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Society</th>
+                            <th>Tipo</th>
+                            <th>Descrição</th>
+                            <th class="right">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyPag"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="../js/goplay_home.js"></script>
+    <script src="../scripts/menu.js"></script>
+    <script src="../scripts/meus-pagamentos.js"></script>
+</body>
+
+</html>

@@ -1,3 +1,4 @@
+// ✅ src/routes.js  (ARQUIVO TODO)
 const express = require("express");
 const router = express.Router();
 
@@ -65,7 +66,6 @@ router.get("/cardapio/:societyId", cardapioController.list);
 router.post("/campos", campoController.create);
 router.get("/campos/:societyId", campoController.listBySociety);
 
-
 /* =========================
    CONVITE
 ========================= */
@@ -101,12 +101,14 @@ router.post("/agendamentos", agendamentoController.create);
 router.get("/agendamentos/time/:timeId", agendamentoController.listByTime);
 router.post("/agendamentos/:id/cancelar", agendamentoController.cancelar);
 
-/* =========================
-   PAGAMENTOS (vinculado ao Agendamento)
-========================= */
-router.post("/pagamentos/agendamento", pagamentoController.createPagamentoAgendamento);
+// ✅ api/src/routes.js  (TRECHO / PARTE DE PAGAMENTOS)
 router.post("/pagamentos/:id/confirmar", pagamentoController.confirmarPagamento);
+router.get("/pagamentos/:id", pagamentoController.readOne);
+router.post("/pagamentos/agendamento", pagamentoController.createPagamentoAgendamento);
 router.get("/pagamentos/society/:societyId", pagamentoController.listBySociety);
 router.get("/pagamentos/time/:timeId", pagamentoController.listByTime);
+router.get("/pagamentos/usuario/:usuarioId", pagamentoController.listarPorUsuario);
+router.post("/pagamentos/mensalidade", pagamentoController.createMensalidade);
+
 
 module.exports = router;
