@@ -13,8 +13,8 @@ const create = async (req, res) => {
             data: {
                 societyId: Number(societyId),
                 nome: nome.trim(),
-                valorAvulso: valorAvulso ? Number(valorAvulso) : null,
-                valorMensal: valorMensal ? Number(valorMensal) : null,
+                valorAvulso: valorAvulso !== undefined && valorAvulso !== "" ? Number(valorAvulso) : null,
+                valorMensal: valorMensal !== undefined && valorMensal !== "" ? Number(valorMensal) : null,
                 dimensoes: dimensoes || null,
                 gramado: gramado || null,
                 fotoUrl: fotoUrl || null,
@@ -24,6 +24,12 @@ const create = async (req, res) => {
         return res.json(campo);
     } catch (e) {
         console.error(e);
+
+        // erro de unique (societyId+nome)
+        if (e.code === "P2002") {
+            return res.status(400).json({ error: "Já existe um campo com esse nome nesse society." });
+        }
+
         return res.status(500).json({ error: "Erro ao criar campo." });
     }
 };

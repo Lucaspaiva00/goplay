@@ -49,10 +49,6 @@ if (usuarioLogado.tipo === "DONO_SOCIETY") {
         👀 Ver meus Societies
       </button>
 
-      <button class="btn navy" onclick="location.href='campos.html'">
-        🥅 Gerenciar Campos
-      </button>
-
       <button class="btn navy" onclick="location.href='campeonatos.html'">
         🏆 Campeonatos
       </button>

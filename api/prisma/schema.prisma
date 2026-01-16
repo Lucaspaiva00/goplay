@@ -44,6 +44,26 @@ enum EventoTipo {
   OBSERVACAO
 }
 
+enum StatusAgendamento {
+  PENDENTE
+  CONFIRMADO
+  CANCELADO
+}
+
+enum StatusPagamento {
+  PENDENTE
+  PAGO
+  CANCELADO
+}
+
+enum FormaPagamento {
+  PIX
+  DINHEIRO
+  CARTAO
+  TRANSFERENCIA
+  OUTRO
+}
+
 model Usuario {
   id           Int       @id @default(autoincrement())
   nome         String
@@ -87,7 +107,7 @@ model Usuario {
 model Society {
   id        Int     @id @default(autoincrement())
   usuarioId Int
-  dono      Usuario @relation("UsuarioSocieties", fields: [usuarioId], references: [id])
+  dono      Usuario @relation("UsuarioSocieties", fields: [usuarioId], references: [id], onDelete: Cascade)
 
   imagem    String?
   nome      String
@@ -110,40 +130,46 @@ model Society {
   societyPlayers SocietyPlayer[]
   pagamentos     Pagamento[]
   campeonatos    Campeonato[]
+  times          Time[]
+  agendamentos   Agendamento[]
 
-  times Time[]
-
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  agendamentos Agendamento[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Cardapio {
   id        Int     @id @default(autoincrement())
   societyId Int
-  society   Society @relation(fields: [societyId], references: [id])
+  society   Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
 
   nome  String
   preco Float
 
   createdAt DateTime @default(now())
+
+  @@index([societyId])
 }
 
 model Campo {
-  id        Int     @id @default(autoincrement())
-  societyId Int
-  society   Society @relation(fields: [societyId], references: [id])
+  id Int @id @default(autoincrement())
 
-  nome          String
-  valorAvulso   Float?
-  valorMensal   Float?
-  foto          String?
-  dimensoes     String?
-  estiloGramado String?
+  // ✅ AMARRADO AO SOCIETY (obrigatório)
+  societyId Int
+  society   Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  nome        String
+  valorAvulso Float? // <- por hora (ex: 500)
+  valorMensal Float?
+  fotoUrl     String?
+  dimensoes   String?
+  gramado     String?
 
   createdAt    DateTime      @default(now())
   agendamentos Agendamento[]
   pagamentos   Pagamento[]
+
+  @@unique([societyId, nome])
+  @@index([societyId])
 }
 
 model Time {
@@ -156,10 +182,10 @@ model Time {
   modalidade String?
 
   societyId Int
-  society   Society @relation(fields: [societyId], references: [id])
+  society   Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
 
   donoId Int
-  dono   Usuario @relation("TimeDono", fields: [donoId], references: [id])
+  dono   Usuario @relation("TimeDono", fields: [donoId], references: [id], onDelete: Cascade)
 
   jogadores Usuario[] @relation("TimeJogadores")
 
@@ -184,26 +210,27 @@ model Time {
   pagamentos        Pagamento[]
 
   @@unique([societyId, nome])
+  @@index([societyId])
+  @@index([donoId])
 }
 
 model Pagamento {
   id Int @id @default(autoincrement())
 
   usuarioId Int
-  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   societyId Int
-  society   Society @relation(fields: [societyId], references: [id])
+  society   Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
 
-  // ✅ NOVOS:
   timeId Int?
-  time   Time? @relation(fields: [timeId], references: [id])
+  time   Time? @relation(fields: [timeId], references: [id], onDelete: SetNull)
 
   campoId Int?
-  campo   Campo? @relation(fields: [campoId], references: [id])
+  campo   Campo? @relation(fields: [campoId], references: [id], onDelete: SetNull)
 
   agendamentoId Int?         @unique
-  agendamento   Agendamento? @relation(fields: [agendamentoId], references: [id])
+  agendamento   Agendamento? @relation(fields: [agendamentoId], references: [id], onDelete: Cascade)
 
   tipo      TipoPagamento
   valor     Float
@@ -215,89 +242,134 @@ model Pagamento {
   pagoEm DateTime?
 
   createdAt DateTime @default(now())
+
+  @@index([societyId])
+  @@index([usuarioId])
+  @@index([timeId])
+  @@index([campoId])
+}
+
+model Agendamento {
+  id Int @id @default(autoincrement())
+
+  societyId Int
+  society   Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  campoId Int
+  campo   Campo @relation(fields: [campoId], references: [id], onDelete: Cascade)
+
+  timeId Int
+  time   Time @relation(fields: [timeId], references: [id], onDelete: Cascade)
+
+  data       DateTime
+  horaInicio String
+  horaFim    String
+
+  valor Float
+
+  status StatusAgendamento @default(PENDENTE)
+
+  // ✅ 1–1
+  pagamento Pagamento?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([societyId, campoId, data])
+  @@index([timeId, data])
 }
 
 model SocietyPlayer {
   id Int @id @default(autoincrement())
 
   societyId Int
-  society   Society @relation(fields: [societyId], references: [id])
+  society   Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
 
   usuarioId Int
-  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
+
+  @@unique([societyId, usuarioId])
+  @@index([societyId])
+  @@index([usuarioId])
 }
 
 model Notificacao {
   id        Int     @id @default(autoincrement())
   usuarioId Int
-  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   titulo   String
   mensagem String
   lido     Boolean @default(false)
 
   createdAt DateTime @default(now())
+
+  @@index([usuarioId])
 }
 
 model Campeonato {
   id        Int     @id @default(autoincrement())
   societyId Int
-  society   Society @relation(fields: [societyId], references: [id])
+  society   Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
 
   nome     String
   tipo     TipoCampeonato
   maxTimes Int
 
-  // GRUPOS | MATA_MATA | FINALIZADO
   faseAtual  String @default("GRUPOS")
   roundAtual Int    @default(1)
 
   campeaoId Int?
-  campeao   Time? @relation("CampeaoTime", fields: [campeaoId], references: [id])
+  campeao   Time? @relation("CampeaoTime", fields: [campeaoId], references: [id], onDelete: SetNull)
 
   viceCampeaoId Int?
-  viceCampeao   Time? @relation("ViceCampeaoTime", fields: [viceCampeaoId], references: [id])
+  viceCampeao   Time? @relation("ViceCampeaoTime", fields: [viceCampeaoId], references: [id], onDelete: SetNull)
 
   times  TimeCampeonato[]
   grupos Grupo[]
   jogos  Jogo[]
 
-  // novo: tabela geral do campeonato
   tabela TabelaCampeonato[]
 
   createdAt DateTime @default(now())
+
+  @@index([societyId])
 }
 
 model TimeCampeonato {
   id           Int        @id @default(autoincrement())
   campeonatoId Int
-  campeonato   Campeonato @relation(fields: [campeonatoId], references: [id])
+  campeonato   Campeonato @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
 
   timeId Int
-  time   Time @relation(fields: [timeId], references: [id])
+  time   Time @relation(fields: [timeId], references: [id], onDelete: Cascade)
 
   @@unique([campeonatoId, timeId])
+  @@index([campeonatoId])
+  @@index([timeId])
 }
 
 model Grupo {
   id           Int        @id @default(autoincrement())
   nome         String
   campeonatoId Int
-  campeonato   Campeonato @relation(fields: [campeonatoId], references: [id])
+  campeonato   Campeonato @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
 
   timesGrupo TimeGrupo[]
   jogos      Jogo[]
+
+  @@index([campeonatoId])
 }
 
 model TimeGrupo {
   id      Int   @id @default(autoincrement())
   grupoId Int
-  grupo   Grupo @relation(fields: [grupoId], references: [id])
+  grupo   Grupo @relation(fields: [grupoId], references: [id], onDelete: Cascade)
 
   timeId Int
-  time   Time @relation(fields: [timeId], references: [id])
+  time   Time @relation(fields: [timeId], references: [id], onDelete: Cascade)
 
   pontos     Int @default(0)
   vitorias   Int @default(0)
@@ -308,30 +380,30 @@ model TimeGrupo {
   saldoGols  Int @default(0)
 
   @@unique([grupoId, timeId])
+  @@index([grupoId])
+  @@index([timeId])
 }
 
 model Jogo {
   id           Int        @id @default(autoincrement())
   campeonatoId Int
-  campeonato   Campeonato @relation(fields: [campeonatoId], references: [id])
+  campeonato   Campeonato @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
 
   round   Int
   grupoId Int?
-  grupo   Grupo? @relation(fields: [grupoId], references: [id])
+  grupo   Grupo? @relation(fields: [grupoId], references: [id], onDelete: SetNull)
 
   timeAId Int
-  timeA   Time @relation("JogoTimeA", fields: [timeAId], references: [id])
+  timeA   Time @relation("JogoTimeA", fields: [timeAId], references: [id], onDelete: Cascade)
 
   timeBId Int
-  timeB   Time @relation("JogoTimeB", fields: [timeBId], references: [id])
+  timeB   Time @relation("JogoTimeB", fields: [timeBId], references: [id], onDelete: Cascade)
 
   golsA Int?
   golsB Int?
 
-  // vencedor direto (mata-mata) OU nulo (grupo empate)
   vencedorId Int?
 
-  // NOVO: desempate (quando empate no mata-mata)
   desempateTipo DesempateTipo?
   penaltisA     Int?
   penaltisB     Int?
@@ -341,39 +413,42 @@ model Jogo {
 
   finalizado Boolean @default(false)
 
-  // antigo (mantido)
   estatisticas EstatisticaJogo[]
 
-  // NOVO: detalhes
   estatisticasTimes JogoEstatisticaTime[]
   eventos           JogoEvento[]
   jogadoresAtuacao  JogoJogador[]
+
+  @@index([campeonatoId])
+  @@index([grupoId])
+  @@index([timeAId])
+  @@index([timeBId])
 }
 
 model EstatisticaJogo {
   id     Int  @id @default(autoincrement())
   jogoId Int
-  jogo   Jogo @relation(fields: [jogoId], references: [id])
+  jogo   Jogo @relation(fields: [jogoId], references: [id], onDelete: Cascade)
 
   jogadorId Int
-  jogador   Usuario @relation(fields: [jogadorId], references: [id])
+  jogador   Usuario @relation(fields: [jogadorId], references: [id], onDelete: Cascade)
 
   gols      Int @default(0)
   amarelos  Int @default(0)
   vermelhos Int @default(0)
+
+  @@index([jogoId])
+  @@index([jogadorId])
 }
 
-//
-// ✅ NOVO: Tabela geral do campeonato (campanha do time)
-//
 model TabelaCampeonato {
   id Int @id @default(autoincrement())
 
   campeonatoId Int
-  campeonato   Campeonato @relation(fields: [campeonatoId], references: [id])
+  campeonato   Campeonato @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
 
   timeId Int
-  time   Time @relation(fields: [timeId], references: [id])
+  time   Time @relation(fields: [timeId], references: [id], onDelete: Cascade)
 
   pontos     Int @default(0)
   vitorias   Int @default(0)
@@ -386,127 +461,78 @@ model TabelaCampeonato {
   updatedAt DateTime @updatedAt
 
   @@unique([campeonatoId, timeId])
+  @@index([campeonatoId])
+  @@index([timeId])
 }
 
-//
-// ✅ NOVO: Estatística por TIME dentro do jogo
-//
 model JogoEstatisticaTime {
   id Int @id @default(autoincrement())
 
   jogoId Int
-  jogo   Jogo @relation(fields: [jogoId], references: [id])
+  jogo   Jogo @relation(fields: [jogoId], references: [id], onDelete: Cascade)
 
   timeId Int
-  time   Time @relation(fields: [timeId], references: [id])
+  time   Time @relation(fields: [timeId], references: [id], onDelete: Cascade)
 
   chutes      Int @default(0)
   chutesNoGol Int @default(0)
   escanteios  Int @default(0)
   laterais    Int @default(0)
   faltas      Int @default(0)
-  posse       Int @default(0) // 0..100 (opcional)
+  posse       Int @default(0)
 
   updatedAt DateTime @updatedAt
 
   @@unique([jogoId, timeId])
+  @@index([jogoId])
+  @@index([timeId])
 }
 
-//
-// ✅ NOVO: Quem jogou (escalação / atuação)
-//
 model JogoJogador {
   id Int @id @default(autoincrement())
 
   jogoId Int
-  jogo   Jogo @relation(fields: [jogoId], references: [id])
+  jogo   Jogo @relation(fields: [jogoId], references: [id], onDelete: Cascade)
 
   timeId Int
-  time   Time @relation(fields: [timeId], references: [id])
+  time   Time @relation(fields: [timeId], references: [id], onDelete: Cascade)
 
   jogadorId Int
-  jogador   Usuario @relation(fields: [jogadorId], references: [id])
+  jogador   Usuario @relation(fields: [jogadorId], references: [id], onDelete: Cascade)
 
   titular      Boolean @default(false)
   entrouMinuto Int?
   saiuMinuto   Int?
 
   @@unique([jogoId, jogadorId])
+  @@index([jogoId])
+  @@index([timeId])
+  @@index([jogadorId])
 }
 
-//
-// ✅ NOVO: Eventos do jogo (timeline simples)
-//
 model JogoEvento {
   id Int @id @default(autoincrement())
 
   jogoId Int
-  jogo   Jogo @relation(fields: [jogoId], references: [id])
+  jogo   Jogo @relation(fields: [jogoId], references: [id], onDelete: Cascade)
 
-  tipo EventoTipo
-
+  tipo   EventoTipo
   minuto Int?
 
   timeId Int?
-  time   Time? @relation(fields: [timeId], references: [id])
+  time   Time? @relation(fields: [timeId], references: [id], onDelete: SetNull)
 
   jogadorId Int?
-  jogador   Usuario? @relation(fields: [jogadorId], references: [id])
+  jogador   Usuario? @relation(fields: [jogadorId], references: [id], onDelete: SetNull)
 
-  // para substituição
   jogadorSaindoId   Int?
   jogadorEntrandoId Int?
 
   detalhe String?
 
   createdAt DateTime @default(now())
-}
 
-enum StatusAgendamento {
-  PENDENTE
-  CONFIRMADO
-  CANCELADO
-}
-
-enum StatusPagamento {
-  PENDENTE
-  PAGO
-  CANCELADO
-}
-
-enum FormaPagamento {
-  PIX
-  DINHEIRO
-  CARTAO
-  TRANSFERENCIA
-  OUTRO
-}
-
-model Agendamento {
-  id Int @id @default(autoincrement())
-
-  societyId Int
-  society   Society @relation(fields: [societyId], references: [id])
-
-  campoId Int
-  campo   Campo @relation(fields: [campoId], references: [id])
-
-  timeId Int
-  time   Time @relation(fields: [timeId], references: [id])
-
-  data       DateTime
-  horaInicio String
-  horaFim    String
-
-  valor Float
-
-  status StatusAgendamento @default(PENDENTE)
-
-  // ✅ relação 1–1 CORRETA
-  pagamento Pagamento?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([societyId, campoId, data])
+  @@index([jogoId])
+  @@index([timeId])
+  @@index([jogadorId])
 }

@@ -65,6 +65,7 @@ router.get("/cardapio/:societyId", cardapioController.list);
 router.post("/campos", campoController.create);
 router.get("/campos/:societyId", campoController.listBySociety);
 
+
 /* =========================
    CONVITE
 ========================= */

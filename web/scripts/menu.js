@@ -20,7 +20,6 @@ if (!window.menuLoaded) {
     if (usuarioLogado.tipo === "DONO_SOCIETY") {
         html += `
       <li onclick="location.href='society-create.html'"><i class="fa fa-plus"></i> Cadastrar Society</li>
-      <li onclick="location.href='campos.html'"><i class="fa fa-map"></i> Gerenciar Campos</li>
       <li onclick="location.href='campeonatos.html'"><i class="fa fa-trophy"></i> Campeonatos</li>
       <li onclick="location.href='pagamentos.html'"><i class="fa fa-credit-card"></i> Recebimentos</li>
       <li onclick="location.href='society-dashboard.html'"><i class="fa fa-chart-line"></i> Dashboard</li>

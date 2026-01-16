@@ -56,6 +56,7 @@ CREATE TABLE `Cardapio` (
     `preco` DOUBLE NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
+    INDEX `Cardapio_societyId_idx`(`societyId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -66,11 +67,13 @@ CREATE TABLE `Campo` (
     `nome` VARCHAR(191) NOT NULL,
     `valorAvulso` DOUBLE NULL,
     `valorMensal` DOUBLE NULL,
-    `foto` VARCHAR(191) NULL,
+    `fotoUrl` VARCHAR(191) NULL,
     `dimensoes` VARCHAR(191) NULL,
-    `estiloGramado` VARCHAR(191) NULL,
+    `gramado` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
+    INDEX `Campo_societyId_idx`(`societyId`),
+    UNIQUE INDEX `Campo_societyId_nome_key`(`societyId`, `nome`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -88,6 +91,8 @@ CREATE TABLE `Time` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
+    INDEX `Time_societyId_idx`(`societyId`),
+    INDEX `Time_donoId_idx`(`donoId`),
     UNIQUE INDEX `Time_societyId_nome_key`(`societyId`, `nome`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -109,6 +114,29 @@ CREATE TABLE `Pagamento` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     UNIQUE INDEX `Pagamento_agendamentoId_key`(`agendamentoId`),
+    INDEX `Pagamento_societyId_idx`(`societyId`),
+    INDEX `Pagamento_usuarioId_idx`(`usuarioId`),
+    INDEX `Pagamento_timeId_idx`(`timeId`),
+    INDEX `Pagamento_campoId_idx`(`campoId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Agendamento` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `societyId` INTEGER NOT NULL,
+    `campoId` INTEGER NOT NULL,
+    `timeId` INTEGER NOT NULL,
+    `data` DATETIME(3) NOT NULL,
+    `horaInicio` VARCHAR(191) NOT NULL,
+    `horaFim` VARCHAR(191) NOT NULL,
+    `valor` DOUBLE NOT NULL,
+    `status` ENUM('PENDENTE', 'CONFIRMADO', 'CANCELADO') NOT NULL DEFAULT 'PENDENTE',
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    INDEX `Agendamento_societyId_campoId_data_idx`(`societyId`, `campoId`, `data`),
+    INDEX `Agendamento_timeId_data_idx`(`timeId`, `data`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -119,6 +147,9 @@ CREATE TABLE `SocietyPlayer` (
     `usuarioId` INTEGER NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
+    INDEX `SocietyPlayer_societyId_idx`(`societyId`),
+    INDEX `SocietyPlayer_usuarioId_idx`(`usuarioId`),
+    UNIQUE INDEX `SocietyPlayer_societyId_usuarioId_key`(`societyId`, `usuarioId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -131,6 +162,7 @@ CREATE TABLE `Notificacao` (
     `lido` BOOLEAN NOT NULL DEFAULT false,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
+    INDEX `Notificacao_usuarioId_idx`(`usuarioId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -147,6 +179,7 @@ CREATE TABLE `Campeonato` (
     `viceCampeaoId` INTEGER NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
+    INDEX `Campeonato_societyId_idx`(`societyId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -156,6 +189,8 @@ CREATE TABLE `TimeCampeonato` (
     `campeonatoId` INTEGER NOT NULL,
     `timeId` INTEGER NOT NULL,
 
+    INDEX `TimeCampeonato_campeonatoId_idx`(`campeonatoId`),
+    INDEX `TimeCampeonato_timeId_idx`(`timeId`),
     UNIQUE INDEX `TimeCampeonato_campeonatoId_timeId_key`(`campeonatoId`, `timeId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -166,6 +201,7 @@ CREATE TABLE `Grupo` (
     `nome` VARCHAR(191) NOT NULL,
     `campeonatoId` INTEGER NOT NULL,
 
+    INDEX `Grupo_campeonatoId_idx`(`campeonatoId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -182,6 +218,8 @@ CREATE TABLE `TimeGrupo` (
     `golsContra` INTEGER NOT NULL DEFAULT 0,
     `saldoGols` INTEGER NOT NULL DEFAULT 0,
 
+    INDEX `TimeGrupo_grupoId_idx`(`grupoId`),
+    INDEX `TimeGrupo_timeId_idx`(`timeId`),
     UNIQUE INDEX `TimeGrupo_grupoId_timeId_key`(`grupoId`, `timeId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -204,6 +242,10 @@ CREATE TABLE `Jogo` (
     `dataHora` DATETIME(3) NULL,
     `finalizado` BOOLEAN NOT NULL DEFAULT false,
 
+    INDEX `Jogo_campeonatoId_idx`(`campeonatoId`),
+    INDEX `Jogo_grupoId_idx`(`grupoId`),
+    INDEX `Jogo_timeAId_idx`(`timeAId`),
+    INDEX `Jogo_timeBId_idx`(`timeBId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -216,6 +258,8 @@ CREATE TABLE `EstatisticaJogo` (
     `amarelos` INTEGER NOT NULL DEFAULT 0,
     `vermelhos` INTEGER NOT NULL DEFAULT 0,
 
+    INDEX `EstatisticaJogo_jogoId_idx`(`jogoId`),
+    INDEX `EstatisticaJogo_jogadorId_idx`(`jogadorId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -233,6 +277,8 @@ CREATE TABLE `TabelaCampeonato` (
     `saldoGols` INTEGER NOT NULL DEFAULT 0,
     `updatedAt` DATETIME(3) NOT NULL,
 
+    INDEX `TabelaCampeonato_campeonatoId_idx`(`campeonatoId`),
+    INDEX `TabelaCampeonato_timeId_idx`(`timeId`),
     UNIQUE INDEX `TabelaCampeonato_campeonatoId_timeId_key`(`campeonatoId`, `timeId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -250,6 +296,8 @@ CREATE TABLE `JogoEstatisticaTime` (
     `posse` INTEGER NOT NULL DEFAULT 0,
     `updatedAt` DATETIME(3) NOT NULL,
 
+    INDEX `JogoEstatisticaTime_jogoId_idx`(`jogoId`),
+    INDEX `JogoEstatisticaTime_timeId_idx`(`timeId`),
     UNIQUE INDEX `JogoEstatisticaTime_jogoId_timeId_key`(`jogoId`, `timeId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -264,6 +312,9 @@ CREATE TABLE `JogoJogador` (
     `entrouMinuto` INTEGER NULL,
     `saiuMinuto` INTEGER NULL,
 
+    INDEX `JogoJogador_jogoId_idx`(`jogoId`),
+    INDEX `JogoJogador_timeId_idx`(`timeId`),
+    INDEX `JogoJogador_jogadorId_idx`(`jogadorId`),
     UNIQUE INDEX `JogoJogador_jogoId_jogadorId_key`(`jogoId`, `jogadorId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -281,24 +332,9 @@ CREATE TABLE `JogoEvento` (
     `detalhe` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `Agendamento` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `societyId` INTEGER NOT NULL,
-    `campoId` INTEGER NOT NULL,
-    `timeId` INTEGER NOT NULL,
-    `data` DATETIME(3) NOT NULL,
-    `horaInicio` VARCHAR(191) NOT NULL,
-    `horaFim` VARCHAR(191) NOT NULL,
-    `valor` DOUBLE NOT NULL,
-    `status` ENUM('PENDENTE', 'CONFIRMADO', 'CANCELADO') NOT NULL DEFAULT 'PENDENTE',
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
-
-    INDEX `Agendamento_societyId_campoId_data_idx`(`societyId`, `campoId`, `data`),
+    INDEX `JogoEvento_jogoId_idx`(`jogoId`),
+    INDEX `JogoEvento_timeId_idx`(`timeId`),
+    INDEX `JogoEvento_jogadorId_idx`(`jogadorId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -306,25 +342,25 @@ CREATE TABLE `Agendamento` (
 ALTER TABLE `Usuario` ADD CONSTRAINT `Usuario_timeRelacionadoId_fkey` FOREIGN KEY (`timeRelacionadoId`) REFERENCES `Time`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Society` ADD CONSTRAINT `Society_usuarioId_fkey` FOREIGN KEY (`usuarioId`) REFERENCES `Usuario`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Society` ADD CONSTRAINT `Society_usuarioId_fkey` FOREIGN KEY (`usuarioId`) REFERENCES `Usuario`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Cardapio` ADD CONSTRAINT `Cardapio_societyId_fkey` FOREIGN KEY (`societyId`) REFERENCES `Society`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Cardapio` ADD CONSTRAINT `Cardapio_societyId_fkey` FOREIGN KEY (`societyId`) REFERENCES `Society`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Campo` ADD CONSTRAINT `Campo_societyId_fkey` FOREIGN KEY (`societyId`) REFERENCES `Society`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Campo` ADD CONSTRAINT `Campo_societyId_fkey` FOREIGN KEY (`societyId`) REFERENCES `Society`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Time` ADD CONSTRAINT `Time_societyId_fkey` FOREIGN KEY (`societyId`) REFERENCES `Society`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Time` ADD CONSTRAINT `Time_societyId_fkey` FOREIGN KEY (`societyId`) REFERENCES `Society`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Time` ADD CONSTRAINT `Time_donoId_fkey` FOREIGN KEY (`donoId`) REFERENCES `Usuario`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Time` ADD CONSTRAINT `Time_donoId_fkey` FOREIGN KEY (`donoId`) REFERENCES `Usuario`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Pagamento` ADD CONSTRAINT `Pagamento_usuarioId_fkey` FOREIGN KEY (`usuarioId`) REFERENCES `Usuario`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Pagamento` ADD CONSTRAINT `Pagamento_usuarioId_fkey` FOREIGN KEY (`usuarioId`) REFERENCES `Usuario`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Pagamento` ADD CONSTRAINT `Pagamento_societyId_fkey` FOREIGN KEY (`societyId`) REFERENCES `Society`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Pagamento` ADD CONSTRAINT `Pagamento_societyId_fkey` FOREIGN KEY (`societyId`) REFERENCES `Society`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Pagamento` ADD CONSTRAINT `Pagamento_timeId_fkey` FOREIGN KEY (`timeId`) REFERENCES `Time`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
@@ -333,19 +369,28 @@ ALTER TABLE `Pagamento` ADD CONSTRAINT `Pagamento_timeId_fkey` FOREIGN KEY (`tim
 ALTER TABLE `Pagamento` ADD CONSTRAINT `Pagamento_campoId_fkey` FOREIGN KEY (`campoId`) REFERENCES `Campo`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Pagamento` ADD CONSTRAINT `Pagamento_agendamentoId_fkey` FOREIGN KEY (`agendamentoId`) REFERENCES `Agendamento`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `Pagamento` ADD CONSTRAINT `Pagamento_agendamentoId_fkey` FOREIGN KEY (`agendamentoId`) REFERENCES `Agendamento`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `SocietyPlayer` ADD CONSTRAINT `SocietyPlayer_societyId_fkey` FOREIGN KEY (`societyId`) REFERENCES `Society`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Agendamento` ADD CONSTRAINT `Agendamento_societyId_fkey` FOREIGN KEY (`societyId`) REFERENCES `Society`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `SocietyPlayer` ADD CONSTRAINT `SocietyPlayer_usuarioId_fkey` FOREIGN KEY (`usuarioId`) REFERENCES `Usuario`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Agendamento` ADD CONSTRAINT `Agendamento_campoId_fkey` FOREIGN KEY (`campoId`) REFERENCES `Campo`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Notificacao` ADD CONSTRAINT `Notificacao_usuarioId_fkey` FOREIGN KEY (`usuarioId`) REFERENCES `Usuario`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Agendamento` ADD CONSTRAINT `Agendamento_timeId_fkey` FOREIGN KEY (`timeId`) REFERENCES `Time`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Campeonato` ADD CONSTRAINT `Campeonato_societyId_fkey` FOREIGN KEY (`societyId`) REFERENCES `Society`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `SocietyPlayer` ADD CONSTRAINT `SocietyPlayer_societyId_fkey` FOREIGN KEY (`societyId`) REFERENCES `Society`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `SocietyPlayer` ADD CONSTRAINT `SocietyPlayer_usuarioId_fkey` FOREIGN KEY (`usuarioId`) REFERENCES `Usuario`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Notificacao` ADD CONSTRAINT `Notificacao_usuarioId_fkey` FOREIGN KEY (`usuarioId`) REFERENCES `Usuario`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Campeonato` ADD CONSTRAINT `Campeonato_societyId_fkey` FOREIGN KEY (`societyId`) REFERENCES `Society`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Campeonato` ADD CONSTRAINT `Campeonato_campeaoId_fkey` FOREIGN KEY (`campeaoId`) REFERENCES `Time`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
@@ -354,73 +399,64 @@ ALTER TABLE `Campeonato` ADD CONSTRAINT `Campeonato_campeaoId_fkey` FOREIGN KEY 
 ALTER TABLE `Campeonato` ADD CONSTRAINT `Campeonato_viceCampeaoId_fkey` FOREIGN KEY (`viceCampeaoId`) REFERENCES `Time`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `TimeCampeonato` ADD CONSTRAINT `TimeCampeonato_campeonatoId_fkey` FOREIGN KEY (`campeonatoId`) REFERENCES `Campeonato`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `TimeCampeonato` ADD CONSTRAINT `TimeCampeonato_campeonatoId_fkey` FOREIGN KEY (`campeonatoId`) REFERENCES `Campeonato`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `TimeCampeonato` ADD CONSTRAINT `TimeCampeonato_timeId_fkey` FOREIGN KEY (`timeId`) REFERENCES `Time`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `TimeCampeonato` ADD CONSTRAINT `TimeCampeonato_timeId_fkey` FOREIGN KEY (`timeId`) REFERENCES `Time`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Grupo` ADD CONSTRAINT `Grupo_campeonatoId_fkey` FOREIGN KEY (`campeonatoId`) REFERENCES `Campeonato`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Grupo` ADD CONSTRAINT `Grupo_campeonatoId_fkey` FOREIGN KEY (`campeonatoId`) REFERENCES `Campeonato`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `TimeGrupo` ADD CONSTRAINT `TimeGrupo_grupoId_fkey` FOREIGN KEY (`grupoId`) REFERENCES `Grupo`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `TimeGrupo` ADD CONSTRAINT `TimeGrupo_grupoId_fkey` FOREIGN KEY (`grupoId`) REFERENCES `Grupo`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `TimeGrupo` ADD CONSTRAINT `TimeGrupo_timeId_fkey` FOREIGN KEY (`timeId`) REFERENCES `Time`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `TimeGrupo` ADD CONSTRAINT `TimeGrupo_timeId_fkey` FOREIGN KEY (`timeId`) REFERENCES `Time`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Jogo` ADD CONSTRAINT `Jogo_campeonatoId_fkey` FOREIGN KEY (`campeonatoId`) REFERENCES `Campeonato`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Jogo` ADD CONSTRAINT `Jogo_campeonatoId_fkey` FOREIGN KEY (`campeonatoId`) REFERENCES `Campeonato`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Jogo` ADD CONSTRAINT `Jogo_grupoId_fkey` FOREIGN KEY (`grupoId`) REFERENCES `Grupo`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Jogo` ADD CONSTRAINT `Jogo_timeAId_fkey` FOREIGN KEY (`timeAId`) REFERENCES `Time`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Jogo` ADD CONSTRAINT `Jogo_timeAId_fkey` FOREIGN KEY (`timeAId`) REFERENCES `Time`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Jogo` ADD CONSTRAINT `Jogo_timeBId_fkey` FOREIGN KEY (`timeBId`) REFERENCES `Time`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Jogo` ADD CONSTRAINT `Jogo_timeBId_fkey` FOREIGN KEY (`timeBId`) REFERENCES `Time`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `EstatisticaJogo` ADD CONSTRAINT `EstatisticaJogo_jogoId_fkey` FOREIGN KEY (`jogoId`) REFERENCES `Jogo`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `EstatisticaJogo` ADD CONSTRAINT `EstatisticaJogo_jogoId_fkey` FOREIGN KEY (`jogoId`) REFERENCES `Jogo`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `EstatisticaJogo` ADD CONSTRAINT `EstatisticaJogo_jogadorId_fkey` FOREIGN KEY (`jogadorId`) REFERENCES `Usuario`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `EstatisticaJogo` ADD CONSTRAINT `EstatisticaJogo_jogadorId_fkey` FOREIGN KEY (`jogadorId`) REFERENCES `Usuario`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `TabelaCampeonato` ADD CONSTRAINT `TabelaCampeonato_campeonatoId_fkey` FOREIGN KEY (`campeonatoId`) REFERENCES `Campeonato`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `TabelaCampeonato` ADD CONSTRAINT `TabelaCampeonato_campeonatoId_fkey` FOREIGN KEY (`campeonatoId`) REFERENCES `Campeonato`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `TabelaCampeonato` ADD CONSTRAINT `TabelaCampeonato_timeId_fkey` FOREIGN KEY (`timeId`) REFERENCES `Time`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `TabelaCampeonato` ADD CONSTRAINT `TabelaCampeonato_timeId_fkey` FOREIGN KEY (`timeId`) REFERENCES `Time`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `JogoEstatisticaTime` ADD CONSTRAINT `JogoEstatisticaTime_jogoId_fkey` FOREIGN KEY (`jogoId`) REFERENCES `Jogo`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `JogoEstatisticaTime` ADD CONSTRAINT `JogoEstatisticaTime_jogoId_fkey` FOREIGN KEY (`jogoId`) REFERENCES `Jogo`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `JogoEstatisticaTime` ADD CONSTRAINT `JogoEstatisticaTime_timeId_fkey` FOREIGN KEY (`timeId`) REFERENCES `Time`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `JogoEstatisticaTime` ADD CONSTRAINT `JogoEstatisticaTime_timeId_fkey` FOREIGN KEY (`timeId`) REFERENCES `Time`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `JogoJogador` ADD CONSTRAINT `JogoJogador_jogoId_fkey` FOREIGN KEY (`jogoId`) REFERENCES `Jogo`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `JogoJogador` ADD CONSTRAINT `JogoJogador_jogoId_fkey` FOREIGN KEY (`jogoId`) REFERENCES `Jogo`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `JogoJogador` ADD CONSTRAINT `JogoJogador_timeId_fkey` FOREIGN KEY (`timeId`) REFERENCES `Time`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `JogoJogador` ADD CONSTRAINT `JogoJogador_timeId_fkey` FOREIGN KEY (`timeId`) REFERENCES `Time`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `JogoJogador` ADD CONSTRAINT `JogoJogador_jogadorId_fkey` FOREIGN KEY (`jogadorId`) REFERENCES `Usuario`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `JogoJogador` ADD CONSTRAINT `JogoJogador_jogadorId_fkey` FOREIGN KEY (`jogadorId`) REFERENCES `Usuario`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `JogoEvento` ADD CONSTRAINT `JogoEvento_jogoId_fkey` FOREIGN KEY (`jogoId`) REFERENCES `Jogo`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `JogoEvento` ADD CONSTRAINT `JogoEvento_jogoId_fkey` FOREIGN KEY (`jogoId`) REFERENCES `Jogo`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `JogoEvento` ADD CONSTRAINT `JogoEvento_timeId_fkey` FOREIGN KEY (`timeId`) REFERENCES `Time`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `JogoEvento` ADD CONSTRAINT `JogoEvento_jogadorId_fkey` FOREIGN KEY (`jogadorId`) REFERENCES `Usuario`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Agendamento` ADD CONSTRAINT `Agendamento_societyId_fkey` FOREIGN KEY (`societyId`) REFERENCES `Society`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Agendamento` ADD CONSTRAINT `Agendamento_campoId_fkey` FOREIGN KEY (`campoId`) REFERENCES `Campo`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Agendamento` ADD CONSTRAINT `Agendamento_timeId_fkey` FOREIGN KEY (`timeId`) REFERENCES `Time`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
