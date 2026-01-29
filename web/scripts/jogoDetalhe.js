@@ -1,21 +1,102 @@
+// ✅ web/scripts/jogo-detalhe.js (ARQUIVO TODO)
 const BASE_URL = "http://localhost:3000";
 
 let jogoId = null;
 let cache = null;
 
+/* =========================
+   PERMISSÃO (READ ONLY)
+========================= */
+function getUsuarioLogado() {
+    try { return JSON.parse(localStorage.getItem("usuarioLogado") || "null"); } catch { return null; }
+}
+
+function isSomenteLeitura() {
+    const u = getUsuarioLogado();
+    // ✅ Somente DONO_SOCIETY pode editar jogo
+    return !u || u.tipo !== "DONO_SOCIETY";
+}
+
+function habilitarModoSomenteLeitura() {
+    // banner
+    const banner = document.createElement("div");
+    banner.style.margin = "10px 0";
+    banner.style.padding = "10px 12px";
+    banner.style.borderRadius = "12px";
+    banner.style.background = "#fff7ed";
+    banner.style.border = "1px solid #fed7aa";
+    banner.style.color = "#9a3412";
+    banner.style.fontWeight = "900";
+    banner.textContent = "Você está apenas visualizando. PLAYER e DONO_TIME não podem alterar dados do jogo.";
+    const alvo = document.querySelector(".content") || document.body;
+    alvo.prepend(banner);
+
+    // desabilita inputs, selects e textareas
+    document.querySelectorAll("input, select, textarea").forEach(el => {
+        el.disabled = true;
+        el.style.opacity = "0.75";
+        el.style.cursor = "not-allowed";
+    });
+
+    // desabilita botões de ações
+    document.querySelectorAll("button").forEach(btn => {
+        const t = (btn.textContent || "").toLowerCase();
+        // trava tudo que for ação
+        if (t.includes("salvar") || t.includes("adicionar") || t.includes("finalizar") || t.includes("escalar")) {
+            btn.disabled = true;
+            btn.style.opacity = "0.55";
+            btn.style.cursor = "not-allowed";
+            btn.title = "Somente o dono do society pode editar.";
+        }
+    });
+
+    // se existir botão "Adicionar evento", trava também pelo ID
+    const btnAddEvento = document.getElementById("btnAddEvento");
+    if (btnAddEvento) {
+        btnAddEvento.disabled = true;
+        btnAddEvento.style.opacity = "0.55";
+        btnAddEvento.style.cursor = "not-allowed";
+        btnAddEvento.title = "Somente o dono do society pode editar.";
+    }
+}
+
+function denyEdit() {
+    alert("Você está apenas visualizando. Somente o dono do society pode alterar o jogo.");
+}
+
+/* =========================
+   BOOT
+========================= */
 document.addEventListener("DOMContentLoaded", () => {
     jogoId = new URLSearchParams(location.search).get("jogoId");
     if (!jogoId) return alert("jogoId não informado.");
 
-    document.getElementById("btnVoltar").addEventListener("click", () => history.back());
-    document.getElementById("btnAtualizar").addEventListener("click", load);
-    document.getElementById("btnAddEvento").addEventListener("click", addEvento);
+    const btnVoltar = document.getElementById("btnVoltar");
+    const btnAtualizar = document.getElementById("btnAtualizar");
+    const btnAddEvento = document.getElementById("btnAddEvento");
+
+    if (btnVoltar) btnVoltar.addEventListener("click", () => history.back());
+    if (btnAtualizar) btnAtualizar.addEventListener("click", load);
+
+    // ✅ Só o dono do society pode adicionar evento
+    if (btnAddEvento) {
+        if (isSomenteLeitura()) {
+            btnAddEvento.addEventListener("click", (e) => { e.preventDefault(); denyEdit(); });
+        } else {
+            btnAddEvento.addEventListener("click", addEvento);
+        }
+    }
 
     load();
 });
 
+/* =========================
+   UI HELPERS
+========================= */
 function msg(text, type = "info") {
     const el = document.getElementById("msg");
+    if (!el) return;
+
     const bg = type === "error" ? "#fff2f2" : type === "ok" ? "#f2fff5" : "#f3f7ff";
     const br = type === "error" ? "#ffd0d0" : type === "ok" ? "#cfead5" : "#dbe7ff";
     el.innerHTML = `<div style="padding:12px 14px;border-radius:12px;border:1px solid ${br};background:${bg};">${text}</div>`;
@@ -30,6 +111,9 @@ async function safeFetchJSON(url, options = {}) {
     return data;
 }
 
+/* =========================
+   LOAD
+========================= */
 async function load() {
     try {
         msg("Carregando...", "info");
@@ -49,6 +133,9 @@ async function load() {
         renderEventos(jogo);
 
         msg("Ok — dados carregados.", "ok");
+
+        // ✅ IMPORTANTE: só depois de renderizar, aplica read-only (pra pegar botões gerados no HTML)
+        if (isSomenteLeitura()) habilitarModoSomenteLeitura();
     } catch (e) {
         console.error(e);
         msg(`Erro: ${e.message}`, "error");
@@ -57,37 +144,54 @@ async function load() {
 
 function buildTimeSelect(jogo) {
     const evTime = document.getElementById("evTime");
+    if (!evTime) return;
+
     evTime.innerHTML = `
     <option value="${jogo.timeAId}">${jogo.timeA.nome}</option>
     <option value="${jogo.timeBId}">${jogo.timeB.nome}</option>
   `;
 
-    evTime.addEventListener("change", () => fillJogadoresDoTime());
+    // só precisa atualizar lista de jogadores do select (isso pode existir no modo leitura também)
+    evTime.onchange = () => fillJogadoresDoTime();
     fillJogadoresDoTime();
 }
 
 function fillJogadoresDoTime() {
+    if (!cache?.jogo) return;
+
     const jogo = cache.jogo;
     const evTime = Number(document.getElementById("evTime").value);
     const evJogador = document.getElementById("evJogador");
 
+    if (!evJogador) return;
+
     const elenco = evTime === jogo.timeAId ? cache.elencoA : cache.elencoB;
 
     evJogador.innerHTML = `<option value="">Jogador (opcional)</option>`;
-    elenco.forEach((p) => {
+    (elenco || []).forEach((p) => {
         evJogador.innerHTML += `<option value="${p.id}">${p.nome}${p.posicaoCampo ? " • " + p.posicaoCampo : ""}</option>`;
     });
 }
 
+/* =========================
+   STATS
+========================= */
 function renderStats(jogo) {
     const a = jogo.estatisticasTimes?.find((x) => x.timeId === jogo.timeAId) || null;
     const b = jogo.estatisticasTimes?.find((x) => x.timeId === jogo.timeBId) || null;
 
-    document.getElementById("statsA").innerHTML = statsForm(jogo.timeAId, a);
-    document.getElementById("statsB").innerHTML = statsForm(jogo.timeBId, b);
+    const statsA = document.getElementById("statsA");
+    const statsB = document.getElementById("statsB");
+    if (!statsA || !statsB) return;
+
+    statsA.innerHTML = statsForm(jogo.timeAId, a);
+    statsB.innerHTML = statsForm(jogo.timeBId, b);
 
     document.querySelectorAll("[data-save-stats]").forEach((btn) => {
-        btn.addEventListener("click", () => saveStats(Number(btn.dataset.timeId)));
+        btn.addEventListener("click", () => {
+            if (isSomenteLeitura()) return denyEdit();
+            saveStats(Number(btn.dataset.timeId));
+        });
     });
 }
 
@@ -121,6 +225,8 @@ function field(label, id, value) {
 }
 
 async function saveStats(timeId) {
+    if (isSomenteLeitura()) return denyEdit();
+
     try {
         const payload = {
             timeId,
@@ -145,12 +251,22 @@ async function saveStats(timeId) {
     }
 }
 
+/* =========================
+   ELENCO / ESCALAÇÃO
+========================= */
 function renderElenco(elencoA, elencoB, jogo) {
-    document.getElementById("elencoA").innerHTML = elencoBox(elencoA, jogo, jogo.timeAId);
-    document.getElementById("elencoB").innerHTML = elencoBox(elencoB, jogo, jogo.timeBId);
+    const elA = document.getElementById("elencoA");
+    const elB = document.getElementById("elencoB");
+    if (!elA || !elB) return;
+
+    elA.innerHTML = elencoBox(elencoA || [], jogo, jogo.timeAId);
+    elB.innerHTML = elencoBox(elencoB || [], jogo, jogo.timeBId);
 
     document.querySelectorAll("[data-add-lineup]").forEach((btn) => {
-        btn.addEventListener("click", () => addLineup(Number(btn.dataset.timeId), Number(btn.dataset.jogadorId)));
+        btn.addEventListener("click", () => {
+            if (isSomenteLeitura()) return denyEdit();
+            addLineup(Number(btn.dataset.timeId), Number(btn.dataset.jogadorId));
+        });
     });
 }
 
@@ -177,6 +293,8 @@ function elencoBox(elenco, jogo, timeId) {
 }
 
 async function addLineup(timeId, jogadorId) {
+    if (isSomenteLeitura()) return denyEdit();
+
     try {
         await safeFetchJSON(`${BASE_URL}/jogo/${jogoId}/escalacao`, {
             method: "POST",
@@ -190,8 +308,13 @@ async function addLineup(timeId, jogadorId) {
     }
 }
 
+/* =========================
+   EVENTOS
+========================= */
 function renderEventos(jogo) {
     const div = document.getElementById("listaEventos");
+    if (!div) return;
+
     const evs = jogo.eventos || [];
 
     if (!evs.length) {
@@ -215,6 +338,8 @@ function renderEventos(jogo) {
 }
 
 async function addEvento() {
+    if (isSomenteLeitura()) return denyEdit();
+
     try {
         const tipo = document.getElementById("evTipo").value;
         const minuto = document.getElementById("evMinuto").value;

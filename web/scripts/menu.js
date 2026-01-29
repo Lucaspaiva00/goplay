@@ -35,6 +35,14 @@ if (!window.menuLoaded) {
       <li onclick="location.href='meus-pagamentos.html'"><i class="fa fa-money-bill"></i> Meus Pagamentos</li>
     `;
     }
+    // ✅ DONO_TIME e PLAYER podem ver campeonatos
+    if (usuarioLogado.tipo === "DONO_TIME" || usuarioLogado.tipo === "PLAYER") {
+        html += `
+    <li onclick="location.href='campeonatos-view.html'">
+      <i class="fa fa-trophy"></i> Campeonatos
+    </li>
+  `;
+    }
 
     // ✅ PLAYER
     if (usuarioLogado.tipo === "PLAYER") {
@@ -48,6 +56,8 @@ if (!window.menuLoaded) {
     <li onclick="location.href='perfil.html'"><i class="fa fa-user"></i> Perfil</li>
     <li id="btnSairMenu"><i class="fa fa-sign-out-alt"></i> Sair</li>
   `;
+
+
 
     if (menu) menu.innerHTML = html;
 

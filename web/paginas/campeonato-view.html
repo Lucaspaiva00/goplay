@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Campeonato — GoPlay</title>
+
+    <link rel="stylesheet" href="../css/goplay_home.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <style>
+        .wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 6px 18px rgba(16, 24, 40, .08);
+            margin: 18px auto;
+        }
+
+        .head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .h {
+            font-weight: 900;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #052845;
+        }
+
+        .muted {
+            opacity: .75;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .chip {
+            font-size: 12px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid #e6edf7;
+            background: #f7faff;
+            font-weight: 900;
+            color: #052845;
+            display: inline-flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1.2fr .8fr;
+            gap: 14px;
+        }
+
+        @media (max-width: 980px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .table-wrap {
+            overflow: auto;
+            border-radius: 14px;
+            border: 1px solid #eef2f6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 720px;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #eef2f6;
+            font-size: 14px;
+        }
+
+        thead th {
+            font-size: 12px;
+            opacity: .7;
+            font-weight: 900;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .status {
+            font-weight: 900;
+            font-size: 12px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+
+        .box {
+            border: 1px solid #eef2f6;
+            border-radius: 14px;
+            padding: 14px;
+            background: #fbfdff;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 12px;
+            padding: 11px 14px;
+            font-weight: 900;
+            cursor: pointer;
+            background: #052845;
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn.secondary {
+            background: #f3f4f6;
+            color: #111827;
+            border: 1px solid #e5e7eb;
+        }
+
+        .section-title {
+            font-weight: 900;
+            margin: 0 0 10px;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .two {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        @media (max-width: 980px) {
+            .two {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        pre {
+            margin: 0;
+            padding: 12px;
+            border-radius: 12px;
+            background: #0b1220;
+            color: #e5e7eb;
+            overflow: auto;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+
+<body class="with-sidebar">
+    <header class="topbar">
+        <button id="menuBtn" class="menu-btn"><i class="fa fa-bars"></i></button>
+        <h1 class="title">Campeonato</h1>
+    </header>
+
+    <aside id="sidebar" class="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+        <ul id="menuDynamic"></ul>
+    </aside>
+
+    <div id="overlay" class="overlay"></div>
+
+    <main class="content">
+        <div class="wrap">
+
+            <div class="card">
+                <div class="head">
+                    <div>
+                        <div class="h"><i class="fa-solid fa-eye"></i> <span id="titulo">Campeonato</span></div>
+                        <div class="muted" id="sub">Visualização (sem editar)</div>
+                    </div>
+                    <div class="chip" id="chipId">#-</div>
+                </div>
+
+                <div id="msg" class="muted" style="margin-top:10px;"></div>
+
+                <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="btn secondary" id="btnVoltar"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+                    <button class="btn" id="btnRecarregar"><i class="fa-solid fa-rotate"></i> Recarregar</button>
+                </div>
+            </div>
+            <section class="card" style="margin-top:16px;">
+                <h3 style="margin:0 0 10px 0;">📅 Jogos</h3>
+                <div id="listaJogos">Carregando jogos...</div>
+            </section>
+            <div class="grid">
+
+                <div class="card">
+                    <div class="section-title"><i class="fa-solid fa-ranking-star"></i> Classificação</div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Time</th>
+                                    <th class="right">P</th>
+                                    <th class="right">J</th>
+                                    <th class="right">V</th>
+                                    <th class="right">E</th>
+                                    <th class="right">D</th>
+                                    <th class="right">GP</th>
+                                    <th class="right">GC</th>
+                                    <th class="right">SG</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyRanking"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="section-title"><i class="fa-solid fa-circle-info"></i> Informações</div>
+                    <div class="box" id="boxInfo">-</div>
+
+                    <div style="height:12px;"></div>
+
+                    <div class="section-title"><i class="fa-solid fa-code-branch"></i> Mata-mata (bracket)</div>
+                    <div class="muted" style="margin-bottom:10px;">Se seu backend retornar, mostramos. Se não, fica
+                        vazio.</div>
+                    <div id="boxBracket" class="box"><span class="muted">Sem dados de bracket.</span></div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <script src="../js/goplay_home.js"></script>
+    <script src="../scripts/menu.js"></script>
+    <script src="../scripts/campeonato-view.js"></script>
+</body>
+
+</html>

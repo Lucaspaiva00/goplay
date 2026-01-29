@@ -1,43 +1,38 @@
+// ✅ api/src/controller/jogoController.js (ARQUIVO TODO)
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-// GET /jogo/:id (detalhes completos)
+/* =========================
+   GET /jogo/:id  (detalhe completo)
+========================= */
 const readOne = async (req, res) => {
     try {
         const jogoId = Number(req.params.id);
+        if (!Number.isFinite(jogoId)) return res.status(400).json({ error: "ID inválido." });
 
         const jogo = await prisma.jogo.findUnique({
             where: { id: jogoId },
             include: {
-                campeonato: { select: { id: true, nome: true, faseAtual: true } },
-                timeA: true,
-                timeB: true,
-                estatisticasTimes: { include: { time: true } },
-                jogadoresAtuacao: {
-                    include: {
-                        jogador: { select: { id: true, nome: true, posicaoCampo: true, goleiro: true } },
-                        time: { select: { id: true, nome: true } },
-                    },
-                    orderBy: [{ titular: "desc" }, { id: "asc" }],
-                },
-                eventos: { orderBy: [{ createdAt: "asc" }, { id: "asc" }] },
+                campeonato: true,
+                timeA: { include: { jogadores: true } },
+                timeB: { include: { jogadores: true } },
+
+                // ✅ stats por time
+                estatisticasTimes: true,
+
+                // ✅ escalação / atuação
+                jogadoresAtuacao: true,
+
+                // ✅ eventos
+                eventos: { orderBy: { id: "asc" } },
             },
         });
 
         if (!jogo) return res.status(404).json({ error: "Jogo não encontrado." });
 
-        // também traz elenco “base” dos times (usando seu relacionamento atual)
-        const elencoA = await prisma.usuario.findMany({
-            where: { timeRelacionadoId: jogo.timeAId },
-            select: { id: true, nome: true, posicaoCampo: true, goleiro: true },
-            orderBy: { nome: "asc" },
-        });
-
-        const elencoB = await prisma.usuario.findMany({
-            where: { timeRelacionadoId: jogo.timeBId },
-            select: { id: true, nome: true, posicaoCampo: true, goleiro: true },
-            orderBy: { nome: "asc" },
-        });
+        // elencos pro front (o JS usa cache.elencoA/cache.elencoB)
+        const elencoA = jogo.timeA?.jogadores || [];
+        const elencoB = jogo.timeB?.jogadores || [];
 
         res.json({ jogo, elencoA, elencoB });
     } catch (err) {
@@ -46,117 +41,142 @@ const readOne = async (req, res) => {
     }
 };
 
-// PUT /jogo/:id/stats  { timeId, chutes, chutesNoGol, escanteios, laterais, faltas, posse }
+/* =========================
+   PUT /jogo/:id/stats
+   body: { timeId, chutes, chutesNoGol, escanteios, laterais, faltas, posse }
+========================= */
 const updateStats = async (req, res) => {
     try {
         const jogoId = Number(req.params.id);
         const timeId = Number(req.body.timeId);
 
-        if (!jogoId || !timeId) return res.status(400).json({ error: "Informe jogoId e timeId." });
-
-        const row = await prisma.jogoEstatisticaTime.findUnique({
-            where: { jogoId_timeId: { jogoId, timeId } },
-        });
-
-        if (!row) {
-            return res.status(404).json({ error: "Stats não encontrados (linha não existe). Gere/crie stats do jogo." });
+        if (!Number.isFinite(jogoId) || !Number.isFinite(timeId)) {
+            return res.status(400).json({ error: "jogoId/timeId inválido." });
         }
 
-        const data = {};
-        const fields = ["chutes", "chutesNoGol", "escanteios", "laterais", "faltas", "posse"];
-        fields.forEach((f) => {
-            if (req.body[f] !== undefined && req.body[f] !== null && req.body[f] !== "") {
-                data[f] = Number(req.body[f]);
-            }
+        // garante que o jogo existe e que esse time faz parte do jogo
+        const jogo = await prisma.jogo.findUnique({ where: { id: jogoId } });
+        if (!jogo) return res.status(404).json({ error: "Jogo não encontrado." });
+        if (![jogo.timeAId, jogo.timeBId].includes(timeId)) {
+            return res.status(400).json({ error: "timeId não pertence a este jogo." });
+        }
+
+        const payload = {
+            chutes: Number(req.body.chutes) || 0,
+            chutesNoGol: Number(req.body.chutesNoGol) || 0,
+            escanteios: Number(req.body.escanteios) || 0,
+            laterais: Number(req.body.laterais) || 0,
+            faltas: Number(req.body.faltas) || 0,
+            posse: Number(req.body.posse) || 0,
+        };
+
+        // upsert na tabela jogoEstatisticaTime (se já existe, atualiza)
+        const row = await prisma.jogoEstatisticaTime.upsert({
+            where: { jogoId_timeId: { jogoId, timeId } },
+            create: { jogoId, timeId, ...payload },
+            update: { ...payload },
         });
 
-        const updated = await prisma.jogoEstatisticaTime.update({
-            where: { id: row.id },
-            data,
-        });
-
-        res.json(updated);
+        res.json({ ok: true, row });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Erro ao atualizar estatísticas." });
+        res.status(500).json({ error: "Erro ao atualizar stats." });
     }
 };
 
-// POST /jogo/:id/escalacao  { timeId, jogadorId, titular }
+/* =========================
+   POST /jogo/:id/escalacao
+   body: { timeId, jogadorId, titular }
+========================= */
 const addLineup = async (req, res) => {
     try {
         const jogoId = Number(req.params.id);
         const timeId = Number(req.body.timeId);
         const jogadorId = Number(req.body.jogadorId);
-        const titular = !!req.body.titular;
+        const titular = req.body.titular !== undefined ? !!req.body.titular : true;
 
-        if (!jogoId || !timeId || !jogadorId) return res.status(400).json({ error: "Informe jogoId, timeId, jogadorId." });
+        if (!Number.isFinite(jogoId) || !Number.isFinite(timeId) || !Number.isFinite(jogadorId)) {
+            return res.status(400).json({ error: "Dados inválidos." });
+        }
 
-        const up = await prisma.jogoJogador.upsert({
+        const jogo = await prisma.jogo.findUnique({ where: { id: jogoId } });
+        if (!jogo) return res.status(404).json({ error: "Jogo não encontrado." });
+        if (![jogo.timeAId, jogo.timeBId].includes(timeId)) {
+            return res.status(400).json({ error: "timeId não pertence a este jogo." });
+        }
+
+        // garante que o jogador pertence ao time
+        const jogador = await prisma.jogador.findUnique({ where: { id: jogadorId } });
+        if (!jogador) return res.status(404).json({ error: "Jogador não encontrado." });
+        if (Number(jogador.timeId) !== Number(timeId)) {
+            return res.status(400).json({ error: "Jogador não pertence a este time." });
+        }
+
+        // upsert (se já escalou, só confirma)
+        const row = await prisma.jogadorAtuacao.upsert({
             where: { jogoId_jogadorId: { jogoId, jogadorId } },
-            update: { timeId, titular },
             create: { jogoId, timeId, jogadorId, titular },
+            update: { timeId, titular },
         });
 
-        res.json(up);
+        res.json({ ok: true, row });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Erro ao salvar escalação." });
+        res.status(500).json({ error: "Erro ao escalar jogador." });
     }
 };
 
-// POST /jogo/:id/evento
-// { tipo, timeId?, jogadorId?, minuto?, detalhe?, jogadorSaindoId?, jogadorEntrandoId? }
+/* =========================
+   POST /jogo/:id/evento
+   body: { tipo, minuto, timeId, jogadorId, detalhe }
+========================= */
 const addEvento = async (req, res) => {
     try {
         const jogoId = Number(req.params.id);
-        const tipo = req.body.tipo;
+        if (!Number.isFinite(jogoId)) return res.status(400).json({ error: "ID inválido." });
 
-        if (!jogoId || !tipo) return res.status(400).json({ error: "Informe jogoId e tipo." });
+        const jogo = await prisma.jogo.findUnique({ where: { id: jogoId } });
+        if (!jogo) return res.status(404).json({ error: "Jogo não encontrado." });
 
-        const payload = {
-            jogoId,
-            tipo,
-            minuto: req.body.minuto !== undefined && req.body.minuto !== null && req.body.minuto !== "" ? Number(req.body.minuto) : null,
-            timeId: req.body.timeId ? Number(req.body.timeId) : null,
-            jogadorId: req.body.jogadorId ? Number(req.body.jogadorId) : null,
-            detalhe: req.body.detalhe ? String(req.body.detalhe) : null,
-            jogadorSaindoId: req.body.jogadorSaindoId ? Number(req.body.jogadorSaindoId) : null,
-            jogadorEntrandoId: req.body.jogadorEntrandoId ? Number(req.body.jogadorEntrandoId) : null,
-        };
+        const tipo = String(req.body.tipo || "").trim();
+        if (!tipo) return res.status(400).json({ error: "Informe tipo." });
 
-        const evento = await prisma.jogoEvento.create({ data: payload });
+        const minuto = req.body.minuto === null || req.body.minuto === "" || req.body.minuto === undefined
+            ? null
+            : Number(req.body.minuto);
 
-        // ✅ opcional: manter o "EstatisticaJogo" sincronizado para gols/cartões
-        if (payload.jogadorId && ["GOL", "CARTAO_AMARELO", "CARTAO_VERMELHO"].includes(tipo)) {
-            const row = await prisma.estatisticaJogo.findFirst({
-                where: { jogoId, jogadorId: payload.jogadorId },
-            });
+        const timeId = req.body.timeId ? Number(req.body.timeId) : null;
+        const jogadorId = req.body.jogadorId ? Number(req.body.jogadorId) : null;
+        const detalhe = req.body.detalhe ? String(req.body.detalhe) : null;
 
-            const data = {};
-            if (tipo === "GOL") data.gols = (row?.gols || 0) + 1;
-            if (tipo === "CARTAO_AMARELO") data.amarelos = (row?.amarelos || 0) + 1;
-            if (tipo === "CARTAO_VERMELHO") data.vermelhos = (row?.vermelhos || 0) + 1;
+        if (timeId && ![jogo.timeAId, jogo.timeBId].includes(timeId)) {
+            return res.status(400).json({ error: "timeId não pertence a este jogo." });
+        }
 
-            if (row) {
-                await prisma.estatisticaJogo.update({ where: { id: row.id }, data });
-            } else {
-                await prisma.estatisticaJogo.create({
-                    data: {
-                        jogoId,
-                        jogadorId: payload.jogadorId,
-                        gols: tipo === "GOL" ? 1 : 0,
-                        amarelos: tipo === "CARTAO_AMARELO" ? 1 : 0,
-                        vermelhos: tipo === "CARTAO_VERMELHO" ? 1 : 0,
-                    },
-                });
+        // se informou jogador, valida que ele existe (e opcionalmente valida o time)
+        if (jogadorId) {
+            const jogador = await prisma.jogador.findUnique({ where: { id: jogadorId } });
+            if (!jogador) return res.status(400).json({ error: "jogadorId inválido." });
+            if (timeId && Number(jogador.timeId) !== Number(timeId)) {
+                return res.status(400).json({ error: "Jogador não pertence ao time informado." });
             }
         }
 
-        res.json(evento);
+        const evento = await prisma.jogoEvento.create({
+            data: {
+                jogoId,
+                tipo,
+                minuto: Number.isFinite(minuto) ? minuto : null,
+                timeId: timeId || null,
+                jogadorId: jogadorId || null,
+                detalhe,
+            },
+        });
+
+        res.json({ ok: true, evento });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Erro ao registrar evento." });
+        res.status(500).json({ error: "Erro ao adicionar evento." });
     }
 };
 
