@@ -95,9 +95,21 @@
 
                         <select id="evTime" style="padding:10px;border-radius:12px;border:1px solid #dbe3ef;"></select>
 
+                        <!-- NORMAL -->
                         <select id="evJogador"
                             style="padding:10px;border-radius:12px;border:1px solid #dbe3ef; min-width:220px;">
                             <option value="">Jogador (opcional)</option>
+                        </select>
+
+                        <!-- SUBSTITUIÇÃO -->
+                        <select id="evJogadorSaindo"
+                            style="display:none; padding:10px;border-radius:12px;border:1px solid #dbe3ef;">
+                            <option value="">Sai</option>
+                        </select>
+
+                        <select id="evJogadorEntrando"
+                            style="display:none; padding:10px;border-radius:12px;border:1px solid #dbe3ef;">
+                            <option value="">Entra</option>
                         </select>
 
                         <input id="evDetalhe" placeholder="Detalhe (opcional)"

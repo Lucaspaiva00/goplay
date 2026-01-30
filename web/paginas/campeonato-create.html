@@ -4,21 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <title>Novo Campeonato – GoPlay</title>
 
-    <!-- CSS global (menu, layout, inputs, etc) -->
     <link rel="stylesheet" href="../css/perfil.css">
-
-    <!-- CSS desta página -->
     <link rel="stylesheet" href="../css/campeonato-create.css">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
 <body>
-
-    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
         <div class="logo-area">
             <h2>GoPlay</h2>
@@ -26,20 +19,15 @@
         <ul id="menuDynamic"></ul>
     </aside>
 
-    <!-- OVERLAY -->
     <div class="overlay" id="overlay"></div>
 
-    <!-- TOPBAR -->
     <header class="topbar">
         <h1 class="title">Criar Campeonato</h1>
     </header>
 
-    <!-- ÁREA ÚTIL -->
     <div class="main-wrapper">
         <main class="content">
-
             <div class="create-wrapper">
-
                 <h2 class="titulo-pagina">🏆 Criar Campeonato</h2>
 
                 <div class="card-form">
@@ -47,27 +35,96 @@
                     <label class="label">Nome do Campeonato</label>
                     <input id="nome" class="input" placeholder="Ex: Copa GoPlay">
 
-                    <label class="label">Tipo</label>
-                    <select id="tipo" class="input">
-                        <option value="MATA_MATA">Mata-Mata</option>
-                        <option value="GRUPOS">Fase de Grupos</option>
-                    </select>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div>
+                            <label class="label">Tipo</label>
+                            <select id="tipo" class="input">
+                                <option value="MATA_MATA">Mata-Mata</option>
+                                <option value="GRUPOS">Fase de Grupos</option>
+                                <option value="GRUPOS_MATA_MATA">Grupos + Mata-mata</option>
+                                <option value="PONTOS_CORRIDOS">Pontos corridos</option>
+                                <option value="LIGA_IDA_VOLTA">Liga (ida e volta)</option>
+                                <option value="COPA">Copa</option>
+                            </select>
+                        </div>
 
-                    <label class="label">Número máximo de times</label>
-                    <input id="maxTimes" class="input" type="number" placeholder="Ex: 8">
+                        <div>
+                            <label class="label">Status</label>
+                            <select id="status" class="input">
+                                <option value="EM_CRIACAO">Em criação</option>
+                                <option value="INSCRICOES_ABERTAS">Inscrições abertas</option>
+                                <option value="EM_ANDAMENTO">Em andamento</option>
+                                <option value="FINALIZADO">Finalizado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div>
+                            <label class="label">Modalidade</label>
+                            <select id="modalidade" class="input">
+                                <option value="SOCIETY">Society</option>
+                                <option value="FUTEBOL">Futebol</option>
+                                <option value="FUTSAL">Futsal</option>
+                                <option value="ESPORTS">E-sports</option>
+                                <option value="OUTRO">Outro</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="label">Categoria</label>
+                            <select id="categoria" class="input">
+                                <option value="ADULTO">Adulto</option>
+                                <option value="SUB_15">Sub-15</option>
+                                <option value="SUB_17">Sub-17</option>
+                                <option value="SUB_20">Sub-20</option>
+                                <option value="FEMININO">Feminino</option>
+                                <option value="AMADOR">Amador</option>
+                                <option value="PROFISSIONAL">Profissional</option>
+                                <option value="OUTRO">Outro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div>
+                            <label class="label">Temporada</label>
+                            <input id="temporada" class="input" placeholder="Ex: 2026">
+                        </div>
+
+                        <div>
+                            <label class="label">Número máximo de times</label>
+                            <input id="maxTimes" class="input" type="number" min="2" placeholder="Ex: 8">
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div>
+                            <label class="label">Data de início</label>
+                            <input id="dataInicio" class="input" type="date">
+                        </div>
+                        <div>
+                            <label class="label">Data de fim</label>
+                            <input id="dataFim" class="input" type="date">
+                        </div>
+                    </div>
+
+                    <label class="label">Regulamento (link do PDF) — opcional</label>
+                    <input id="regulamentoUrl" class="input" placeholder="https://...pdf">
+
+                    <label class="label">Regulamento (texto) — opcional</label>
+                    <textarea id="regulamentoTexto" class="input" rows="5"
+                        placeholder="Cole aqui o regulamento..."></textarea>
 
                     <button class="btn-salvar" onclick="salvarCampeonato()">Salvar</button>
 
                 </div>
-
             </div>
-
         </main>
     </div>
 
     <script src="../scripts/menu.js"></script>
     <script src="../scripts/campeonatoCreate.js"></script>
-
 </body>
 
 </html>

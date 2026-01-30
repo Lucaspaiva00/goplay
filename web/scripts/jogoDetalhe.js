@@ -1,4 +1,3 @@
-// ✅ web/scripts/jogo-detalhe.js (ARQUIVO TODO)
 const BASE_URL = "http://localhost:3000";
 
 let jogoId = null;
@@ -8,17 +7,19 @@ let cache = null;
    PERMISSÃO (READ ONLY)
 ========================= */
 function getUsuarioLogado() {
-    try { return JSON.parse(localStorage.getItem("usuarioLogado") || "null"); } catch { return null; }
+    try {
+        return JSON.parse(localStorage.getItem("usuarioLogado") || "null");
+    } catch {
+        return null;
+    }
 }
 
 function isSomenteLeitura() {
     const u = getUsuarioLogado();
-    // ✅ Somente DONO_SOCIETY pode editar jogo
     return !u || u.tipo !== "DONO_SOCIETY";
 }
 
 function habilitarModoSomenteLeitura() {
-    // banner
     const banner = document.createElement("div");
     banner.style.margin = "10px 0";
     banner.style.padding = "10px 12px";
@@ -27,41 +28,21 @@ function habilitarModoSomenteLeitura() {
     banner.style.border = "1px solid #fed7aa";
     banner.style.color = "#9a3412";
     banner.style.fontWeight = "900";
-    banner.textContent = "Você está apenas visualizando. PLAYER e DONO_TIME não podem alterar dados do jogo.";
+    banner.textContent =
+        "Você está apenas visualizando. PLAYER e DONO_TIME não podem alterar dados do jogo.";
+
     const alvo = document.querySelector(".content") || document.body;
     alvo.prepend(banner);
 
-    // desabilita inputs, selects e textareas
-    document.querySelectorAll("input, select, textarea").forEach(el => {
+    document.querySelectorAll("input, select, textarea, button").forEach(el => {
         el.disabled = true;
-        el.style.opacity = "0.75";
+        el.style.opacity = "0.6";
         el.style.cursor = "not-allowed";
     });
-
-    // desabilita botões de ações
-    document.querySelectorAll("button").forEach(btn => {
-        const t = (btn.textContent || "").toLowerCase();
-        // trava tudo que for ação
-        if (t.includes("salvar") || t.includes("adicionar") || t.includes("finalizar") || t.includes("escalar")) {
-            btn.disabled = true;
-            btn.style.opacity = "0.55";
-            btn.style.cursor = "not-allowed";
-            btn.title = "Somente o dono do society pode editar.";
-        }
-    });
-
-    // se existir botão "Adicionar evento", trava também pelo ID
-    const btnAddEvento = document.getElementById("btnAddEvento");
-    if (btnAddEvento) {
-        btnAddEvento.disabled = true;
-        btnAddEvento.style.opacity = "0.55";
-        btnAddEvento.style.cursor = "not-allowed";
-        btnAddEvento.title = "Somente o dono do society pode editar.";
-    }
 }
 
 function denyEdit() {
-    alert("Você está apenas visualizando. Somente o dono do society pode alterar o jogo.");
+    alert("Somente o dono do society pode alterar dados do jogo.");
 }
 
 /* =========================
@@ -71,43 +52,49 @@ document.addEventListener("DOMContentLoaded", () => {
     jogoId = new URLSearchParams(location.search).get("jogoId");
     if (!jogoId) return alert("jogoId não informado.");
 
-    const btnVoltar = document.getElementById("btnVoltar");
-    const btnAtualizar = document.getElementById("btnAtualizar");
-    const btnAddEvento = document.getElementById("btnAddEvento");
+    document.getElementById("btnVoltar")?.addEventListener("click", () => history.back());
+    document.getElementById("btnAtualizar")?.addEventListener("click", load);
 
-    if (btnVoltar) btnVoltar.addEventListener("click", () => history.back());
-    if (btnAtualizar) btnAtualizar.addEventListener("click", load);
+    document.getElementById("btnAddEvento")?.addEventListener("click", () => {
+        if (isSomenteLeitura()) return denyEdit();
+        addEvento();
+    });
 
-    // ✅ Só o dono do society pode adicionar evento
-    if (btnAddEvento) {
-        if (isSomenteLeitura()) {
-            btnAddEvento.addEventListener("click", (e) => { e.preventDefault(); denyEdit(); });
-        } else {
-            btnAddEvento.addEventListener("click", addEvento);
-        }
-    }
+    document.getElementById("evTipo")?.addEventListener("change", toggleSubstituicao);
 
     load();
 });
 
 /* =========================
-   UI HELPERS
+   HELPERS
 ========================= */
 function msg(text, type = "info") {
     const el = document.getElementById("msg");
     if (!el) return;
 
-    const bg = type === "error" ? "#fff2f2" : type === "ok" ? "#f2fff5" : "#f3f7ff";
-    const br = type === "error" ? "#ffd0d0" : type === "ok" ? "#cfead5" : "#dbe7ff";
-    el.innerHTML = `<div style="padding:12px 14px;border-radius:12px;border:1px solid ${br};background:${bg};">${text}</div>`;
+    const map = {
+        info: ["#f3f7ff", "#dbe7ff"],
+        ok: ["#f2fff5", "#cfead5"],
+        error: ["#fff2f2", "#ffd0d0"],
+    };
+
+    const [bg, br] = map[type] || map.info;
+
+    el.innerHTML = `
+    <div style="padding:12px;border-radius:12px;border:1px solid ${br};background:${bg};">
+        ${text}
+    </div>`;
 }
 
 async function safeFetchJSON(url, options = {}) {
     const res = await fetch(url, options);
     const text = await res.text().catch(() => "");
     let data = null;
-    try { data = text ? JSON.parse(text) : null; } catch { }
-    if (!res.ok) throw new Error(data?.error || data?.message || text || `HTTP ${res.status}`);
+    try {
+        data = text ? JSON.parse(text) : null;
+    } catch { }
+
+    if (!res.ok) throw new Error(data?.error || data?.message || text || res.status);
     return data;
 }
 
@@ -116,9 +103,9 @@ async function safeFetchJSON(url, options = {}) {
 ========================= */
 async function load() {
     try {
-        msg("Carregando...", "info");
-        cache = await safeFetchJSON(`${BASE_URL}/jogo/${jogoId}`);
+        msg("Carregando jogo...", "info");
 
+        cache = await safeFetchJSON(`${BASE_URL}/jogo/${jogoId}`);
         const { jogo, elencoA, elencoB } = cache;
 
         document.getElementById("tituloJogo").textContent =
@@ -132,27 +119,25 @@ async function load() {
         renderElenco(elencoA, elencoB, jogo);
         renderEventos(jogo);
 
-        msg("Ok — dados carregados.", "ok");
+        msg("OK — dados carregados.", "ok");
 
-        // ✅ IMPORTANTE: só depois de renderizar, aplica read-only (pra pegar botões gerados no HTML)
         if (isSomenteLeitura()) habilitarModoSomenteLeitura();
     } catch (e) {
         console.error(e);
-        msg(`Erro: ${e.message}`, "error");
+        msg(e.message, "error");
     }
 }
 
+/* =========================
+   TIME / JOGADORES
+========================= */
 function buildTimeSelect(jogo) {
     const evTime = document.getElementById("evTime");
-    if (!evTime) return;
-
     evTime.innerHTML = `
-    <option value="${jogo.timeAId}">${jogo.timeA.nome}</option>
-    <option value="${jogo.timeBId}">${jogo.timeB.nome}</option>
-  `;
-
-    // só precisa atualizar lista de jogadores do select (isso pode existir no modo leitura também)
-    evTime.onchange = () => fillJogadoresDoTime();
+        <option value="${jogo.timeAId}">${jogo.timeA.nome}</option>
+        <option value="${jogo.timeBId}">${jogo.timeB.nome}</option>
+    `;
+    evTime.onchange = fillJogadoresDoTime;
     fillJogadoresDoTime();
 }
 
@@ -160,16 +145,18 @@ function fillJogadoresDoTime() {
     if (!cache?.jogo) return;
 
     const jogo = cache.jogo;
-    const evTime = Number(document.getElementById("evTime").value);
-    const evJogador = document.getElementById("evJogador");
+    const timeId = Number(evTime.value);
+    const elenco = timeId === jogo.timeAId ? cache.elencoA : cache.elencoB;
 
-    if (!evJogador) return;
+    evJogador.innerHTML = `<option value="">Jogador</option>`;
+    evJogadorSaindo.innerHTML = `<option value="">Sai</option>`;
+    evJogadorEntrando.innerHTML = `<option value="">Entra</option>`;
 
-    const elenco = evTime === jogo.timeAId ? cache.elencoA : cache.elencoB;
-
-    evJogador.innerHTML = `<option value="">Jogador (opcional)</option>`;
-    (elenco || []).forEach((p) => {
-        evJogador.innerHTML += `<option value="${p.id}">${p.nome}${p.posicaoCampo ? " • " + p.posicaoCampo : ""}</option>`;
+    (elenco || []).forEach(p => {
+        const opt = `<option value="${p.id}">${p.nome}</option>`;
+        evJogador.innerHTML += opt;
+        evJogadorSaindo.innerHTML += opt;
+        evJogadorEntrando.innerHTML += opt;
     });
 }
 
@@ -177,194 +164,163 @@ function fillJogadoresDoTime() {
    STATS
 ========================= */
 function renderStats(jogo) {
-    const a = jogo.estatisticasTimes?.find((x) => x.timeId === jogo.timeAId) || null;
-    const b = jogo.estatisticasTimes?.find((x) => x.timeId === jogo.timeBId) || null;
-
-    const statsA = document.getElementById("statsA");
-    const statsB = document.getElementById("statsB");
-    if (!statsA || !statsB) return;
+    const a = jogo.estatisticasTimes?.find(x => x.timeId === jogo.timeAId);
+    const b = jogo.estatisticasTimes?.find(x => x.timeId === jogo.timeBId);
 
     statsA.innerHTML = statsForm(jogo.timeAId, a);
     statsB.innerHTML = statsForm(jogo.timeBId, b);
 
-    document.querySelectorAll("[data-save-stats]").forEach((btn) => {
-        btn.addEventListener("click", () => {
+    document.querySelectorAll("[data-save-stats]").forEach(btn => {
+        btn.onclick = () => {
             if (isSomenteLeitura()) return denyEdit();
             saveStats(Number(btn.dataset.timeId));
-        });
+        };
     });
 }
 
 function statsForm(timeId, s) {
-    const v = (k) => (s && s[k] !== undefined && s[k] !== null ? s[k] : 0);
+    const v = k => s?.[k] ?? 0;
 
     return `
-    <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:8px;">
-      ${field("Chutes", `chutes_${timeId}`, v("chutes"))}
-      ${field("Chutes no gol", `chutesNoGol_${timeId}`, v("chutesNoGol"))}
-      ${field("Escanteios", `escanteios_${timeId}`, v("escanteios"))}
-      ${field("Laterais", `laterais_${timeId}`, v("laterais"))}
-      ${field("Faltas", `faltas_${timeId}`, v("faltas"))}
-      ${field("Posse (%)", `posse_${timeId}`, v("posse"))}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        ${field("Chutes", `chutes_${timeId}`, v("chutes"))}
+        ${field("Chutes no gol", `chutesNoGol_${timeId}`, v("chutesNoGol"))}
+        ${field("Escanteios", `escanteios_${timeId}`, v("escanteios"))}
+        ${field("Laterais", `laterais_${timeId}`, v("laterais"))}
+        ${field("Faltas", `faltas_${timeId}`, v("faltas"))}
+        ${field("Posse (%)", `posse_${timeId}`, v("posse"))}
     </div>
-
-    <button class="btn btn-primary" data-save-stats="1" data-time-id="${timeId}" style="margin-top:10px;">
-      <i class="fa-solid fa-floppy-disk"></i> Salvar stats
-    </button>
-  `;
+    <button class="btn btn-primary" data-save-stats data-time-id="${timeId}" style="margin-top:10px;">
+        💾 Salvar stats
+    </button>`;
 }
 
 function field(label, id, value) {
     return `
     <div>
-      <div style="font-size:12px;opacity:.75;margin-bottom:4px;">${label}</div>
-      <input id="${id}" type="number" min="0" value="${value}"
-        style="width:100%;padding:10px;border-radius:12px;border:1px solid #dbe3ef;" />
-    </div>
-  `;
+        <small>${label}</small>
+        <input id="${id}" type="number" min="0" value="${value}">
+    </div>`;
 }
 
 async function saveStats(timeId) {
-    if (isSomenteLeitura()) return denyEdit();
+    const payload = {
+        timeId,
+        chutes: Number(document.getElementById(`chutes_${timeId}`).value),
+        chutesNoGol: Number(document.getElementById(`chutesNoGol_${timeId}`).value),
+        escanteios: Number(document.getElementById(`escanteios_${timeId}`).value),
+        laterais: Number(document.getElementById(`laterais_${timeId}`).value),
+        faltas: Number(document.getElementById(`faltas_${timeId}`).value),
+        posse: Number(document.getElementById(`posse_${timeId}`).value),
+    };
 
-    try {
-        const payload = {
-            timeId,
-            chutes: Number(document.getElementById(`chutes_${timeId}`).value),
-            chutesNoGol: Number(document.getElementById(`chutesNoGol_${timeId}`).value),
-            escanteios: Number(document.getElementById(`escanteios_${timeId}`).value),
-            laterais: Number(document.getElementById(`laterais_${timeId}`).value),
-            faltas: Number(document.getElementById(`faltas_${timeId}`).value),
-            posse: Number(document.getElementById(`posse_${timeId}`).value),
-        };
+    await safeFetchJSON(`${BASE_URL}/jogo/${jogoId}/stats`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
 
-        await safeFetchJSON(`${BASE_URL}/jogo/${jogoId}/stats`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-        });
-
-        await load();
-    } catch (e) {
-        console.error(e);
-        alert(e.message);
-    }
+    load();
 }
 
 /* =========================
-   ELENCO / ESCALAÇÃO
+   ELENCO
 ========================= */
-function renderElenco(elencoA, elencoB, jogo) {
-    const elA = document.getElementById("elencoA");
-    const elB = document.getElementById("elencoB");
-    if (!elA || !elB) return;
+function renderElenco(elA, elB, jogo) {
+    elencoA.innerHTML = elencoBox(elA || [], jogo, jogo.timeAId);
+    elencoB.innerHTML = elencoBox(elB || [], jogo, jogo.timeBId);
 
-    elA.innerHTML = elencoBox(elencoA || [], jogo, jogo.timeAId);
-    elB.innerHTML = elencoBox(elencoB || [], jogo, jogo.timeBId);
-
-    document.querySelectorAll("[data-add-lineup]").forEach((btn) => {
-        btn.addEventListener("click", () => {
+    document.querySelectorAll("[data-add-lineup]").forEach(btn => {
+        btn.onclick = () => {
             if (isSomenteLeitura()) return denyEdit();
             addLineup(Number(btn.dataset.timeId), Number(btn.dataset.jogadorId));
-        });
+        };
     });
 }
 
-function elencoBox(elenco, jogo, timeId) {
-    const escalados = new Set((jogo.jogadoresAtuacao || []).filter(x => x.timeId === timeId).map(x => x.jogadorId));
+function elencoBox(lista, jogo, timeId) {
+    const escalados = new Set(
+        (jogo.jogadoresAtuacao || [])
+            .filter(x => x.timeId === timeId)
+            .map(x => x.jogadorId)
+    );
 
-    if (!elenco.length) return `<div class="empty">Nenhum jogador cadastrado nesse time ainda.</div>`;
+    if (!lista.length) return `<div class="empty">Nenhum jogador.</div>`;
 
-    return elenco.map((p) => {
-        const inGame = escalados.has(p.id);
-        return `
-      <div style="display:flex;justify-content:space-between;align-items:center;border:1px solid #eef2f6;border-radius:12px;padding:10px;margin-bottom:8px;">
-        <div>
-          <strong>${p.nome}</strong>
-          <div style="font-size:12px;opacity:.75;">${p.posicaoCampo || "-"} ${p.goleiro ? "• Goleiro" : ""}</div>
+    return lista.map(p => `
+        <div style="display:flex;justify-content:space-between;">
+            <div><strong>${p.nome}</strong></div>
+            <button class="btn ${escalados.has(p.id) ? "btn-light" : "btn-primary"}"
+                data-add-lineup
+                data-time-id="${timeId}"
+                data-jogador-id="${p.id}">
+                ${escalados.has(p.id) ? "Já escalado" : "Escalar"}
+            </button>
         </div>
-
-        <button class="btn ${inGame ? "btn-light" : "btn-primary"}" data-add-lineup="1" data-time-id="${timeId}" data-jogador-id="${p.id}">
-          ${inGame ? "Já escalado" : "Escalar"}
-        </button>
-      </div>
-    `;
-    }).join("");
+    `).join("");
 }
 
 async function addLineup(timeId, jogadorId) {
-    if (isSomenteLeitura()) return denyEdit();
-
-    try {
-        await safeFetchJSON(`${BASE_URL}/jogo/${jogoId}/escalacao`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ timeId, jogadorId, titular: true }),
-        });
-        await load();
-    } catch (e) {
-        console.error(e);
-        alert(e.message);
-    }
+    await safeFetchJSON(`${BASE_URL}/jogo/${jogoId}/escalacao`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ timeId, jogadorId, titular: true }),
+    });
+    load();
 }
 
 /* =========================
    EVENTOS
 ========================= */
+function toggleSubstituicao() {
+    const sub = evTipo.value === "SUBSTITUICAO";
+    evJogador.style.display = sub ? "none" : "inline-block";
+    evJogadorSaindo.style.display = sub ? "inline-block" : "none";
+    evJogadorEntrando.style.display = sub ? "inline-block" : "none";
+}
+
 function renderEventos(jogo) {
-    const div = document.getElementById("listaEventos");
-    if (!div) return;
-
-    const evs = jogo.eventos || [];
-
-    if (!evs.length) {
-        div.innerHTML = `<div class="empty">Nenhum evento registrado ainda.</div>`;
+    if (!jogo.eventos?.length) {
+        listaEventos.innerHTML = `<div class="empty">Nenhum evento.</div>`;
         return;
     }
 
-    div.innerHTML = evs.map((e) => {
-        const min = e.minuto !== null && e.minuto !== undefined ? `${e.minuto}'` : "";
-        return `
-      <div style="border:1px solid #eef2f6;border-radius:12px;padding:10px;margin-bottom:8px;">
-        <div style="font-weight:800;">${min} ${e.tipo}</div>
-        <div style="font-size:12px;opacity:.8;">
-          ${e.timeId ? "Time: " + (e.timeId === jogo.timeAId ? jogo.timeA.nome : jogo.timeB.nome) : ""}
-          ${e.jogadorId ? " • JogadorId: " + e.jogadorId : ""}
-          ${e.detalhe ? " • " + e.detalhe : ""}
+    listaEventos.innerHTML = jogo.eventos.map(e => `
+        <div style="border:1px solid #eee;padding:10px;border-radius:10px;">
+            <strong>${e.minuto ?? ""}' ${e.tipo}</strong>
+            <div class="muted">${e.detalhe || ""}</div>
         </div>
-      </div>
-    `;
-    }).join("");
+    `).join("");
 }
 
 async function addEvento() {
-    if (isSomenteLeitura()) return denyEdit();
+    const tipo = evTipo.value;
 
-    try {
-        const tipo = document.getElementById("evTipo").value;
-        const minuto = document.getElementById("evMinuto").value;
-        const timeId = document.getElementById("evTime").value;
-        const jogadorId = document.getElementById("evJogador").value;
-        const detalhe = document.getElementById("evDetalhe").value;
+    const payload = {
+        tipo,
+        minuto: evMinuto.value ? Number(evMinuto.value) : null,
+        timeId: evTime.value ? Number(evTime.value) : null,
+        detalhe: evDetalhe.value || null,
+    };
 
-        await safeFetchJSON(`${BASE_URL}/jogo/${jogoId}/evento`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                tipo,
-                minuto: minuto !== "" ? Number(minuto) : null,
-                timeId: timeId ? Number(timeId) : null,
-                jogadorId: jogadorId ? Number(jogadorId) : null,
-                detalhe: detalhe || null,
-            }),
-        });
+    if (tipo === "SUBSTITUICAO") {
+        if (!evJogadorSaindo.value || !evJogadorEntrando.value)
+            return alert("Selecione quem sai e quem entra.");
 
-        document.getElementById("evMinuto").value = "";
-        document.getElementById("evDetalhe").value = "";
-
-        await load();
-    } catch (e) {
-        console.error(e);
-        alert(e.message);
+        payload.jogadorSaindoId = Number(evJogadorSaindo.value);
+        payload.jogadorEntrandoId = Number(evJogadorEntrando.value);
+    } else {
+        payload.jogadorId = evJogador.value ? Number(evJogador.value) : null;
     }
+
+    await safeFetchJSON(`${BASE_URL}/jogo/${jogoId}/evento`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+
+    evMinuto.value = "";
+    evDetalhe.value = "";
+
+    load();
 }

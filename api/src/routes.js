@@ -84,6 +84,7 @@ router.post("/campeonato/:id/gerar-mata-mata", campeonatoController.generateMata
 router.post("/campeonato/jogo/:id/finalizar", campeonatoController.finalizarJogo);
 router.get("/campeonato/:id/bracket", campeonatoController.getBracket);
 router.get("/campeonato/:id/ranking", campeonatoController.ranking);
+router.put("/campeonato/:id", campeonatoController.updateInfo);
 
 /* =========================
    JOGO (DETALHES)

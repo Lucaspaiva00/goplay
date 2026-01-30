@@ -1,4 +1,4 @@
-// ✅ api/src/controller/jogoController.js (ARQUIVO TODO)
+// ✅ api/src/controller/jogoController.js (ARQUIVO TODO) — alinhado ao seu schema
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
@@ -14,23 +14,26 @@ const readOne = async (req, res) => {
             where: { id: jogoId },
             include: {
                 campeonato: true,
-                timeA: { include: { jogadores: true } },
+                timeA: { include: { jogadores: true } }, // jogadores = Usuarios com timeRelacionadoId = time.id
                 timeB: { include: { jogadores: true } },
 
-                // ✅ stats por time
                 estatisticasTimes: true,
-
-                // ✅ escalação / atuação
                 jogadoresAtuacao: true,
 
-                // ✅ eventos
-                eventos: { orderBy: { id: "asc" } },
+                eventos: {
+                    orderBy: { id: "asc" },
+                    include: {
+                        time: true,
+                        jogador: true,
+                        jogadorSaindo: true,
+                        jogadorEntrando: true,
+                    },
+                },
             },
         });
 
         if (!jogo) return res.status(404).json({ error: "Jogo não encontrado." });
 
-        // elencos pro front (o JS usa cache.elencoA/cache.elencoB)
         const elencoA = jogo.timeA?.jogadores || [];
         const elencoB = jogo.timeB?.jogadores || [];
 
@@ -54,7 +57,6 @@ const updateStats = async (req, res) => {
             return res.status(400).json({ error: "jogoId/timeId inválido." });
         }
 
-        // garante que o jogo existe e que esse time faz parte do jogo
         const jogo = await prisma.jogo.findUnique({ where: { id: jogoId } });
         if (!jogo) return res.status(404).json({ error: "Jogo não encontrado." });
         if (![jogo.timeAId, jogo.timeBId].includes(timeId)) {
@@ -70,7 +72,6 @@ const updateStats = async (req, res) => {
             posse: Number(req.body.posse) || 0,
         };
 
-        // upsert na tabela jogoEstatisticaTime (se já existe, atualiza)
         const row = await prisma.jogoEstatisticaTime.upsert({
             where: { jogoId_timeId: { jogoId, timeId } },
             create: { jogoId, timeId, ...payload },
@@ -87,6 +88,7 @@ const updateStats = async (req, res) => {
 /* =========================
    POST /jogo/:id/escalacao
    body: { timeId, jogadorId, titular }
+   jogadorId = Usuario.id
 ========================= */
 const addLineup = async (req, res) => {
     try {
@@ -105,15 +107,17 @@ const addLineup = async (req, res) => {
             return res.status(400).json({ error: "timeId não pertence a este jogo." });
         }
 
-        // garante que o jogador pertence ao time
-        const jogador = await prisma.jogador.findUnique({ where: { id: jogadorId } });
-        if (!jogador) return res.status(404).json({ error: "Jogador não encontrado." });
-        if (Number(jogador.timeId) !== Number(timeId)) {
-            return res.status(400).json({ error: "Jogador não pertence a este time." });
+        // ✅ jogador é Usuario
+        const jogador = await prisma.usuario.findUnique({ where: { id: jogadorId } });
+        if (!jogador) return res.status(404).json({ error: "Jogador (usuário) não encontrado." });
+
+        // ✅ valida se pertence ao time (via timeRelacionadoId)
+        if (Number(jogador.timeRelacionadoId) !== Number(timeId)) {
+            return res.status(400).json({ error: "Usuário não pertence a este time." });
         }
 
-        // upsert (se já escalou, só confirma)
-        const row = await prisma.jogadorAtuacao.upsert({
+        // ✅ tabela é JogoJogador (não JogadorAtuacao)
+        const row = await prisma.jogoJogador.upsert({
             where: { jogoId_jogadorId: { jogoId, jogadorId } },
             create: { jogoId, timeId, jogadorId, titular },
             update: { timeId, titular },
@@ -128,7 +132,10 @@ const addLineup = async (req, res) => {
 
 /* =========================
    POST /jogo/:id/evento
-   body: { tipo, minuto, timeId, jogadorId, detalhe }
+   body:
+     - evento normal: { tipo, minuto, timeId, jogadorId, detalhe }
+     - substituição:  { tipo:"SUBSTITUICAO", minuto, timeId, jogadorSaindoId, jogadorEntrandoId, detalhe }
+   tipo = enum EventoTipo (ex: "GOL", "CARTAO_AMARELO"...)
 ========================= */
 const addEvento = async (req, res) => {
     try {
@@ -138,37 +145,50 @@ const addEvento = async (req, res) => {
         const jogo = await prisma.jogo.findUnique({ where: { id: jogoId } });
         if (!jogo) return res.status(404).json({ error: "Jogo não encontrado." });
 
-        const tipo = String(req.body.tipo || "").trim();
+        const tipo = String(req.body.tipo || "").trim().toUpperCase();
         if (!tipo) return res.status(400).json({ error: "Informe tipo." });
 
-        const minuto = req.body.minuto === null || req.body.minuto === "" || req.body.minuto === undefined
-            ? null
-            : Number(req.body.minuto);
+        const minuto =
+            req.body.minuto === null || req.body.minuto === "" || req.body.minuto === undefined
+                ? null
+                : Number(req.body.minuto);
 
         const timeId = req.body.timeId ? Number(req.body.timeId) : null;
+
         const jogadorId = req.body.jogadorId ? Number(req.body.jogadorId) : null;
+        const jogadorSaindoId = req.body.jogadorSaindoId ? Number(req.body.jogadorSaindoId) : null;
+        const jogadorEntrandoId = req.body.jogadorEntrandoId ? Number(req.body.jogadorEntrandoId) : null;
+
         const detalhe = req.body.detalhe ? String(req.body.detalhe) : null;
 
         if (timeId && ![jogo.timeAId, jogo.timeBId].includes(timeId)) {
             return res.status(400).json({ error: "timeId não pertence a este jogo." });
         }
 
-        // se informou jogador, valida que ele existe (e opcionalmente valida o time)
-        if (jogadorId) {
-            const jogador = await prisma.jogador.findUnique({ where: { id: jogadorId } });
-            if (!jogador) return res.status(400).json({ error: "jogadorId inválido." });
-            if (timeId && Number(jogador.timeId) !== Number(timeId)) {
-                return res.status(400).json({ error: "Jogador não pertence ao time informado." });
+        // valida jogadores informados
+        const validaUsuario = async (id, label) => {
+            if (!id) return null;
+            const u = await prisma.usuario.findUnique({ where: { id } });
+            if (!u) throw new Error(`${label} inválido.`);
+            if (timeId && Number(u.timeRelacionadoId) !== Number(timeId)) {
+                throw new Error(`${label} não pertence ao time informado.`);
             }
-        }
+            return u;
+        };
+
+        if (jogadorId) await validaUsuario(jogadorId, "jogadorId");
+        if (jogadorSaindoId) await validaUsuario(jogadorSaindoId, "jogadorSaindoId");
+        if (jogadorEntrandoId) await validaUsuario(jogadorEntrandoId, "jogadorEntrandoId");
 
         const evento = await prisma.jogoEvento.create({
             data: {
                 jogoId,
-                tipo,
+                tipo, // ✅ enum
                 minuto: Number.isFinite(minuto) ? minuto : null,
                 timeId: timeId || null,
                 jogadorId: jogadorId || null,
+                jogadorSaindoId: jogadorSaindoId || null,
+                jogadorEntrandoId: jogadorEntrandoId || null,
                 detalhe,
             },
         });
@@ -176,6 +196,13 @@ const addEvento = async (req, res) => {
         res.json({ ok: true, evento });
     } catch (err) {
         console.error(err);
+
+        // erro "bonito" pro front
+        const msg = err?.message || "Erro ao adicionar evento.";
+        if (msg.includes("inválido") || msg.includes("não pertence")) {
+            return res.status(400).json({ error: msg });
+        }
+
         res.status(500).json({ error: "Erro ao adicionar evento." });
     }
 };

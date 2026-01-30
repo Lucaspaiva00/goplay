@@ -19,11 +19,6 @@ enum TipoPagamento {
   CONSUMO_BAR
 }
 
-enum TipoCampeonato {
-  MATA_MATA
-  GRUPOS
-}
-
 enum DesempateTipo {
   PENALTIS
   WO
@@ -64,6 +59,41 @@ enum FormaPagamento {
   OUTRO
 }
 
+enum ModalidadeCampeonato {
+  FUTEBOL
+  FUTSAL
+  SOCIETY
+  ESPORTS
+  OUTRO
+}
+
+enum CategoriaCampeonato {
+  ADULTO
+  SUB_15
+  SUB_17
+  SUB_20
+  FEMININO
+  AMADOR
+  PROFISSIONAL
+  OUTRO
+}
+
+enum StatusCampeonato {
+  EM_CRIACAO
+  INSCRICOES_ABERTAS
+  EM_ANDAMENTO
+  FINALIZADO
+}
+
+enum TipoCampeonato {
+  PONTOS_CORRIDOS
+  MATA_MATA
+  GRUPOS
+  GRUPOS_MATA_MATA
+  LIGA_IDA_VOLTA
+  COPA
+}
+
 model Usuario {
   id           Int       @id @default(autoincrement())
   nome         String
@@ -84,24 +114,27 @@ model Usuario {
 
   times Time[] @relation("TimeDono")
 
-  // jogador pertence a um time (modelo atual seu)
   timeRelacionadoId Int?
   timeRelacionado   Time? @relation("TimeJogadores", fields: [timeRelacionadoId], references: [id])
 
-  societies      Society[]       @relation("UsuarioSocieties")
+  societies Society[] @relation("UsuarioSocieties")
+
   pagamentos     Pagamento[]
   notificacoes   Notificacao[]
   societyPlayers SocietyPlayer[]
 
-  // antigo (mantido)
   estatisticas EstatisticaJogo[]
 
-  // novo (detalhes do jogo)
   jogoEventos  JogoEvento[]
   jogosAtuacao JogoJogador[]
 
+  eventosSaindo   JogoEvento[] @relation("EventoJogadorSaindo")
+  eventosEntrando JogoEvento[] @relation("EventoJogadorEntrando")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([timeRelacionadoId])
 }
 
 model Society {
@@ -135,6 +168,8 @@ model Society {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([usuarioId])
 }
 
 model Cardapio {
@@ -153,12 +188,11 @@ model Cardapio {
 model Campo {
   id Int @id @default(autoincrement())
 
-  // ✅ AMARRADO AO SOCIETY (obrigatório)
   societyId Int
   society   Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
 
   nome        String
-  valorAvulso Float? // <- por hora (ex: 500)
+  valorAvulso Float?
   valorMensal Float?
   fotoUrl     String?
   dimensoes   String?
@@ -196,12 +230,13 @@ model Time {
   jogosMandante   Jogo[]           @relation("JogoTimeA")
   jogosVisitante  Jogo[]           @relation("JogoTimeB")
 
+  jogosVencedor Jogo[] @relation("JogoVencedor")
+
   campeonatosVencidos Campeonato[] @relation("CampeaoTime")
   campeonatosVice     Campeonato[] @relation("ViceCampeaoTime")
 
   timeGrupos TimeGrupo[]
 
-  // novos
   tabelaCampeonatos TabelaCampeonato[]
   jogoStats         JogoEstatisticaTime[]
   jogoJogadores     JogoJogador[]
@@ -239,9 +274,8 @@ model Pagamento {
   status StatusPagamento @default(PENDENTE)
   forma  FormaPagamento  @default(PIX)
 
-  pagoEm DateTime?
-
-  createdAt DateTime @default(now())
+  pagoEm    DateTime?
+  createdAt DateTime  @default(now())
 
   @@index([societyId])
   @@index([usuarioId])
@@ -265,11 +299,9 @@ model Agendamento {
   horaInicio String
   horaFim    String
 
-  valor Float
-
+  valor  Float
   status StatusAgendamento @default(PENDENTE)
 
-  // ✅ 1–1
   pagamento Pagamento?
 
   createdAt DateTime @default(now())
@@ -318,6 +350,20 @@ model Campeonato {
   tipo     TipoCampeonato
   maxTimes Int
 
+  // ✅ NOVOS CAMPOS (profissional)
+  modalidade ModalidadeCampeonato @default(SOCIETY)
+  categoria  CategoriaCampeonato  @default(ADULTO)
+  temporada  String? // ex: "2026" ou "2025/2"
+
+  dataInicio DateTime?
+  dataFim    DateTime?
+
+  status StatusCampeonato @default(EM_CRIACAO)
+
+  regulamentoTexto String?
+  regulamentoUrl   String? // link do pdf
+
+  // ✅ você já usa isso no fluxo de grupos/mata-mata:
   faseAtual  String @default("GRUPOS")
   roundAtual Int    @default(1)
 
@@ -336,6 +382,9 @@ model Campeonato {
   createdAt DateTime @default(now())
 
   @@index([societyId])
+  @@index([campeaoId])
+  @@index([viceCampeaoId])
+  @@index([status])
 }
 
 model TimeCampeonato {
@@ -403,6 +452,7 @@ model Jogo {
   golsB Int?
 
   vencedorId Int?
+  vencedor   Time? @relation("JogoVencedor", fields: [vencedorId], references: [id], onDelete: SetNull)
 
   desempateTipo DesempateTipo?
   penaltisA     Int?
@@ -423,6 +473,7 @@ model Jogo {
   @@index([grupoId])
   @@index([timeAId])
   @@index([timeBId])
+  @@index([vencedorId])
 }
 
 model EstatisticaJogo {
@@ -525,14 +576,18 @@ model JogoEvento {
   jogadorId Int?
   jogador   Usuario? @relation(fields: [jogadorId], references: [id], onDelete: SetNull)
 
-  jogadorSaindoId   Int?
+  jogadorSaindoId Int?
+  jogadorSaindo   Usuario? @relation("EventoJogadorSaindo", fields: [jogadorSaindoId], references: [id], onDelete: SetNull)
+
   jogadorEntrandoId Int?
+  jogadorEntrando   Usuario? @relation("EventoJogadorEntrando", fields: [jogadorEntrandoId], references: [id], onDelete: SetNull)
 
-  detalhe String?
-
+  detalhe   String?
   createdAt DateTime @default(now())
 
   @@index([jogoId])
   @@index([timeId])
   @@index([jogadorId])
+  @@index([jogadorSaindoId])
+  @@index([jogadorEntrandoId])
 }
