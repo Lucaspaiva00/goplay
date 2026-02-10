@@ -1,12 +1,12 @@
 /************************************************************
- * campeonatoDetalhe.js — COMPLETO (melhorado / robusto)
- * - Ranking (tabelaCampeonato)
- * - Proteção contra duplo clique / requisições concorrentes
- * - Render seguro (escape HTML)
- * - Mensagens melhores e fallbacks
- * - Mantém seu layout / ids do HTML
+ * campeonatoDetalhe.js — COMPLETO (robusto + Próximo passo)
+ * - Mostra CTA "Próximo passo" na aba TIMES para TODAS modalidades
+ * - Mantém botões originais (Grupos/Jogos/Mata-mata) por seção
+ * - Evita requisições concorrentes / duplo clique
+ * - Ranking por grupos usando /campeonato/:id/ranking-grupos (rota correta)
+ * - AVISO: 4 times + 2 grupos => só 2 jogos (1 por grupo)
  ************************************************************/
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "http://localhost:3000"; // <-- ajuste se seu backend estiver em outra porta
 
 let campeonatoId = null;
 let campeonatoAtual = null;
@@ -19,7 +19,7 @@ const busy = {
     gerarGrupos: false,
     gerarJogos: false,
     gerarMataMata: false,
-    finalizarJogo: new Set(), // ids em andamento
+    finalizarJogo: new Set(),
 };
 
 // ============================
@@ -27,7 +27,6 @@ const busy = {
 // ============================
 document.addEventListener("DOMContentLoaded", () => {
     campeonatoId = new URLSearchParams(location.search).get("campeonatoId");
-
     if (!campeonatoId) {
         alert("Campeonato inválido");
         return;
@@ -108,36 +107,6 @@ function setLoading(loading) {
     }
 }
 
-function showInlineMessage(el, type, title, desc) {
-    if (!el) return;
-    const icon =
-        type === "success"
-            ? "fa-circle-check"
-            : type === "warn"
-                ? "fa-triangle-exclamation"
-                : type === "error"
-                    ? "fa-circle-xmark"
-                    : "fa-circle-info";
-
-    el.innerHTML = `
-    <div style="
-      border:1px solid #e6edf6;
-      background:#fff;
-      border-radius:14px;
-      padding:14px;
-      display:flex;
-      gap:10px;
-      align-items:flex-start;
-    ">
-      <i class="fa-solid ${icon}" style="margin-top:2px;"></i>
-      <div>
-        <div style="font-weight:700;">${escapeHTML(title)}</div>
-        ${desc ? `<div class="muted" style="margin-top:4px;">${escapeHTML(desc)}</div>` : ""}
-      </div>
-    </div>
-  `;
-}
-
 function escapeHTML(str) {
     return String(str ?? "")
         .replaceAll("&", "&amp;")
@@ -178,6 +147,115 @@ async function safeFetchJSON(url, options = {}) {
     return data;
 }
 
+function badgeTipo(tipo) {
+    const t = String(tipo || "").toUpperCase();
+    if (t === "GRUPOS") return "Fase de grupos";
+    if (t === "GRUPOS_MATA_MATA") return "Grupos + mata-mata";
+    if (t === "COPA") return "Copa (grupos)";
+    if (t === "PONTOS_CORRIDOS") return "Pontos corridos";
+    if (t === "LIGA_IDA_VOLTA") return "Liga (ida e volta)";
+    if (t === "MATA_MATA" || t === "MATA-MATA") return "Mata-mata";
+    return t || "—";
+}
+
+function renderCampeonatoInfo(c) {
+    const el = document.getElementById("campeonatoInfo");
+    if (!el) return;
+
+    const fmtData = (d) => {
+        if (!d) return "—";
+        const dt = new Date(d);
+        if (Number.isNaN(dt.getTime())) return "—";
+        return dt.toLocaleDateString("pt-BR");
+    };
+
+    const tipo = badgeTipo(c.tipo);
+    const max = c.maxTimes ?? "—";
+    const fase = c.faseAtual ?? "—";
+    const status = c.status ?? "—";
+
+    el.innerHTML = `
+    <div class="item"><strong>Nome:</strong> ${escapeHTML(c.nome || "—")}</div>
+    <div class="item"><strong>Tipo:</strong> ${escapeHTML(tipo)}</div>
+    <div class="item"><strong>Times:</strong> ${(c.times?.length || 0)} / ${escapeHTML(max)}</div>
+    <div class="item"><strong>Status:</strong> ${escapeHTML(status)}</div>
+    <div class="item"><strong>Fase atual:</strong> ${escapeHTML(fase)}</div>
+    <div class="item"><strong>Início:</strong> ${escapeHTML(fmtData(c.dataInicio))}</div>
+    <div class="item"><strong>Fim:</strong> ${escapeHTML(fmtData(c.dataFim))}</div>
+  `;
+}
+
+// ============================
+// CTA "Próximo passo" (injetado na aba TIMES)
+// ============================
+function ensureNextStepContainer() {
+    const secTimes = document.getElementById("sec-times");
+    if (!secTimes) return null;
+
+    let wrap = document.getElementById("nextStepWrap");
+    if (wrap) return wrap;
+
+    wrap = document.createElement("div");
+    wrap.id = "nextStepWrap";
+    wrap.style.marginTop = "14px";
+
+    wrap.innerHTML = `
+    <div style="
+      border:1px solid #e6edf6;
+      background:#fff;
+      border-radius:14px;
+      padding:14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    ">
+      <div>
+        <div style="font-weight:800; display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-circle-play"></i>
+          Próximo passo
+        </div>
+        <div class="muted" id="nextStepDesc" style="margin-top:4px;">
+          —
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="nextStepBtn" style="display:none;">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> —
+      </button>
+    </div>
+  `;
+
+    secTimes.appendChild(wrap);
+    return wrap;
+}
+
+function setNextStepCTA({ show, label, desc, onClick }) {
+    const wrap = ensureNextStepContainer();
+    if (!wrap) return;
+
+    const btn = document.getElementById("nextStepBtn");
+    const d = document.getElementById("nextStepDesc");
+
+    if (d) d.textContent = desc || "—";
+    if (!btn) return;
+
+    btn.onclick = null;
+
+    if (!show) {
+        btn.style.display = "none";
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Tudo certo`;
+        return;
+    }
+
+    btn.style.display = "inline-flex";
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> ${escapeHTML(label || "Continuar")}`;
+    btn.onclick = onClick;
+}
+
 // ============================
 // Carregamento geral
 // ============================
@@ -194,6 +272,8 @@ async function carregarDetalhes(force = false) {
         const c = await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}`);
         campeonatoAtual = c;
 
+        renderCampeonatoInfo(c);
+
         const titulo = document.getElementById("titulo");
         if (titulo) titulo.textContent = c.nome || "Campeonato";
 
@@ -206,7 +286,7 @@ async function carregarDetalhes(force = false) {
         await renderRanking();
         await renderFinal(c);
 
-        ajustarAcoesSemFluxo(c);
+        ajustarAcoesPorTipo(c);
     } catch (err) {
         console.error(err);
         alert(err?.message || "Erro ao carregar campeonato");
@@ -217,28 +297,148 @@ async function carregarDetalhes(force = false) {
     }
 }
 
-function ajustarAcoesSemFluxo(c) {
+// ============================
+// Regras de ações por tipo (botões + Próximo passo)
+// ============================
+function ajustarAcoesPorTipo(c) {
     const btnGerarGrupos = document.getElementById("btnGerarGrupos");
     const btnGerarJogosGrupos = document.getElementById("btnGerarJogosGrupos");
     const btnGerarMataMata = document.getElementById("btnGerarMataMata");
 
-    if (!btnGerarGrupos || !btnGerarJogosGrupos || !btnGerarMataMata) return;
+    if (btnGerarGrupos) btnGerarGrupos.style.display = "none";
+    if (btnGerarJogosGrupos) btnGerarJogosGrupos.style.display = "none";
+    if (btnGerarMataMata) btnGerarMataMata.style.display = "none";
 
-    if (c.faseAtual === "FINALIZADO") {
-        btnGerarGrupos.style.display = "none";
-        btnGerarJogosGrupos.style.display = "none";
-        btnGerarMataMata.style.display = "none";
+    if (c.faseAtual === "FINALIZADO" || c.status === "FINALIZADO") {
+        setNextStepCTA({ show: false, desc: "Campeonato finalizado." });
         return;
     }
 
-    const podeGerarGrupos = (c.times?.length || 0) >= 4 && (c.grupos?.length || 0) === 0;
-    btnGerarGrupos.style.display = podeGerarGrupos ? "inline-flex" : "none";
+    const tipo = String(c.tipo || "").toUpperCase();
+    const totalTimes = c.times?.length || 0;
+    const totalGrupos = c.grupos?.length || 0;
+    const totalJogos = c.jogos?.length || 0;
 
-    const podeGerarJogosGrupos = (c.grupos?.length || 0) > 0 && (c.jogos?.length || 0) === 0;
-    btnGerarJogosGrupos.style.display = podeGerarJogosGrupos ? "inline-flex" : "none";
+    const max = Number(c.maxTimes || 0);
+    const lotado = max > 0 && totalTimes >= max;
 
-    const temJogos = (c.jogos?.length || 0) > 0;
-    btnGerarMataMata.style.display = temJogos ? "inline-flex" : "none";
+    const minLiga = 2;
+    const minGrupos = 4;
+
+    const notReadyDesc = lotado
+        ? "Times completos, mas ainda não há uma ação disponível no fluxo."
+        : `Adicione times para liberar a próxima etapa. (${totalTimes}/${max || "∞"})`;
+
+    // GRUPOS / GRUPOS_MATA_MATA / COPA
+    if (tipo === "GRUPOS" || tipo === "GRUPOS_MATA_MATA" || tipo === "COPA") {
+        if (totalTimes >= minGrupos && totalGrupos === 0) {
+            if (btnGerarGrupos) btnGerarGrupos.style.display = "inline-flex";
+
+            setNextStepCTA({
+                show: true,
+                label: "Gerar grupos",
+                desc: lotado
+                    ? "Times completos. Clique para gerar os grupos automaticamente."
+                    : `Mínimo ${minGrupos} times. Clique para gerar os grupos.`,
+                onClick: () => gerarGrupos(),
+            });
+            return;
+        }
+
+        if (totalGrupos > 0 && totalJogos === 0) {
+            if (btnGerarJogosGrupos) btnGerarJogosGrupos.style.display = "inline-flex";
+
+            // ⚠️ AVISO DO TEU CASO (4 times em 2 grupos => só 2 jogos)
+            if ((c.times?.length || 0) === 4 && (c.grupos?.length || 0) === 2) {
+                setNextStepCTA({
+                    show: true,
+                    label: "Gerar jogos (grupos)",
+                    desc:
+                        "ATENÇÃO: com 4 times e 2 grupos, cada grupo fica com 2 times, então o round-robin gera 1 jogo por grupo (2 jogos no total). " +
+                        "Se você quer mais jogos, o backend precisa colocar 1 grupo com 4 times ou habilitar ida/volta.",
+                    onClick: () => gerarJogosGrupos(),
+                });
+            } else {
+                setNextStepCTA({
+                    show: true,
+                    label: "Gerar jogos (grupos)",
+                    desc: "Grupos prontos. Clique para gerar os jogos da fase de grupos.",
+                    onClick: () => gerarJogosGrupos(),
+                });
+            }
+            return;
+        }
+
+        // Só habilita gerar mata-mata se for GRUPOS_MATA_MATA
+        if (tipo === "GRUPOS_MATA_MATA") {
+            // Se já tem jogos, pode gerar mata-mata (o backend decide se já pode ou não)
+            if (totalJogos > 0) {
+                if (btnGerarMataMata) btnGerarMataMata.style.display = "inline-flex";
+                setNextStepCTA({
+                    show: true,
+                    label: "Gerar mata-mata",
+                    desc: "Após a fase de grupos, gere o mata-mata (chaveamento).",
+                    onClick: () => gerarMataMata(),
+                });
+                return;
+            }
+        }
+
+        setNextStepCTA({ show: false, desc: notReadyDesc });
+        return;
+    }
+
+    // LIGA / PONTOS CORRIDOS / IDA-VOLTA
+    if (tipo === "PONTOS_CORRIDOS" || tipo === "LIGA_IDA_VOLTA") {
+        if (totalTimes >= minLiga && totalJogos === 0) {
+            if (btnGerarJogosGrupos) btnGerarJogosGrupos.style.display = "inline-flex";
+
+            setNextStepCTA({
+                show: true,
+                label: tipo === "LIGA_IDA_VOLTA" ? "Gerar jogos (ida e volta)" : "Gerar jogos (liga)",
+                desc: lotado
+                    ? "Times completos. Clique para gerar os confrontos."
+                    : `Mínimo ${minLiga} times. Clique para gerar os confrontos.`,
+                onClick: () => gerarJogosGrupos(),
+            });
+            return;
+        }
+
+        setNextStepCTA({ show: false, desc: notReadyDesc });
+        return;
+    }
+
+    // MATA-MATA puro
+    if (tipo === "MATA_MATA" || tipo === "MATA-MATA") {
+        const podeGerar = totalTimes >= minLiga && totalJogos === 0;
+
+        if (podeGerar) {
+            if (btnGerarMataMata) btnGerarMataMata.style.display = "inline-flex";
+
+            setNextStepCTA({
+                show: true,
+                label: "Gerar mata-mata",
+                desc: lotado
+                    ? "Times completos. Clique para gerar os jogos do round 1."
+                    : `Mínimo ${minLiga} times. Clique para gerar o mata-mata.`,
+                onClick: () => gerarMataMata(),
+            });
+            return;
+        }
+
+        if (totalJogos > 0) {
+            setNextStepCTA({
+                show: false,
+                desc: "Mata-mata gerado. Agora finalize os jogos para avançar os rounds.",
+            });
+            return;
+        }
+
+        setNextStepCTA({ show: false, desc: notReadyDesc });
+        return;
+    }
+
+    setNextStepCTA({ show: false, desc: notReadyDesc });
 }
 
 // ============================
@@ -250,6 +450,23 @@ function renderTimes(c) {
 
     const chip = document.getElementById("chipTimes");
     if (chip) chip.textContent = `${total} time(s)`;
+
+    const max = Number(c.maxTimes || 0);
+    const btnAdd = document.getElementById("btnAddTime");
+    const btnCriar = document.getElementById("btnCriarEAddTime");
+    const select = document.getElementById("timeId");
+    const inputNovo = document.getElementById("novoTimeNome");
+
+    const lotado = max > 0 && total >= max;
+
+    if (btnAdd) btnAdd.disabled = lotado;
+    if (btnCriar) btnCriar.disabled = lotado;
+    if (select) select.disabled = lotado;
+    if (inputNovo) inputNovo.disabled = lotado;
+
+    if (lotado && select) {
+        select.innerHTML = `<option value="">Limite de times atingido (${total}/${max})</option>`;
+    }
 
     if (!div) return;
 
@@ -284,7 +501,6 @@ async function carregarSelectTimes() {
 
         const times = await safeFetchJSON(`${BASE_URL}/time/society/${societyId}`);
 
-        // inscritos: usa time.id OU timeId (caso venha diferente)
         const inscritos = new Set(
             (campeonatoAtual?.times || [])
                 .map((t) => t?.time?.id ?? t?.timeId)
@@ -439,10 +655,10 @@ function renderGrupos(c) {
               ${times
                     .map(
                         (tg) => `
-                  <div style="padding:10px; border:1px solid #eef2f6; border-radius:12px;">
-                    ${escapeHTML(tg?.time?.nome ?? "Time")}
-                  </div>
-                `
+                    <div style="padding:10px; border:1px solid #eef2f6; border-radius:12px;">
+                      ${escapeHTML(tg?.time?.nome ?? "Time")}
+                    </div>
+                  `
                     )
                     .join("")}
             </div>
@@ -487,7 +703,7 @@ async function gerarJogosGrupos() {
         abrirSecao("sec-jogos");
     } catch (err) {
         console.error(err);
-        alert(err?.message || "Não foi possível gerar os jogos dos grupos.");
+        alert(err?.message || "Não foi possível gerar os jogos.");
     } finally {
         setBtnLoading(btn, false);
         busy.gerarJogos = false;
@@ -507,11 +723,17 @@ function renderJogos(c) {
     if (!div) return;
 
     if (!total) {
-        div.innerHTML = `<div class="empty">Nenhum jogo disponível no momento.</div>`;
+        div.innerHTML = `
+      <div class="empty">
+        Nenhum jogo disponível no momento.<br/>
+        <small class="muted">
+          Se você gerou grupos e apareceu "só 2 jogos" com 4 times, é porque seu backend dividiu em 2 grupos de 2 times.
+        </small>
+      </div>
+    `;
         return;
     }
 
-    // Render
     div.innerHTML = (c.jogos || [])
         .map((j) => {
             const nomeA = j?.timeA?.nome ?? "Time A";
@@ -524,13 +746,11 @@ function renderJogos(c) {
             return `
         <div class="match">
           <div class="match-main">
-            <div class="match-title">${escapeHTML(nomeA)} ${escapeHTML(placarA)} x ${escapeHTML(
-                placarB
-            )} ${escapeHTML(nomeB)}</div>
+            <div class="match-title">${escapeHTML(nomeA)} ${escapeHTML(placarA)} x ${escapeHTML(placarB)} ${escapeHTML(nomeB)}</div>
             <div class="match-sub">Jogo #${Number(j.id)}</div>
             ${isMataMata
                     ? `<div class="muted" style="font-size:12px; margin-top:6px;">Mata-mata • Round ${Number(j.round || 1)}</div>`
-                    : `<div class="muted" style="font-size:12px; margin-top:6px;">Fase de grupos</div>`
+                    : `<div class="muted" style="font-size:12px; margin-top:6px;">Fase de grupos • Rodada ${Number(j.round || 1)}</div>`
                 }
           </div>
 
@@ -548,38 +768,27 @@ function renderJogos(c) {
                 <input id="gA${Number(j.id)}" type="number" min="0" placeholder="Gols A" />
                 <input id="gB${Number(j.id)}" type="number" min="0" placeholder="Gols B" />
 
-                <button class="btn btn-light" onclick="toggleDesempate(${Number(
-                        j.id
-                    )})" title="Usar desempate (se empate no mata-mata)">
+                <button class="btn btn-light" onclick="toggleDesempate(${Number(j.id)})" title="Usar desempate (se empate no mata-mata)">
                   <i class="fa-solid fa-scale-balanced"></i> Desempate
                 </button>
 
-                <button class="btn btn-primary" onclick="finalizarJogo(${Number(j.id)})" id="btnFinalizar${Number(
-                        j.id
-                    )}">
+                <button class="btn btn-primary" onclick="finalizarJogo(${Number(j.id)})" id="btnFinalizar${Number(j.id)}">
                   <i class="fa-solid fa-check"></i> Finalizar
                 </button>
 
-                <!-- ✅ BLOCO DESEMPATE -->
-                <div id="desempateBox${Number(
-                        j.id
-                    )}" style="display:none; width:100%; margin-top:10px; padding:12px; border:1px solid #eef2f6; border-radius:12px; background:#fff;">
+                <div id="desempateBox${Number(j.id)}" style="display:none; width:100%; margin-top:10px; padding:12px; border:1px solid #eef2f6; border-radius:12px; background:#fff;">
                   <div class="muted" style="font-size:12px; margin-bottom:10px;">
                     Empate no mata-mata exige vencedor e tipo de desempate.
                   </div>
 
                   <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <select id="vencedorId${Number(
-                        j.id
-                    )}" style="padding:10px; border-radius:10px; border:1px solid #dbe3ef;">
+                    <select id="vencedorId${Number(j.id)}" style="padding:10px; border-radius:10px; border:1px solid #dbe3ef;">
                       <option value="">Selecione o vencedor...</option>
                       <option value="${Number(j.timeAId)}">${escapeHTML(j?.timeA?.nome ?? "Time A")}</option>
                       <option value="${Number(j.timeBId)}">${escapeHTML(j?.timeB?.nome ?? "Time B")}</option>
                     </select>
 
-                    <select id="desempateTipo${Number(
-                        j.id
-                    )}" style="padding:10px; border-radius:10px; border:1px solid #dbe3ef;">
+                    <select id="desempateTipo${Number(j.id)}" style="padding:10px; border-radius:10px; border:1px solid #dbe3ef;">
                       <option value="">Tipo de desempate...</option>
                       <option value="PENALTIS">Pênaltis</option>
                       <option value="WO">W.O.</option>
@@ -589,10 +798,8 @@ function renderJogos(c) {
 
                     <input id="penaltisA${Number(j.id)}" type="number" min="0" placeholder="Pênaltis A (opcional)"
                       style="padding:10px; border-radius:10px; border:1px solid #dbe3ef; width:180px;" />
-
                     <input id="penaltisB${Number(j.id)}" type="number" min="0" placeholder="Pênaltis B (opcional)"
                       style="padding:10px; border-radius:10px; border:1px solid #dbe3ef; width:180px;" />
-
                     <input id="observacao${Number(j.id)}" type="text" placeholder="Observação (opcional)"
                       style="padding:10px; border-radius:10px; border:1px solid #dbe3ef; flex:1; min-width:220px;" />
                   </div>
@@ -626,13 +833,11 @@ async function finalizarJogo(id) {
             return;
         }
 
-        // Descobre se é mata-mata via campeonatoAtual
         const jogo = (campeonatoAtual?.jogos || []).find((x) => Number(x.id) === jogoId);
         const isMataMata = jogo ? jogo.grupoId === null : false;
 
         const payload = { golsA, golsB };
 
-        // empate no mata-mata exige extra
         if (isMataMata && golsA === golsB) {
             const box = document.getElementById(`desempateBox${jogoId}`);
             if (box) box.style.display = "block";
@@ -685,7 +890,7 @@ async function gerarMataMata() {
     try {
         await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/gerar-mata-mata`, { method: "POST" });
         await carregarDetalhes(true);
-        abrirSecao("sec-final");
+        abrirSecao("sec-jogos");
     } catch (err) {
         console.error(err);
         alert(err?.message || "Não foi possível gerar o mata-mata.");
@@ -703,6 +908,95 @@ async function renderRanking() {
     const chip = document.getElementById("chipRanking");
     if (!wrap || !chip) return;
 
+    const tipo = String(campeonatoAtual?.tipo || "").toUpperCase();
+
+    // Mata-mata não tem ranking por pontos
+    if (tipo === "MATA_MATA" || tipo === "MATA-MATA") {
+        chip.textContent = "—";
+        wrap.innerHTML = `
+      <div class="empty">
+        No mata-mata, não existe ranking por pontos. Use a aba <strong>Chaveamento</strong> para acompanhar o campeonato.
+      </div>
+    `;
+        return;
+    }
+
+    // Ranking por grupos
+    if (tipo === "GRUPOS" || tipo === "GRUPOS_MATA_MATA" || tipo === "COPA") {
+        try {
+            // ✅ rota correta (e seu routes.js precisa estar corrigido)
+            const grupos = await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/ranking-grupos`);
+
+            const totalTimes = (grupos || []).reduce((acc, g) => acc + (g.tabela?.length || 0), 0);
+            chip.textContent = `${totalTimes} time(s)`;
+
+            if (!grupos?.length) {
+                wrap.innerHTML = `<div class="empty">Sem grupos ainda. Gere os grupos para ver a classificação.</div>`;
+                return;
+            }
+
+            wrap.innerHTML = grupos
+                .map((g) => {
+                    const rows = g.tabela || [];
+                    if (!rows.length) {
+                        return `
+              <div style="margin-bottom:14px;">
+                <div style="font-weight:800; margin:10px 0;">${escapeHTML(g.nome)}</div>
+                <div class="empty">Nenhum time no grupo.</div>
+              </div>
+            `;
+                    }
+
+                    return `
+            <div style="margin-bottom:14px;">
+              <div style="font-weight:800; margin:10px 0;">${escapeHTML(g.nome)}</div>
+
+              <div class="item" style="font-weight:700; background:#f7f9fc;">
+                <div style="width:34px;">#</div>
+                <div style="flex:1;">Time</div>
+                <div style="width:50px; text-align:center;">PTS</div>
+                <div style="width:40px; text-align:center;">J</div>
+                <div style="width:40px; text-align:center;">V</div>
+                <div style="width:40px; text-align:center;">E</div>
+                <div style="width:40px; text-align:center;">D</div>
+                <div style="width:55px; text-align:center;">GP</div>
+                <div style="width:55px; text-align:center;">GC</div>
+                <div style="width:55px; text-align:center;">SG</div>
+              </div>
+
+              ${rows
+                            .map(
+                                (r, i) => `
+                  <div class="item">
+                    <div style="width:34px;">${i + 1}</div>
+                    <div style="flex:1;"><strong>${escapeHTML(r.nome)}</strong></div>
+                    <div style="width:50px; text-align:center;"><strong>${Number(r.pontos ?? 0)}</strong></div>
+                    <div style="width:40px; text-align:center;">${Number(r.jogos ?? 0)}</div>
+                    <div style="width:40px; text-align:center;">${Number(r.vitorias ?? 0)}</div>
+                    <div style="width:40px; text-align:center;">${Number(r.empates ?? 0)}</div>
+                    <div style="width:40px; text-align:center;">${Number(r.derrotas ?? 0)}</div>
+                    <div style="width:55px; text-align:center;">${Number(r.golsPro ?? 0)}</div>
+                    <div style="width:55px; text-align:center;">${Number(r.golsContra ?? 0)}</div>
+                    <div style="width:55px; text-align:center;">${Number(r.saldo ?? 0)}</div>
+                  </div>
+                `
+                            )
+                            .join("")}
+            </div>
+          `;
+                })
+                .join("");
+
+            return;
+        } catch (err) {
+            console.error(err);
+            wrap.innerHTML = `<div class="empty">Erro ao carregar ranking por grupos.</div>`;
+            chip.textContent = "—";
+            return;
+        }
+    }
+
+    // Liga / pontos corridos = ranking geral
     try {
         const ranking = await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/ranking`);
         chip.textContent = `${(ranking || []).length} time(s)`;
@@ -725,28 +1019,29 @@ async function renderRanking() {
         <div style="width:55px; text-align:center;">GC</div>
         <div style="width:55px; text-align:center;">SG</div>
       </div>
-      ${ranking
+      ${(ranking || [])
                 .map(
                     (r, i) => `
-        <div class="item">
-          <div style="width:34px;">${i + 1}</div>
-          <div style="flex:1;"><strong>${escapeHTML(r.nome)}</strong></div>
-          <div style="width:50px; text-align:center;"><strong>${Number(r.pontos ?? 0)}</strong></div>
-          <div style="width:40px; text-align:center;">${Number(r.jogos ?? 0)}</div>
-          <div style="width:40px; text-align:center;">${Number(r.vitorias ?? 0)}</div>
-          <div style="width:40px; text-align:center;">${Number(r.empates ?? 0)}</div>
-          <div style="width:40px; text-align:center;">${Number(r.derrotas ?? 0)}</div>
-          <div style="width:55px; text-align:center;">${Number(r.golsPro ?? 0)}</div>
-          <div style="width:55px; text-align:center;">${Number(r.golsContra ?? 0)}</div>
-          <div style="width:55px; text-align:center;">${Number(r.saldo ?? 0)}</div>
-        </div>
-      `
+          <div class="item">
+            <div style="width:34px;">${i + 1}</div>
+            <div style="flex:1;"><strong>${escapeHTML(r.nome)}</strong></div>
+            <div style="width:50px; text-align:center;"><strong>${Number(r.pontos ?? 0)}</strong></div>
+            <div style="width:40px; text-align:center;">${Number(r.jogos ?? 0)}</div>
+            <div style="width:40px; text-align:center;">${Number(r.vitorias ?? 0)}</div>
+            <div style="width:40px; text-align:center;">${Number(r.empates ?? 0)}</div>
+            <div style="width:40px; text-align:center;">${Number(r.derrotas ?? 0)}</div>
+            <div style="width:55px; text-align:center;">${Number(r.golsPro ?? 0)}</div>
+            <div style="width:55px; text-align:center;">${Number(r.golsContra ?? 0)}</div>
+            <div style="width:55px; text-align:center;">${Number(r.saldo ?? 0)}</div>
+          </div>
+        `
                 )
                 .join("")}
     `;
     } catch (err) {
         console.error(err);
         wrap.innerHTML = `<div class="empty">Erro ao carregar ranking.</div>`;
+        chip.textContent = "—";
     }
 }
 
@@ -756,7 +1051,6 @@ async function renderRanking() {
 async function renderFinal(c) {
     const finalInfo = document.getElementById("finalInfo");
     const btnVerChaveamento = document.getElementById("btnVerChaveamento");
-
     if (!finalInfo || !btnVerChaveamento) return;
 
     if (c.faseAtual === "FINALIZADO") {
@@ -779,21 +1073,16 @@ async function renderFinal(c) {
         const temBracket = Array.isArray(jogos) && jogos.length > 0;
 
         if (!temBracket) {
-            showInlineMessage(
-                finalInfo,
-                "info",
-                "Chaveamento ainda não gerado",
-                "Quando você gerar o mata-mata, o chaveamento aparece aqui para visualização."
-            );
+            finalInfo.innerHTML = `<div class="empty">Chaveamento ainda não gerado. Gere o mata-mata para visualizar.</div>`;
             btnVerChaveamento.style.display = "none";
             return;
         }
 
-        showInlineMessage(finalInfo, "success", "Chaveamento disponível", "Você já pode abrir a tela do chaveamento.");
+        finalInfo.innerHTML = `<div class="empty">Chaveamento disponível. Você já pode abrir a tela do chaveamento.</div>`;
         btnVerChaveamento.style.display = "inline-flex";
     } catch (err) {
         console.error(err);
-        showInlineMessage(finalInfo, "warn", "Não consegui verificar o chaveamento agora", "Clique em “Atualizar”.");
+        finalInfo.innerHTML = `<div class="empty">Não consegui verificar o chaveamento agora. Clique em Atualizar.</div>`;
         btnVerChaveamento.style.display = "inline-flex";
     }
 }
@@ -815,3 +1104,9 @@ function toggleDesempate(jogoId) {
     if (!box) return;
     box.style.display = box.style.display === "none" ? "block" : "none";
 }
+
+// ✅ deixa as funções acessíveis pros onclick do HTML
+window.abrirDetalhesJogo = abrirDetalhesJogo;
+window.toggleDesempate = toggleDesempate;
+window.finalizarJogo = finalizarJogo;
+window.abrirBracket = abrirBracket;

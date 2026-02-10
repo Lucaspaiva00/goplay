@@ -79,11 +79,10 @@ async function ensureTabelaRow(db, campeonatoId, timeId) {
 }
 
 /**
- * ✅ CORREÇÃO CRÍTICA:
  * Atualiza tabela SOMENTE quando o jogo deve entrar na classificação geral do campeonato.
  * - Jogos de GRUPOS: entram (grupoId != null)
  * - Liga/Pontos corridos: entram (grupoId == null E tipo in [PONTOS_CORRIDOS, LIGA_IDA_VOLTA])
- * - Mata-mata de campeonato tipo GRUPOS/GRUPOS_MATA_MATA: NÃO entra (evita ranking "pontos corridos + mata-mata")
+ * - Mata-mata puro: NÃO entra (por padrão não existe ranking por pontos)
  */
 async function atualizarTabelaGeral(db, jogo) {
     const { campeonatoId, timeAId, timeBId, grupoId } = jogo;
@@ -101,28 +100,38 @@ async function atualizarTabelaGeral(db, jogo) {
     const tipo = camp.tipo;
 
     const isGrupoGame = grupoId !== null && grupoId !== undefined;
-    const isLigaGame = (grupoId === null || grupoId === undefined) && (tipo === "PONTOS_CORRIDOS" || tipo === "LIGA_IDA_VOLTA");
+    const isLigaGame =
+        (grupoId === null || grupoId === undefined) &&
+        (tipo === "PONTOS_CORRIDOS" || tipo === "LIGA_IDA_VOLTA");
 
-    // ✅ se não for jogo de grupo nem jogo de liga, não soma na tabela
+    // ✅ se não for jogo de grupo nem jogo de liga, não soma
     if (!isGrupoGame && !isLigaGame) return;
 
     const rowA = await ensureTabelaRow(db, campeonatoId, timeAId);
     const rowB = await ensureTabelaRow(db, campeonatoId, timeBId);
 
-    let ptsA = 0, ptsB = 0;
-    let vitA = 0, vitB = 0;
-    let empA = 0, empB = 0;
-    let derA = 0, derB = 0;
+    let ptsA = 0,
+        ptsB = 0;
+    let vitA = 0,
+        vitB = 0;
+    let empA = 0,
+        empB = 0;
+    let derA = 0,
+        derB = 0;
 
     if (golsA > golsB) {
-        ptsA = 3; vitA = 1;
+        ptsA = 3;
+        vitA = 1;
         derB = 1;
     } else if (golsB > golsA) {
-        ptsB = 3; vitB = 1;
+        ptsB = 3;
+        vitB = 1;
         derA = 1;
     } else {
-        ptsA = 1; ptsB = 1;
-        empA = 1; empB = 1;
+        ptsA = 1;
+        ptsB = 1;
+        empA = 1;
+        empB = 1;
     }
 
     await db.tabelaCampeonato.update({
@@ -175,7 +184,9 @@ const create = async (req, res) => {
         } = req.body;
 
         if (!societyId || !nome || !tipo || !maxTimes) {
-            return res.status(400).json({ error: "Dados incompletos (societyId, nome, tipo, maxTimes)." });
+            return res
+                .status(400)
+                .json({ error: "Dados incompletos (societyId, nome, tipo, maxTimes)." });
         }
 
         const di = dataInicio ? new Date(dataInicio) : null;
@@ -347,7 +358,16 @@ const generateGroups = async (req, res) => {
         }
 
         const totalTimes = campeonato.times.length;
-        const numGrupos = totalTimes <= 8 ? 2 : totalTimes <= 12 ? 3 : 4;
+
+        // ✅ FIX IMPORTANTE (teu bug de "só 2 jogos" com 4 times)
+        // 4 times -> 1 grupo (gera 6 jogos)
+        // 5..8 -> 2 grupos
+        // 9..12 -> 3 grupos
+        // 13+ -> 4 grupos
+        const numGrupos =
+            totalTimes <= 4 ? 1 :
+                totalTimes <= 8 ? 2 :
+                    totalTimes <= 12 ? 3 : 4;
 
         const grupos = [];
         for (let i = 0; i < numGrupos; i++) {
@@ -437,8 +457,7 @@ const generateGroupMatches = async (req, res) => {
                     }
                 }
 
-                // VOLTA (somente se LIGA_IDA_VOLTA — você pode decidir se quer ida/volta também nos grupos)
-                // Se você QUER ida/volta também em grupos, deixa assim.
+                // VOLTA (só se LIGA_IDA_VOLTA; se quiser ida/volta em GRUPOS, troque a condição)
                 if (idaVolta) {
                     for (let r = 0; r < rounds.length; r++) {
                         for (const [a, b] of rounds[r]) {
@@ -584,9 +603,26 @@ const generateMataMata = async (req, res) => {
         });
         if (jaTemMataMata) return res.status(400).json({ error: "Mata-mata já foi gerado." });
 
+        // ✅ se for GRUPOS_MATA_MATA, é recomendável bloquear antes dos jogos de grupos acabarem
+        if (campeonato.tipo === "GRUPOS_MATA_MATA") {
+            const jogosDeGrupo = await prisma.jogo.findMany({
+                where: { campeonatoId, grupoId: { not: null } },
+                select: { id: true, finalizado: true },
+            });
+            const temJogos = jogosDeGrupo.length > 0;
+            const todosFinalizados = jogosDeGrupo.every((j) => j.finalizado);
+
+            if (!temJogos) {
+                return res.status(400).json({ error: "Gere e finalize os jogos da fase de grupos antes do mata-mata." });
+            }
+            if (!todosFinalizados) {
+                return res.status(400).json({ error: "Finalize TODOS os jogos da fase de grupos antes de gerar o mata-mata." });
+            }
+        }
+
         let participantes = [];
 
-        if (campeonato.tipo === "MATA_MATA") {
+        if (campeonato.tipo === "MATA_MATA" || campeonato.tipo === "MATA-MATA") {
             participantes = campeonato.times.map((t) => t.timeId);
         } else {
             const grupos = campeonato.grupos || [];
@@ -599,6 +635,7 @@ const generateMataMata = async (req, res) => {
                     return b.golsPro - a.golsPro;
                 });
 
+                // pega os 2 melhores de cada grupo
                 for (let i = 0; i < Math.min(2, ordenados.length); i++) {
                     participantes.push(ordenados[i].timeId);
                 }
@@ -609,13 +646,19 @@ const generateMataMata = async (req, res) => {
         if (participantes.length < 2)
             return res.status(400).json({ error: "Não há times suficientes para mata-mata." });
 
+        // corta pra potência de 2 mais próxima (16,8,4,2)
         const potencias = [16, 8, 4, 2];
         const n = potencias.find((p) => participantes.length >= p) || 2;
         participantes = participantes.slice(0, n);
 
         let pares = [];
 
-        if (campeonato.tipo === "GRUPOS" && (campeonato.grupos?.length || 0) === 2 && participantes.length === 4) {
+        // tentativa de cruzamento "A1 x B2 / B1 x A2" se 2 grupos e 4 times
+        if (
+            (campeonato.tipo === "GRUPOS" || campeonato.tipo === "GRUPOS_MATA_MATA") &&
+            (campeonato.grupos?.length || 0) === 2 &&
+            participantes.length === 4
+        ) {
             const [gA, gB] = campeonato.grupos;
 
             const rank = (g) =>
@@ -636,6 +679,7 @@ const generateMataMata = async (req, res) => {
             }
         }
 
+        // fallback: random
         if (!pares.length) {
             participantes.sort(() => Math.random() - 0.5);
             for (let i = 0; i < participantes.length / 2; i++) {
@@ -666,7 +710,7 @@ const generateMataMata = async (req, res) => {
 };
 
 // ============================
-// ✅ Finalizar jogo (seu código intacto, só mantendo as novas regras de tabela)
+// ✅ Finalizar jogo (mantém regras novas de tabela + avanço do mata-mata)
 // ============================
 const finalizarJogo = async (req, res) => {
     try {
@@ -695,7 +739,10 @@ const finalizarJogo = async (req, res) => {
             }
 
             if (jogoAtual.finalizado) {
-                return { status: 409, body: { error: "Este jogo já foi finalizado. Não é permitido finalizar novamente." } };
+                return {
+                    status: 409,
+                    body: { error: "Este jogo já foi finalizado. Não é permitido finalizar novamente." },
+                };
             }
 
             const isMataMata = jogoAtual.grupoId === null;
@@ -714,7 +761,10 @@ const finalizarJogo = async (req, res) => {
                     if (!vencedorIdBody) {
                         return {
                             status: 400,
-                            body: { error: "Empate no mata-mata: informe vencedorId e desempateTipo (PENALTIS/WO/MELHOR_CAMPANHA)." },
+                            body: {
+                                error:
+                                    "Empate no mata-mata: informe vencedorId e desempateTipo (PENALTIS/WO/MELHOR_CAMPANHA).",
+                            },
                         };
                     }
                     if (![jogoAtual.timeAId, jogoAtual.timeBId].includes(vencedorIdBody)) {
@@ -743,6 +793,7 @@ const finalizarJogo = async (req, res) => {
             await atualizarClassificacaoGrupos(tx, jogo);
             await atualizarTabelaGeral(tx, jogo);
 
+            // se não for mata-mata, acabou aqui
             if (!isMataMata) return { status: 200, body: { ok: true } };
 
             const campeonatoId = jogo.campeonatoId;
@@ -755,11 +806,15 @@ const finalizarJogo = async (req, res) => {
 
             const todosFinalizados = jogosDoRound.every((j) => j.finalizado);
             if (!todosFinalizados) {
-                return { status: 200, body: { ok: true, mensagem: "Jogo finalizado. Aguardando os demais jogos do round." } };
+                return {
+                    status: 200,
+                    body: { ok: true, mensagem: "Jogo finalizado. Aguardando os demais jogos do round." },
+                };
             }
 
             const vencedores = jogosDoRound.map((j) => j.vencedorId).filter(Boolean);
 
+            // final do campeonato (só 1 jogo no round)
             if (jogosDoRound.length === 1) {
                 const finalGame = jogosDoRound[0];
                 const campeaoId = finalGame.vencedorId;
@@ -770,7 +825,10 @@ const finalizarJogo = async (req, res) => {
                     data: { faseAtual: "FINALIZADO", campeaoId, viceCampeaoId: viceId, status: "FINALIZADO" },
                 });
 
-                return { status: 200, body: { ok: true, mensagem: "Campeonato finalizado!", campeaoId, viceCampeaoId: viceId } };
+                return {
+                    status: 200,
+                    body: { ok: true, mensagem: "Campeonato finalizado!", campeaoId, viceCampeaoId: viceId },
+                };
             }
 
             const proximoRound = roundAtual + 1;
@@ -778,6 +836,7 @@ const finalizarJogo = async (req, res) => {
                 return { status: 400, body: { error: "Quantidade de vencedores ímpar. Verifique jogos do round." } };
             }
 
+            // cria próximo round em pares
             for (let i = 0; i < vencedores.length; i += 2) {
                 await createGameWithStats(tx, {
                     campeonatoId,
@@ -824,7 +883,7 @@ const getBracket = async (req, res) => {
 };
 
 // ============================
-// ✅ RANKING
+// ✅ RANKING (geral)
 // ============================
 const ranking = async (req, res) => {
     try {
@@ -901,8 +960,10 @@ const updateInfo = async (req, res) => {
                 dataInicio: dataInicio !== undefined ? di : undefined,
                 dataFim: dataFim !== undefined ? df : undefined,
                 status: status !== undefined ? status : undefined,
-                regulamentoTexto: regulamentoTexto !== undefined ? (regulamentoTexto ? String(regulamentoTexto) : null) : undefined,
-                regulamentoUrl: regulamentoUrl !== undefined ? (regulamentoUrl ? String(regulamentoUrl).trim() : null) : undefined,
+                regulamentoTexto:
+                    regulamentoTexto !== undefined ? (regulamentoTexto ? String(regulamentoTexto) : null) : undefined,
+                regulamentoUrl:
+                    regulamentoUrl !== undefined ? (regulamentoUrl ? String(regulamentoUrl).trim() : null) : undefined,
             },
         });
 
@@ -910,6 +971,51 @@ const updateInfo = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Erro ao atualizar campeonato." });
+    }
+};
+
+// ✅ Ranking separado por grupos (para campeonatos com grupos)
+const rankingPorGrupos = async (req, res) => {
+    try {
+        const campeonatoId = Number(req.params.id);
+
+        const grupos = await prisma.grupo.findMany({
+            where: { campeonatoId },
+            include: {
+                timesGrupo: {
+                    include: { time: true },
+                    orderBy: [
+                        { pontos: "desc" },
+                        { saldoGols: "desc" },
+                        { golsPro: "desc" },
+                        { vitorias: "desc" },
+                    ],
+                },
+            },
+            orderBy: { id: "asc" },
+        });
+
+        const resp = (grupos || []).map((g) => ({
+            grupoId: g.id,
+            nome: g.nome,
+            tabela: (g.timesGrupo || []).map((tg) => ({
+                timeId: tg.timeId,
+                nome: tg.time?.nome || "Time",
+                pontos: tg.pontos || 0,
+                jogos: (tg.vitorias || 0) + (tg.empates || 0) + (tg.derrotas || 0),
+                vitorias: tg.vitorias || 0,
+                empates: tg.empates || 0,
+                derrotas: tg.derrotas || 0,
+                golsPro: tg.golsPro || 0,
+                golsContra: tg.golsContra || 0,
+                saldo: tg.saldoGols || 0,
+            })),
+        }));
+
+        res.json(resp);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message || "Erro ao gerar ranking por grupos" });
     }
 };
 
@@ -925,4 +1031,5 @@ module.exports = {
     getBracket,
     ranking,
     updateInfo,
+    rankingPorGrupos,
 };
