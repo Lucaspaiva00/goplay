@@ -1,8 +1,8 @@
-# 🎬 GoPlay
+# ⚽ GoPlay
 
-Plataforma social e de conteúdo digital desenvolvida para conectar pessoas através de perfis, feed interativo, mensagens e funcionalidades premium.
+Plataforma completa para **gestão de quadras society**, campeonatos e controle financeiro.
 
-O GoPlay permite criação de perfis, interação entre usuários, curtidas, match, chat em tempo real e monetização via recursos premium.
+O GoPlay foi criado para donos de quadras, organizadores de campeonatos e gestores esportivos controlarem reservas, times, campeonatos e recebimentos em um único sistema.
 
 ---
 
@@ -13,9 +13,7 @@ O GoPlay permite criação de perfis, interação entre usuários, curtidas, mat
 - Express
 - Prisma ORM
 - PostgreSQL / MySQL
-- JWT (Autenticação)
-- Socket.io (tempo real)
-- Multer (upload de arquivos)
+- JWT
 
 ### Frontend
 - HTML
@@ -25,45 +23,43 @@ O GoPlay permite criação de perfis, interação entre usuários, curtidas, mat
 - SB Admin 2
 
 ### Infraestrutura
+- Linux Server
 - Nginx
 - PM2
-- Linux Server
 - HTTPS
 
 ---
 
 ## 📦 Funcionalidades
 
+### 🏟️ Societies (Quadras)
+- Cadastro de quadras
+- Gestão de horários
+- Controle de reservas
+- Dados da quadra
+
+### 🏆 Campeonatos
+- Criação de campeonatos
+- Times participantes
+- Tabela e classificação
+- Gestão de partidas
+
+### 💰 Recebimentos
+- Controle de pagamentos
+- Caixa por society
+- Histórico financeiro
+- Relatórios
+
 ### 👤 Usuários
-- Cadastro e login
-- Perfil com fotos
-- Edição de dados
-- Sistema invisível
-- Bloqueio e denúncia
+- Login e autenticação
+- Perfil do gestor
+- Controle de acesso
 
-### ❤️ Interação
-- Curtidas
-- Match entre usuários
-- Skip de perfis
-- Feed personalizado
-
-### 💬 Comunicação
-- Conversas privadas
-- Mensagens em tempo real
-- Sistema de notificações
-
-### 💎 Premium
-- Boost de perfil
-- Presentes virtuais
-- Créditos
-- Recursos exclusivos
-
-### 🛡️ Segurança
-- Hash de senha
-- Tokens JWT
-- Rate limit
-- Helmet
-- Logs de auditoria
+### 📊 Dashboard
+- Visão geral da operação
+- Indicadores financeiros
+- Status das quadras
+- Próximos jogos
 
 ---
 
