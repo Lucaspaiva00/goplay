@@ -1,5 +1,5 @@
 // ✅ web/scripts/meus-agendamentos.js  (ARQUIVO TODO)
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "https://goplay-dzlr.onrender.com";
 
 function el(id) { return document.getElementById(id); }
 

@@ -6,7 +6,7 @@
  * - Ranking por grupos usando /campeonato/:id/ranking-grupos (rota correta)
  * - AVISO: 4 times + 2 grupos => só 2 jogos (1 por grupo)
  ************************************************************/
-const BASE_URL = "http://localhost:3000"; // <-- ajuste se seu backend estiver em outra porta
+const BASE_URL = "https://goplay-dzlr.onrender.com"; // <-- ajuste se seu backend estiver em outra porta
 
 let campeonatoId = null;
 let campeonatoAtual = null;

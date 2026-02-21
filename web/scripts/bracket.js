@@ -6,7 +6,7 @@
  *   Mostra "Vencedor" + desempateTipo (e pênaltis se houver).
  ******************************************************/
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "https://goplay-dzlr.onrender.com";
 
 (() => {
     const campeonatoId = new URLSearchParams(location.search).get("campeonatoId");

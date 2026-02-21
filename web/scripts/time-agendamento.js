@@ -1,5 +1,5 @@
 // ✅ web/scripts/time-agendamento.js  (ARQUIVO TODO)  -- AJUSTE MENSALIDADE + LIMITES + PIX FIXO
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "https://goplay-dzlr.onrender.com";
 
 const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado") || "null");
 if (!usuarioLogado?.id) location.href = "login.html";

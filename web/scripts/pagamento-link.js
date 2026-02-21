@@ -1,5 +1,5 @@
 // ✅ web/scripts/pagamento-link.js  (ARQUIVO TODO)
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "https://goplay-dzlr.onrender.com";
 const PIX_KEY = "47.051.258/0001-58";
 
 function el(id) { return document.getElementById(id); }

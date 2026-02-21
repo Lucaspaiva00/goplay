@@ -1,7 +1,7 @@
 // ✅ web/scripts/meus-pagamentos.js  (ARQUIVO TODO)
 // (ajuste pra aceitar ?pagamentoId=123 e focar/filtrar)
 // PERFIL: DONO DO TIME (quem gerou pagamentos)
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "https://goplay-dzlr.onrender.com";
 
 function el(id) { return document.getElementById(id); }
 
