@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "https://goplay-dzlr.onrender.com";
 
 function salvarCampeonato() {
     const societyId = localStorage.getItem("societyId");

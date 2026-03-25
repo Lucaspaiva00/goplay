@@ -74,7 +74,7 @@ if (!window.menuLoaded) {
 
     // 🔥 (opcional) salvar societyId do dono
     if (usuarioLogado.tipo === "DONO_SOCIETY") {
-        fetch(`http://localhost:3000/society/owner/${usuarioLogado.id}`)
+        fetch(`https://goplay-dzlr.onrender.com/society/owner/${usuarioLogado.id}`)
             .then((res) => res.json())
             .then((lista) => {
                 if (lista?.length) {

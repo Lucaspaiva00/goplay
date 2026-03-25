@@ -9,7 +9,7 @@ if (!usuario) {
 }
 
 // URL BASE DA API
-const API = "http://localhost:3000";
+const API = "https://goplay-dzlr.onrender.com";
 
 // BUSCAR SOCIETIES DO USUÁRIO
 async function carregarSocieties() {

@@ -1,5 +1,5 @@
 // /web/scripts/societyCreate.js
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "https://goplay-dzlr.onrender.com";
 
 function salvarSociety() {
     const usuario = JSON.parse(localStorage.getItem("usuarioLogado"));

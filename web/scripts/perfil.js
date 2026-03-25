@@ -14,7 +14,7 @@ if (!usuarioLogado) {
 // =====================================================
 window.onload = async () => {
     try {
-        const resp = await fetch(`http://localhost:3000/usuarios/${usuarioLogado.id}`);
+        const resp = await fetch(`https://goplay-dzlr.onrender.com/usuarios/${usuarioLogado.id}`);
 
         // Se a rota não responder JSON (ex: HTML de erro)
         if (!resp.ok) {
@@ -69,7 +69,7 @@ async function salvarPerfil() {
     };
 
     try {
-        const resp = await fetch(`http://localhost:3000/usuarios/${usuarioLogado.id}`, {
+        const resp = await fetch(`https://goplay-dzlr.onrender.com/usuarios/${usuarioLogado.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
