@@ -25,11 +25,16 @@ const create = async (req, res) => {
             data: { nome, email, senha: senhaHash, telefone, tipo }
         });
 
-        res.status(200).json(usuario);
+        return res.status(200).json({
+            id: usuario.id,
+            nome: usuario.nome,
+            email: usuario.email,
+            tipo: usuario.tipo
+        });
 
     } catch (error) {
         console.log("ERRO AO CRIAR USUÁRIO:", error);
-        res.status(500).json({ error: "Erro ao criar usuário." });
+        return res.status(500).json({ error: "Erro ao criar usuário." });
     }
 };
 

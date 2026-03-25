@@ -36,9 +36,8 @@
 /* ================================
    INPUTS
 ================================ */
-
 .input {
-    width: 95%;
+    width: 100%;
     padding: 14px;
     margin-top: 12px;
     border-radius: 12px;
@@ -47,6 +46,7 @@
     transition: .2s;
     font-size: 16px;
     outline: none;
+    box-sizing: border-box;
 }
 
 .input:focus {
@@ -57,14 +57,14 @@
 
 .input-password-wrap {
     position: relative;
-    width: 95%;
-    margin: 12px auto 0;
+    width: 100%;
+    margin-top: 12px;
 }
 
 .input-password-wrap .input {
     width: 100%;
     margin-top: 0;
-    padding-right: 48px;
+    padding-right: 45px;
 }
 
 .toggle-password {

@@ -27,7 +27,7 @@ function criarConta() {
             }
 
             alert("Conta criada com sucesso!");
-            window.location.href = "login.html";
+            window.location.href = "home.html";
         })
         .catch(() => alert("Erro ao criar conta."));
 }
