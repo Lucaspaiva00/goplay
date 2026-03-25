@@ -4,10 +4,12 @@ async function solicitarReset() {
     const email = document.getElementById("email").value.trim();
     const msg = document.getElementById("msg");
 
-    msg.innerText = "";
+    msg.textContent = "";
+    msg.classList.remove("error");
 
     if (!email) {
-        msg.innerText = "Informe seu e-mail.";
+        msg.textContent = "Informe seu e-mail.";
+        msg.classList.add("error");
         return;
     }
 
@@ -21,12 +23,14 @@ async function solicitarReset() {
         const json = await response.json();
 
         if (json.error) {
-            msg.innerText = json.error;
+            msg.textContent = json.error;
+            msg.classList.add("error");
             return;
         }
 
-        msg.innerText = json.message || "Se o e-mail estiver cadastrado, enviaremos o link.";
+        msg.textContent = json.message || "Se o e-mail estiver cadastrado, enviaremos o link.";
     } catch (error) {
-        msg.innerText = "Erro ao solicitar redefinição de senha.";
+        msg.textContent = "Erro ao solicitar redefinição de senha.";
+        msg.classList.add("error");
     }
 }

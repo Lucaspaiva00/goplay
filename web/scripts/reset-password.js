@@ -11,25 +11,30 @@ async function redefinirSenha() {
     const confirmarSenha = document.getElementById("confirmarSenha").value.trim();
     const msg = document.getElementById("msg");
 
-    msg.innerText = "";
+    msg.textContent = "";
+    msg.classList.remove("error");
 
     if (!token) {
-        msg.innerText = "Token inválido ou ausente.";
+        msg.textContent = "Token inválido ou ausente.";
+        msg.classList.add("error");
         return;
     }
 
     if (!novaSenha || !confirmarSenha) {
-        msg.innerText = "Preencha os dois campos.";
+        msg.textContent = "Preencha todos os campos.";
+        msg.classList.add("error");
         return;
     }
 
     if (novaSenha.length < 6) {
-        msg.innerText = "A senha deve ter pelo menos 6 caracteres.";
+        msg.textContent = "A senha deve ter pelo menos 6 caracteres.";
+        msg.classList.add("error");
         return;
     }
 
     if (novaSenha !== confirmarSenha) {
-        msg.innerText = "As senhas não coincidem.";
+        msg.textContent = "As senhas não coincidem.";
+        msg.classList.add("error");
         return;
     }
 
@@ -43,16 +48,18 @@ async function redefinirSenha() {
         const json = await response.json();
 
         if (json.error) {
-            msg.innerText = json.error;
+            msg.textContent = json.error;
+            msg.classList.add("error");
             return;
         }
 
-        msg.innerText = json.message || "Senha redefinida com sucesso.";
+        msg.textContent = json.message || "Senha redefinida com sucesso.";
 
         setTimeout(() => {
             window.location.href = "login.html";
         }, 2000);
     } catch (error) {
-        msg.innerText = "Erro ao redefinir senha.";
+        msg.textContent = "Erro ao redefinir senha.";
+        msg.classList.add("error");
     }
 }

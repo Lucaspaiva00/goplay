@@ -211,3 +211,129 @@ body {
     color: #065f46;
     font-size: 14px;
 }
+
+/* ============================================
+   AUTH / RESET PASSWORD
+============================================ */
+.auth-content {
+    min-height: calc(100vh - 60px);
+    max-width: none;
+    width: 100%;
+    margin-left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+}
+
+.auth-box {
+    width: 100%;
+    max-width: 520px;
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10);
+}
+
+.auth-header {
+    background: linear-gradient(135deg, #052845, #0a2f4d);
+    color: #fff;
+    padding: 28px 24px;
+    text-align: center;
+}
+
+.auth-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.auth-header p {
+    font-size: 15px;
+    opacity: 0.95;
+    line-height: 1.5;
+}
+
+.auth-body {
+    padding: 24px;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #052845;
+}
+
+.form-group input {
+    width: 100%;
+    height: 48px;
+    padding: 0 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    background: #fff;
+    color: #111827;
+    font-size: 15px;
+    outline: none;
+    transition: 0.25s ease;
+}
+
+.form-group input:focus {
+    border-color: #0a2f4d;
+    box-shadow: 0 0 0 3px rgba(10, 47, 77, 0.10);
+}
+
+.form-message {
+    min-height: 22px;
+    margin-top: 6px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: #065f46;
+}
+
+.form-message.error {
+    color: #b91c1c;
+}
+
+.auth-links {
+    margin-top: 18px;
+    text-align: center;
+}
+
+.auth-links a {
+    color: #0a2f4d;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.auth-links a:hover {
+    text-decoration: underline;
+}
+
+@media (min-width: 900px) {
+    .auth-content {
+        margin-left: 260px;
+        width: calc(100% - 260px);
+    }
+}
+
+@media (max-width: 899px) {
+    .auth-content {
+        padding: 24px 14px;
+    }
+
+    .auth-header h1 {
+        font-size: 24px;
+    }
+
+    .auth-body {
+        padding: 20px;
+    }
+}
