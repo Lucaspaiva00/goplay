@@ -116,4 +116,7 @@ router.get("/pagamentos/time/:timeId", pagamentoController.listByTime);
 router.get("/pagamentos/usuario/:usuarioId", pagamentoController.listarPorUsuario);
 router.post("/pagamentos/mensalidade", pagamentoController.createMensalidade);
 
+router.post("/forgot-password", usuarioController.forgotPassword);
+router.post("/reset-password", usuarioController.resetPassword);
+
 module.exports = router;

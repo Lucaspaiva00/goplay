@@ -112,6 +112,9 @@ model Usuario {
 
   tipo TipoUsuario @default(PLAYER)
 
+  resetToken          String?
+  resetTokenExpiresAt DateTime?
+
   times Time[] @relation("TimeDono")
 
   timeRelacionadoId Int?
@@ -135,6 +138,7 @@ model Usuario {
   updatedAt DateTime @updatedAt
 
   @@index([timeRelacionadoId])
+  @@index([resetToken])
 }
 
 model Society {
