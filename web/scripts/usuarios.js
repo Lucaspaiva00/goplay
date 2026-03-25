@@ -26,6 +26,9 @@ function criarConta() {
                 return;
             }
 
+            // salva usuário como logado
+            localStorage.setItem("usuarioLogado", JSON.stringify(json));
+
             alert("Conta criada com sucesso!");
             window.location.href = "home.html";
         })
