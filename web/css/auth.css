@@ -46,12 +46,42 @@
     background: #fafafa;
     transition: .2s;
     font-size: 16px;
+    outline: none;
 }
 
 .input:focus {
     border-color: #052748;
     box-shadow: 0 0 4px rgba(5, 39, 72, .3);
     background: #fff;
+}
+
+.input-password-wrap {
+    position: relative;
+    width: 95%;
+    margin: 12px auto 0;
+}
+
+.input-password-wrap .input {
+    width: 100%;
+    margin-top: 0;
+    padding-right: 48px;
+}
+
+.toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    font-size: 18px;
+    padding: 0;
+}
+
+.toggle-password:hover {
+    color: #052748;
 }
 
 /* ================================

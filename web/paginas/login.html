@@ -16,7 +16,13 @@
         <h1 class="auth-title">Entrar no GoPlay</h1>
 
         <input id="email" class="input" placeholder="E-mail" type="email">
-        <input id="senha" class="input" type="password" placeholder="Senha">
+
+        <div class="input-password-wrap">
+            <input id="senha" class="input input-password" type="password" placeholder="Senha">
+            <button type="button" class="toggle-password" onclick="toggleSenha()">
+                <i id="iconeSenha" class="fa-solid fa-eye"></i>
+            </button>
+        </div>
 
         <button class="btn" onclick="login()">Entrar</button>
 

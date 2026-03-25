@@ -1,5 +1,20 @@
 const BASE_URL = "https://goplay-dzlr.onrender.com";
 
+function toggleSenha() {
+    const campoSenha = document.getElementById("senha");
+    const icone = document.getElementById("iconeSenha");
+
+    if (campoSenha.type === "password") {
+        campoSenha.type = "text";
+        icone.classList.remove("fa-eye");
+        icone.classList.add("fa-eye-slash");
+    } else {
+        campoSenha.type = "password";
+        icone.classList.remove("fa-eye-slash");
+        icone.classList.add("fa-eye");
+    }
+}
+
 function login() {
     const data = {
         email: email.value.trim(),
@@ -24,9 +39,7 @@ function login() {
                 return;
             }
 
-            // SALVAR USUÁRIO LOGADO
             localStorage.setItem("usuarioLogado", JSON.stringify(json));
-
             window.location.href = "home.html";
         })
         .catch(() => {
