@@ -22,8 +22,8 @@ async function solicitarReset() {
 
         const json = await response.json();
 
-        if (json.error) {
-            msg.textContent = json.error;
+        if (!response.ok || json.error) {
+            msg.textContent = json.error || "Erro ao solicitar redefinição de senha.";
             msg.classList.add("error");
             return;
         }
