@@ -17,3 +17,5 @@ function verificarSessao() {
 
 // executa
 verificarSessao();
+
+// batatinha
