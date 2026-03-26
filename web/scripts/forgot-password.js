@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "https://goplay-dzlr.onrender.com";
 
 async function solicitarReset() {
     const email = document.getElementById("email").value.trim();
