@@ -47,8 +47,8 @@ async function redefinirSenha() {
 
         const json = await response.json();
 
-        if (json.error) {
-            msg.textContent = json.error;
+        if (!response.ok || json.error) {
+            msg.textContent = json.error || "Erro ao redefinir senha.";
             msg.classList.add("error");
             return;
         }
