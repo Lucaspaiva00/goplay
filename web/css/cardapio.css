@@ -1,15 +1,13 @@
 /* ================================
-        CARDÁPIO – LAYOUT
+   CARDÁPIO – LAYOUT
 ================================ */
 
-/* Container exclusivo desta página */
 .content-cardapio {
     max-width: 900px;
     margin: 40px auto;
     padding: 20px;
 }
 
-/* Título da página */
 .page-title {
     font-size: 26px;
     font-weight: 700;
@@ -20,7 +18,6 @@
     gap: 10px;
 }
 
-/* Card padrão */
 .card {
     background: #fff;
     padding: 25px;
@@ -29,21 +26,13 @@
     margin-bottom: 25px;
 }
 
-/* Itens do cardápio */
-.cardapio-item {
-    background: #f7f9fc;
-    border: 1px solid #e3e5e9;
-    padding: 18px;
-    border-radius: 12px;
-    margin-bottom: 14px;
-}
-
-.cardapio-item strong {
-    font-size: 18px;
+.form-title {
+    font-size: 22px;
+    font-weight: 700;
     color: #052748;
+    margin-bottom: 18px;
 }
 
-/* Inputs */
 .input {
     width: 100%;
     padding: 14px;
@@ -61,12 +50,9 @@
     box-shadow: 0 0 0 2px rgba(5, 39, 72, 0.15);
 }
 
-/* Botão Premium – GoPlay */
 .btn {
     width: 100%;
     padding: 15px;
-    background: #052748;
-    color: white;
     border: none;
     border-radius: 10px;
     font-size: 16px;
@@ -76,16 +62,181 @@
     transition: .2s;
 }
 
-.btn:hover {
+.btn-primary {
+    background: #052748;
+    color: white;
+}
+
+.btn-primary:hover {
     background: #031a35;
 }
 
+.btn-secondary {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.btn-secondary:hover {
+    background: #d1d5db;
+}
+
+.cardapio-card {
+    background: #f7f9fc;
+    border: 1px solid #e3e5e9;
+    padding: 18px;
+    border-radius: 14px;
+    margin-bottom: 14px;
+}
+
+.cardapio-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.cardapio-nome {
+    font-size: 20px;
+    color: #052748;
+    font-weight: 800;
+    margin: 0 0 4px 0;
+}
+
+.cardapio-preco {
+    margin: 0;
+    color: #111827;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.cardapio-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.icon-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 12px;
+    background: #052748;
+    color: #fff;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-btn:hover {
+    background: #031a35;
+}
+
+.icon-btn.danger {
+    background: #b91c1c;
+}
+
+.icon-btn.danger:hover {
+    background: #991b1b;
+}
+
+.empty-state {
+    color: #6b7280;
+    text-align: center;
+    font-weight: 600;
+}
+
+.error-state {
+    color: #b91c1c;
+    text-align: center;
+    font-weight: 700;
+}
+
 /* ================================
-        RESPONSIVO
+   MODAL
+================================ */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 20px;
+}
+
+.modal-box {
+    width: 100%;
+    max-width: 640px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.20);
+    animation: modalFadeIn 0.18s ease;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 24px;
+    color: #052748;
+}
+
+.modal-close {
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 12px;
+    background: #f3f4f6;
+    color: #111827;
+    cursor: pointer;
+    font-size: 16px;
+    transition: 0.2s;
+}
+
+.modal-close:hover {
+    background: #e5e7eb;
+}
+
+.modal-body {
+    padding: 22px 24px 10px;
+}
+
+.modal-footer {
+    padding: 0 24px 24px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ================================
+   RESPONSIVO
 ================================ */
 
 @media (max-width: 768px) {
-
     .content-cardapio {
         padding: 15px;
         margin-top: 90px;
@@ -94,10 +245,17 @@
     .page-title {
         font-size: 22px;
     }
+
+    .cardapio-top {
+        flex-direction: column;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+    }
 }
 
 @media (max-width: 480px) {
-
     .page-title {
         font-size: 20px;
     }
@@ -109,5 +267,9 @@
     .btn {
         font-size: 15px;
         padding: 13px;
+    }
+
+    .cardapio-nome {
+        font-size: 18px;
     }
 }

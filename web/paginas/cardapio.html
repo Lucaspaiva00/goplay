@@ -5,12 +5,9 @@
     <meta charset="UTF-8">
     <title>Cardápio – GoPlay</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- CSS do layout + sidebar -->
+
     <link rel="stylesheet" href="../css/goplay_home.css">
-
-    <!-- CSS específico do cardápio -->
     <link rel="stylesheet" href="../css/cardapio.css">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
@@ -24,42 +21,58 @@
         <h1 class="title">Cardápio</h1>
     </header>
 
-    <!-- SIDEBAR PADRÃO -->
+    <!-- SIDEBAR -->
     <aside id="sidebar" class="sidebar">
         <div class="logo-area">
             <h2>GoPlay</h2>
         </div>
-
         <ul id="menuDynamic"></ul>
-
     </aside>
 
     <div id="overlay" class="overlay"></div>
 
     <!-- CONTEÚDO -->
     <main class="content">
+
         <section class="card">
-            <h3>Novo Item</h3>
+            <h3 class="form-title">Novo Item</h3>
 
             <input id="nome" class="input" placeholder="Nome do item">
-
             <input id="preco" class="input" type="number" step="0.01" placeholder="Preço (ex: 12.50)">
 
-            <button class="btn" onclick="salvarItem()">Salvar Item</button>
+            <button class="btn btn-primary" onclick="salvarItem()">Salvar Item</button>
         </section>
+
         <h2 class="page-title">🍔 Cardápio do Society</h2>
 
-        <!-- LISTA -->
         <section id="listaCardapio" class="card">
             Carregando cardápio...
         </section>
 
-        <!-- FORM -->
-
-
     </main>
 
-    <!-- JS -->
+    <!-- MODAL EDITAR ITEM -->
+    <div id="editItemModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Editar Item do Cardápio</h3>
+                <button class="modal-close" onclick="fecharModalItem()">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <input id="editNome" class="input" placeholder="Nome do item">
+                <input id="editPreco" class="input" type="number" step="0.01" placeholder="Preço (ex: 12.50)">
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="salvarEdicaoItem()">Salvar Alterações</button>
+                <button class="btn btn-secondary" onclick="fecharModalItem()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="../js/goplay_home.js"></script>
     <script src="../scripts/cardapio.js"></script>
     <script src="../scripts/menu.js"></script>
