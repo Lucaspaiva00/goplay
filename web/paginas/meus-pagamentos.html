@@ -9,11 +9,249 @@
     <link rel="stylesheet" href="../css/goplay_home.css" />
     <link rel="stylesheet" href="../css/pagamentos.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <style>
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .page-header-left h2 {
+            font-size: 30px;
+            font-weight: 800;
+            color: #052845;
+            margin-bottom: 6px;
+        }
+
+        .page-header-left p {
+            color: #6b7280;
+            font-size: 15px;
+            margin: 0;
+        }
+
+        .hero-chip {
+            background: linear-gradient(135deg, #052845, #0a3c73);
+            color: #fff;
+            padding: 12px 18px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 14px;
+            box-shadow: 0 6px 18px rgba(5, 40, 69, 0.20);
+        }
+
+        .info-banner {
+            display: none;
+            margin-bottom: 18px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1d4ed8;
+            font-weight: 600;
+        }
+
+        .payments-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .payments-card {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e8edf5;
+            padding: 22px;
+        }
+
+        .payments-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .payments-card-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: #052845;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .payments-card-subtitle {
+            color: #6b7280;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .summary-chip {
+            background: #f8fbff;
+            border: 1px solid #dbe7f5;
+            color: #052845;
+            font-weight: 700;
+            border-radius: 999px;
+            padding: 10px 14px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 14px;
+            align-items: end;
+            margin-bottom: 16px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            height: 46px;
+            border-radius: 12px;
+            border: 1px solid #d9e1ea;
+            padding: 0 14px;
+            font-size: 14px;
+            outline: none;
+            background: #fff;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            border-color: #052845;
+            box-shadow: 0 0 0 3px rgba(5, 40, 69, 0.10);
+        }
+
+        .btn-filter {
+            height: 46px;
+            min-width: 180px;
+            border: none;
+            border-radius: 12px;
+            background: #052845;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .2s;
+            padding: 0 18px;
+        }
+
+        .btn-filter:hover {
+            background: #031a2f;
+        }
+
+        .msg-area {
+            min-height: 24px;
+            margin-bottom: 14px;
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .table-card {
+            background: #fff;
+            border: 1px solid #edf2f7;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        .payments-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 760px;
+        }
+
+        .payments-table thead tr {
+            background: #f8fbff;
+        }
+
+        .payments-table th {
+            text-align: left;
+            padding: 14px 16px;
+            font-size: 13px;
+            font-weight: 800;
+            color: #4b5563;
+            border-bottom: 1px solid #e8edf5;
+        }
+
+        .payments-table td {
+            padding: 16px;
+            font-size: 14px;
+            color: #111827;
+            border-bottom: 1px solid #eef2f7;
+            vertical-align: middle;
+        }
+
+        .payments-table tbody tr:hover {
+            background: #fcfdff;
+        }
+
+        .payments-table .right {
+            text-align: right;
+        }
+
+        .empty-box {
+            padding: 28px 18px;
+            text-align: center;
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        @media (max-width: 950px) {
+            .filters-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .btn-filter {
+                width: 100%;
+                min-width: auto;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .page-header-left h2 {
+                font-size: 24px;
+            }
+
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .payments-card {
+                padding: 16px;
+            }
+
+            .payments-card-title {
+                font-size: 20px;
+            }
+        }
+    </style>
 </head>
 
 <body class="with-sidebar">
     <header class="topbar">
-        <button id="menuBtn" class="menu-btn"><i class="fa fa-bars"></i></button>
+        <button id="menuBtn" class="menu-btn">
+            <i class="fa fa-bars"></i>
+        </button>
         <h1 class="title">Meus Pagamentos</h1>
     </header>
 
@@ -27,55 +265,88 @@
     <div id="overlay" class="overlay"></div>
 
     <main class="content">
-        <div class="card">
-            <div class="head">
-                <div>
-                    <div class="h"><i class="fa-solid fa-wallet"></i> Meus Pagamentos</div>
-                    <div class="muted">Histórico dos pagamentos gerados por você</div>
-                </div>
-                <div class="chip" id="chipResumo">0 pagamento(s) • Total R$ 0,00</div>
+        <div class="page-header">
+            <div class="page-header-left">
+                <h2><i class="fa-solid fa-wallet"></i> Meus Pagamentos</h2>
+                <p>Acompanhe os pagamentos gerados pelos seus agendamentos.</p>
             </div>
 
-            <div class="filters">
-                <div>
-                    <label>Tipo</label>
-                    <select id="filtroTipo">
-                        <option value="">Todos</option>
-                        <option value="AVULSO">Avulso</option>
-                        <option value="MENSALISTA">Mensalista</option>
-                        <option value="CONSUMO_BAR">Consumo Bar</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label>De</label>
-                    <input id="filtroFrom" type="date" />
-                </div>
-
-                <div>
-                    <label>Até</label>
-                    <input id="filtroTo" type="date" />
-                </div>
-
-                <button class="btn" id="btnFiltrar"><i class="fa-solid fa-filter"></i> Filtrar</button>
+            <div class="hero-chip" id="chipResumo">
+                0 pagamento(s) • Total R$ 0,00
             </div>
+        </div>
 
-            <div id="msg" class="muted"></div>
+        <div id="bannerTime" class="info-banner">
+            Visualizando pagamentos relacionados ao time selecionado.
+        </div>
 
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Society</th>
-                            <th>Tipo</th>
-                            <th>Descrição</th>
-                            <th class="right">Valor</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbodyPag"></tbody>
-                </table>
-            </div>
+        <div class="payments-layout">
+            <section class="payments-card">
+                <div class="payments-card-header">
+                    <div>
+                        <div class="payments-card-title">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                            Histórico financeiro
+                        </div>
+                        <div class="payments-card-subtitle">
+                            Use os filtros para localizar pagamentos por tipo ou período.
+                        </div>
+                    </div>
+
+                    <div class="summary-chip">
+                        Resumo atualizado automaticamente
+                    </div>
+                </div>
+
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="filtroTipo">Tipo</label>
+                        <select id="filtroTipo">
+                            <option value="">Todos</option>
+                            <option value="AVULSO">Avulso</option>
+                            <option value="MENSALISTA">Mensalista</option>
+                            <option value="CONSUMO_BAR">Consumo Bar</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="filtroFrom">De</label>
+                        <input id="filtroFrom" type="date" />
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="filtroTo">Até</label>
+                        <input id="filtroTo" type="date" />
+                    </div>
+
+                    <button class="btn-filter" id="btnFiltrar">
+                        <i class="fa-solid fa-filter"></i> Filtrar
+                    </button>
+                </div>
+
+                <div id="msg" class="msg-area"></div>
+
+                <div class="table-card">
+                    <div class="table-wrap">
+                        <table class="payments-table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Society</th>
+                                    <th>Tipo</th>
+                                    <th>Descrição</th>
+                                    <th class="right">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyPag">
+                                <tr>
+                                    <td colspan="5" class="empty-box">Carregando pagamentos...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
         </div>
     </main>
 

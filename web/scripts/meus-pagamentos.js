@@ -1,6 +1,3 @@
-// ✅ web/scripts/meus-pagamentos.js  (ARQUIVO TODO)
-// (ajuste pra aceitar ?pagamentoId=123 e focar/filtrar)
-// PERFIL: DONO DO TIME (quem gerou pagamentos)
 const BASE_URL = "https://goplay-dzlr.onrender.com";
 
 function el(id) { return document.getElementById(id); }
@@ -62,35 +59,46 @@ async function carregar() {
     const data = await fetchJSON(`${BASE_URL}/pagamentos/usuario/${encodeURIComponent(u.id)}?${qs.toString()}`);
 
     let lista = data?.pagamentos || [];
-    const total = Number(data?.total || 0);
 
-    // ✅ se veio da tela "Meus Agendamentos" com pagamentoId, filtra/foca nele
     const pagamentoId = getQueryParam("pagamentoId");
+    const timeId = getQueryParam("timeId");
+
     if (pagamentoId) {
         const pid = Number(pagamentoId);
         lista = lista.filter(p => Number(p.id) === pid);
     }
 
-    el("chipResumo").textContent = `${lista.length} pagamento(s) • Total ${moneyBR(
-        lista.reduce((s, p) => s + Number(p.valor || 0), 0)
-    )}`;
+    if (timeId) {
+        const tid = Number(timeId);
+        lista = lista.filter(p => Number(p.timeId) === tid || Number(p?.time?.id) === tid);
+    }
+
+    const totalFiltrado = lista.reduce((s, p) => s + Number(p.valor || 0), 0);
+
+    el("chipResumo").textContent = `${lista.length} pagamento(s) • Total ${moneyBR(totalFiltrado)}`;
 
     if (!lista.length) {
-        el("msg").textContent = pagamentoId ? "Pagamento não encontrado." : "Nenhum pagamento encontrado.";
+        if (pagamentoId) {
+            el("msg").textContent = "Pagamento não encontrado.";
+        } else if (timeId) {
+            el("msg").textContent = "Nenhum pagamento encontrado para este time.";
+        } else {
+            el("msg").textContent = "Nenhum pagamento encontrado.";
+        }
         return;
     }
 
     el("msg").textContent = "";
 
     el("tbodyPag").innerHTML = lista.map(p => `
-    <tr>
-      <td>${dtBR(p.createdAt)}</td>
-      <td>${p?.society?.nome || "-"}</td>
-      <td>${p.tipo || "-"}</td>
-      <td>${p.descricao ? String(p.descricao) : "-"}</td>
-      <td class="right"><strong>${moneyBR(p.valor)}</strong></td>
-    </tr>
-  `).join("");
+        <tr>
+            <td>${dtBR(p.createdAt)}</td>
+            <td>${p?.society?.nome || "-"}</td>
+            <td>${p.tipo || "-"}</td>
+            <td>${p.descricao ? String(p.descricao) : "-"}</td>
+            <td class="right"><strong>${moneyBR(p.valor)}</strong></td>
+        </tr>
+    `).join("");
 }
 
 document.addEventListener("DOMContentLoaded", () => {

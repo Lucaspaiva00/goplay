@@ -30,17 +30,13 @@ async function fetchJSON(url, options = {}) {
     return data;
 }
 
-// estado
 let timeSelecionadoId = null;
 let societyIdDoTime = null;
 let campoSelecionado = null;
 let horarioSelecionado = null;
-
-// PIX FIXO (CNPJ)
-const PIX_CHAVE = "47.051.258/0001-58";
-
-// controle de mensalidade
 let recorrenteSelecionado = false;
+
+const PIX_CHAVE = "47.051.258/0001-58";
 
 async function carregarTimesDoDono() {
     const donoId = usuarioLogado.id;
@@ -60,13 +56,19 @@ async function carregarTimesDoDono() {
     selectTime.addEventListener("change", async () => {
         timeSelecionadoId = selectTime.value ? Number(selectTime.value) : null;
 
-        // reset
         societyIdDoTime = null;
         campoSelecionado = null;
         horarioSelecionado = null;
+
         el("horarios").innerHTML = "";
         el("acao").style.display = "none";
         el("campoId").innerHTML = `<option value="">Selecione</option>`;
+
+        const msg = el("msgSucesso");
+        if (msg) {
+            msg.style.display = "none";
+            msg.innerHTML = "";
+        }
 
         if (!timeSelecionadoId) return;
 
@@ -97,7 +99,6 @@ async function carregarCampos(societyId) {
     const select = el("campoId");
     select.innerHTML = `<option value="">Carregando campos...</option>`;
 
-    // ✅ rota corrigida
     const campos = await fetchJSON(`${BASE_URL}/campos/society/${societyId}`);
 
     select.innerHTML = `<option value="">Selecione</option>`;
@@ -172,52 +173,67 @@ function selecionarHorario(slotEl, h) {
 }
 
 async function criarAgendamento() {
-    const data = el("data").value;
+    try {
+        const data = el("data").value;
 
-    if (!timeSelecionadoId) return alert("Selecione seu time.");
-    if (!societyIdDoTime) return alert("Não consegui identificar o society do time.");
-    if (!campoSelecionado || !data || !horarioSelecionado?.horaInicio) {
-        return alert("Selecione campo, data e horário.");
+        if (!timeSelecionadoId) return alert("Selecione seu time.");
+        if (!societyIdDoTime) return alert("Não consegui identificar o society do time.");
+        if (!campoSelecionado || !data || !horarioSelecionado?.horaInicio) {
+            return alert("Selecione campo, data e horário.");
+        }
+
+        const opt = el("campoId").selectedOptions?.[0];
+        const valorMensalCampo = opt?.getAttribute("data-mensal");
+        const podeMensal = !!valorMensalCampo && Number(valorMensalCampo) > 0;
+
+        const recorrente = recorrenteSelecionado && podeMensal;
+
+        const agendamento = await fetchJSON(`${BASE_URL}/agendamentos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                societyId: societyIdDoTime,
+                campoId: campoSelecionado,
+                timeId: timeSelecionadoId,
+                data,
+                horaInicio: horarioSelecionado.horaInicio,
+            }),
+        });
+
+        await fetchJSON(`${BASE_URL}/pagamentos/agendamento`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                usuarioId: usuarioLogado.id,
+                societyId: societyIdDoTime,
+                timeId: timeSelecionadoId,
+                campoId: campoSelecionado,
+                agendamentoId: agendamento.id,
+                forma: "PIX",
+                recorrente,
+            }),
+        });
+
+        const msg = el("msgSucesso");
+        if (msg) {
+            msg.style.display = "block";
+            msg.innerHTML = `
+                <strong>Agendamento criado com sucesso.</strong><br>
+                O pagamento foi gerado. Você será redirecionado para Meus Pagamentos.
+            `;
+            msg.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+
+        el("acao").style.display = "none";
+
+        setTimeout(() => {
+            window.location.href = `meus-pagamentos.html?timeId=${encodeURIComponent(timeSelecionadoId)}`;
+        }, 1500);
+
+    } catch (e) {
+        console.error(e);
+        alert(e.message || "Erro ao criar agendamento.");
     }
-
-    const opt = el("campoId").selectedOptions?.[0];
-    const valorMensalCampo = opt?.getAttribute("data-mensal");
-    const podeMensal = !!valorMensalCampo && Number(valorMensalCampo) > 0;
-
-    const recorrente = recorrenteSelecionado && podeMensal;
-
-    const agendamento = await fetchJSON(`${BASE_URL}/agendamentos`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            societyId: societyIdDoTime,
-            campoId: campoSelecionado,
-            timeId: timeSelecionadoId,
-            data,
-            horaInicio: horarioSelecionado.horaInicio,
-        }),
-    });
-
-    await fetchJSON(`${BASE_URL}/pagamentos/agendamento`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            usuarioId: usuarioLogado.id,
-            societyId: societyIdDoTime,
-            timeId: timeSelecionadoId,
-            campoId: campoSelecionado,
-            agendamentoId: agendamento.id,
-            forma: "PIX",
-            recorrente,
-        }),
-    });
-
-    alert(
-        `✅ Agendamento criado e pagamento gerado!\n\nPague via PIX:\nChave (CNPJ): ${PIX_CHAVE}\n\nDepois veja em "Meus Pagamentos".`
-    );
-
-    await buscarHorarios();
-    el("acao").style.display = "none";
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -230,7 +246,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             el("timeId").dispatchEvent(new Event("change"));
         }
 
-        // ✅ usa o checkbox que já existe no HTML
         const chkRecorrente = el("recorrente");
         if (chkRecorrente) {
             chkRecorrente.addEventListener("change", (e) => {
