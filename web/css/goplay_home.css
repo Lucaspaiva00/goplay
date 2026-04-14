@@ -366,3 +366,50 @@ body {
 .toggle-password:hover {
     color: #0a2f4d;
 }
+
+.card {
+    background: #fff;
+    padding: 28px;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 900px;
+    margin: 30px auto;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.10);
+    text-align: center;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin: 20px 0 24px 0;
+}
+
+.dashboard-card {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 18px 14px;
+    text-align: center;
+}
+
+.dashboard-label {
+    display: block;
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.dashboard-card strong {
+    display: block;
+    font-size: 24px;
+    color: #052845;
+    font-weight: 700;
+}
+
+@media (max-width: 640px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}

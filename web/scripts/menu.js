@@ -1,5 +1,3 @@
-// menu.js (BROWSER) - sem require
-
 if (!window.menuLoaded) {
   window.menuLoaded = true;
 
@@ -10,10 +8,6 @@ if (!window.menuLoaded) {
   if (!usuarioLogado) {
     window.location.href = "login.html";
   }
-
-  // ============================================
-  // FUNÇÕES GLOBAIS
-  // ============================================
 
   window.sairSistema = function () {
     localStorage.removeItem("usuarioLogado");
@@ -56,112 +50,90 @@ if (!window.menuLoaded) {
       });
   };
 
-  // ============================================
-  // MONTA MENU
-  // ============================================
-
   let html = `
-        <li onclick="location.href='home.html'">
-            <i class="fa fa-house"></i> Início
-        </li>
-    `;
+    <li onclick="location.href='home.html'">
+      <i class="fa fa-house"></i> Início
+    </li>
+  `;
 
-  // =========================
-  // DONO_SOCIETY
-  // =========================
   if (usuarioLogado.tipo === "DONO_SOCIETY") {
     html += `
-            <li onclick="abrirMeuSocietyMenu()">
-                <i class="fa fa-futbol"></i> Meu Society
-            </li>
-            <li onclick="location.href='society-create.html'">
-                <i class="fa fa-plus"></i> Cadastrar Society
-            </li>
-            <li onclick="location.href='campeonatos.html'">
-                <i class="fa fa-trophy"></i> Campeonatos
-            </li>
-            <li onclick="location.href='pagamentos.html'">
-                <i class="fa fa-credit-card"></i> Recebimentos
-            </li>
-            <li onclick="location.href='society-dashboard.html'">
-                <i class="fa fa-chart-line"></i> Dashboard
-            </li>
-        `;
+      <li onclick="abrirMeuSocietyMenu()">
+        <i class="fa fa-futbol"></i> Meu Society
+      </li>
+      <li onclick="location.href='society-create.html'">
+        <i class="fa fa-plus"></i> Cadastrar Society
+      </li>
+      <li onclick="location.href='campeonatos.html'">
+        <i class="fa fa-trophy"></i> Campeonatos
+      </li>
+      <li onclick="location.href='recebimentos.html'">
+        <i class="fa fa-credit-card"></i> Recebimentos
+      </li>
+      <li onclick="location.href='society-dashboard.html'">
+        <i class="fa fa-chart-line"></i> Dashboard
+      </li>
+    `;
   }
 
-  // =========================
-  // DONO_TIME
-  // =========================
   if (usuarioLogado.tipo === "DONO_TIME") {
     html += `
-            <li onclick="location.href='societies.html'">
-                <i class="fa fa-eye"></i> Ver Societies
-            </li>
-            <li onclick="location.href='times.html'">
-                <i class="fa fa-users"></i> Meus Times
-            </li>
-            <li onclick="location.href='time-agendamento.html'">
-                <i class="fa fa-calendar"></i> Agendar Horário
-            </li>
-            <li onclick="location.href='meus-agendamentos.html'">
-                <i class="fa fa-list"></i> Meus Agendamentos
-            </li>
-            <li onclick="location.href='meus-pagamentos.html'">
-                <i class="fa fa-money-bill"></i> Meus Pagamentos
-            </li>
-            <li onclick="location.href='campeonatos-view.html'">
-                <i class="fa fa-trophy"></i> Campeonatos
-            </li>
-        `;
+      <li onclick="location.href='societies.html'">
+        <i class="fa fa-eye"></i> Ver Societies
+      </li>
+      <li onclick="location.href='times.html'">
+        <i class="fa fa-users"></i> Meus Times
+      </li>
+      <li onclick="location.href='agendar-horario.html'">
+        <i class="fa fa-calendar"></i> Agendar Horário
+      </li>
+      <li onclick="location.href='meus-agendamentos.html'">
+        <i class="fa fa-list"></i> Meus Agendamentos
+      </li>
+      <li onclick="location.href='meus-pagamentos.html'">
+        <i class="fa fa-money-bill"></i> Meus Pagamentos
+      </li>
+      <li onclick="location.href='campeonatos-view.html'">
+        <i class="fa fa-trophy"></i> Campeonatos
+      </li>
+    `;
   }
 
-  // =========================
-  // PLAYER
-  // =========================
   if (usuarioLogado.tipo === "PLAYER") {
     html += `
-            <li onclick="location.href='societies.html'">
-                <i class="fa fa-eye"></i> Ver Societies
-            </li>
-            <li onclick="location.href='campeonatos-view.html'">
-                <i class="fa fa-trophy"></i> Campeonatos
-            </li>
-            <li onclick="location.href='times-disponiveis.html'">
-                <i class="fa fa-users"></i> Times
-            </li>
-            <li onclick="location.href='meu-time.html'">
-                <i class="fa fa-user-friends"></i> Meu Time
-            </li>
-        `;
+      <li onclick="location.href='societies.html'">
+        <i class="fa fa-eye"></i> Ver Societies
+      </li>
+      <li onclick="location.href='campeonatos-view.html'">
+        <i class="fa fa-trophy"></i> Campeonatos
+      </li>
+      <li onclick="location.href='times-disponiveis.html'">
+        <i class="fa fa-users"></i> Times
+      </li>
+      <li onclick="location.href='meu-time.html'">
+        <i class="fa fa-user-friends"></i> Meu Time
+      </li>
+    `;
   }
 
-  // =========================
-  // FINAL DO MENU
-  // =========================
   html += `
-        <li onclick="location.href='perfil.html'">
-            <i class="fa fa-user"></i> Perfil
-        </li>
-        <li id="btnSairMenu">
-            <i class="fa fa-sign-out-alt"></i> Sair
-        </li>
-    `;
+    <li onclick="location.href='perfil.html'">
+      <i class="fa fa-user"></i> Perfil
+    </li>
+    <li id="btnSairMenu">
+      <i class="fa fa-sign-out-alt"></i> Sair
+    </li>
+  `;
 
   if (menu) {
     menu.innerHTML = html;
   }
 
-  // ============================================
-  // BOTÃO SAIR
-  // ============================================
   const btnSair = document.getElementById("btnSairMenu");
   if (btnSair) {
     btnSair.onclick = window.sairSistema;
   }
 
-  // ============================================
-  // PRÉ-CARREGAR societyId DO DONO
-  // ============================================
   if (usuarioLogado.tipo === "DONO_SOCIETY") {
     fetch(`${BASE_URL}/society/owner/${usuarioLogado.id}`)
       .then((res) => res.json())

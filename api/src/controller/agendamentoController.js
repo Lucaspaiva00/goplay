@@ -1,55 +1,59 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-/**
- * Helpers
- */
-function horaToMin(hora) {
-  const [h, m] = hora.split(":").map(Number);
-  return h * 60 + m;
-}
+/* =========================
+   HELPERS
+========================= */
+const toId = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
 
-/**
- * ============================
- * LISTAR HORÁRIOS DISPONÍVEIS
- * ============================
- * GET /agendamentos/disponiveis?campoId=1&data=2026-01-20
- */
+const parseDateOnly = (dateStr) => {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+
+/* =========================
+   HORÁRIOS DISPONÍVEIS
+========================= */
 const horariosDisponiveis = async (req, res) => {
   try {
-    const { campoId, data } = req.query;
+    const campoId = toId(req.query.campoId);
+    const dataStr = req.query.data;
 
-    if (!campoId || !data) {
+    if (!campoId || !dataStr) {
       return res.status(400).json({ error: "campoId e data são obrigatórios." });
     }
 
     const campo = await prisma.campo.findUnique({
-      where: { id: Number(campoId) },
+      where: { id: campoId },
     });
 
     if (!campo) {
       return res.status(404).json({ error: "Campo não encontrado." });
     }
 
-    // 🔒 horários fixos (pode virar config depois)
+    const data = parseDateOnly(dataStr);
+
     const HORA_INICIO = 18;
     const HORA_FIM = 23;
 
     const agendamentos = await prisma.agendamento.findMany({
       where: {
-        campoId: Number(campoId),
-        data: new Date(data),
+        campoId,
+        data,
         status: { not: "CANCELADO" },
       },
       select: {
         horaInicio: true,
-        horaFim: true,
       },
     });
 
     const ocupados = agendamentos.map(a => a.horaInicio);
 
     const horarios = [];
+
     for (let h = HORA_INICIO; h < HORA_FIM; h++) {
       const inicio = `${String(h).padStart(2, "0")}:00`;
       const fim = `${String(h + 1).padStart(2, "0")}:00`;
@@ -68,29 +72,61 @@ const horariosDisponiveis = async (req, res) => {
   }
 };
 
-/**
- * ============================
- * CRIAR AGENDAMENTO
- * ============================
- * POST /agendamentos
- */
+/* =========================
+   CRIAR AGENDAMENTO
+========================= */
 const create = async (req, res) => {
   try {
-    const { societyId, campoId, timeId, data, horaInicio } = req.body;
+    const societyId = toId(req.body.societyId);
+    const campoId = toId(req.body.campoId);
+    const timeId = toId(req.body.timeId);
+    const dataStr = req.body.data;
+    const horaInicio = String(req.body.horaInicio || "");
 
-    if (!societyId || !campoId || !timeId || !data || !horaInicio) {
+    if (!societyId || !campoId || !timeId || !dataStr || !horaInicio) {
       return res.status(400).json({ error: "Dados incompletos." });
+    }
+
+    const data = parseDateOnly(dataStr);
+
+    const campo = await prisma.campo.findUnique({
+      where: { id: campoId },
+    });
+
+    if (!campo) {
+      return res.status(404).json({ error: "Campo não encontrado." });
+    }
+
+    const time = await prisma.time.findUnique({
+      where: { id: timeId },
+    });
+
+    if (!time) {
+      return res.status(404).json({ error: "Time não encontrado." });
+    }
+
+    if (time.societyId !== societyId) {
+      return res.status(400).json({ error: "Time não pertence a este society." });
     }
 
     const horaFim = `${String(Number(horaInicio.split(":")[0]) + 1).padStart(2, "0")}:00`;
 
-    // 🔒 verifica conflito
+    // 🔥 conflito REAL (intervalo)
     const conflito = await prisma.agendamento.findFirst({
       where: {
-        campoId: Number(campoId),
-        data: new Date(data),
-        horaInicio,
+        campoId,
+        data,
         status: { not: "CANCELADO" },
+        OR: [
+          {
+            horaInicio: { lte: horaInicio },
+            horaFim: { gt: horaInicio },
+          },
+          {
+            horaInicio: { lt: horaFim },
+            horaFim: { gte: horaFim },
+          }
+        ]
       },
     });
 
@@ -98,20 +134,16 @@ const create = async (req, res) => {
       return res.status(400).json({ error: "Horário já ocupado." });
     }
 
-    const campo = await prisma.campo.findUnique({
-      where: { id: Number(campoId) },
-    });
-
-    if (!campo?.valorAvulso) {
+    if (!campo.valorAvulso) {
       return res.status(400).json({ error: "Campo sem valor configurado." });
     }
 
     const agendamento = await prisma.agendamento.create({
       data: {
-        societyId: Number(societyId),
-        campoId: Number(campoId),
-        timeId: Number(timeId),
-        data: new Date(data),
+        societyId,
+        campoId,
+        timeId,
+        data,
         horaInicio,
         horaFim,
         valor: campo.valorAvulso,
@@ -119,25 +151,26 @@ const create = async (req, res) => {
       },
     });
 
-    res.json(agendamento);
+    return res.status(201).json(agendamento);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao criar agendamento." });
   }
 };
 
-/**
- * ============================
- * LISTAR AGENDAMENTOS DO TIME
- * ============================
- * GET /agendamentos/time/:timeId
- */
+/* =========================
+   LISTAR POR TIME
+========================= */
 const listByTime = async (req, res) => {
   try {
-    const { timeId } = req.params;
+    const timeId = toId(req.params.timeId);
+
+    if (!timeId) {
+      return res.status(400).json({ error: "timeId inválido." });
+    }
 
     const lista = await prisma.agendamento.findMany({
-      where: { timeId: Number(timeId) },
+      where: { timeId },
       include: {
         campo: true,
         pagamento: true,
@@ -152,23 +185,28 @@ const listByTime = async (req, res) => {
   }
 };
 
-/**
- * ============================
- * CANCELAR AGENDAMENTO
- * ============================
- * POST /agendamentos/:id/cancelar
- */
+/* =========================
+   CANCELAR
+========================= */
 const cancelar = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = toId(req.params.id);
+
+    if (!id) {
+      return res.status(400).json({ error: "ID inválido." });
+    }
 
     const agendamento = await prisma.agendamento.findUnique({
-      where: { id: Number(id) },
+      where: { id },
       include: { pagamento: true },
     });
 
     if (!agendamento) {
       return res.status(404).json({ error: "Agendamento não encontrado." });
+    }
+
+    if (agendamento.status === "CANCELADO") {
+      return res.status(400).json({ error: "Agendamento já está cancelado." });
     }
 
     if (agendamento.pagamento?.status === "PAGO") {
@@ -178,7 +216,7 @@ const cancelar = async (req, res) => {
     }
 
     await prisma.agendamento.update({
-      where: { id: agendamento.id },
+      where: { id },
       data: { status: "CANCELADO" },
     });
 
@@ -189,16 +227,22 @@ const cancelar = async (req, res) => {
   }
 };
 
-// GET /agendamentos/society/:societyId?data=2026-01-20
+/* =========================
+   LISTAR POR SOCIETY
+========================= */
 const listBySociety = async (req, res) => {
   try {
-    const societyId = Number(req.params.societyId);
-    const data = req.query.data;
+    const societyId = toId(req.params.societyId);
+    const dataStr = req.query.data;
+
+    if (!societyId) {
+      return res.status(400).json({ error: "societyId inválido." });
+    }
 
     const where = { societyId };
 
-    if (data) {
-      where.data = new Date(data);
+    if (dataStr) {
+      where.data = parseDateOnly(dataStr);
     }
 
     const lista = await prisma.agendamento.findMany({
@@ -217,7 +261,6 @@ const listBySociety = async (req, res) => {
     res.status(500).json({ error: "Erro ao listar agendamentos do society." });
   }
 };
-
 
 module.exports = {
   horariosDisponiveis,

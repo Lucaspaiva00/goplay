@@ -28,7 +28,7 @@ const create = async (req, res) => {
         const society = await prisma.society.create({
             data: {
                 usuarioId: Number(usuarioId),
-                nome,
+                nome: nome.trim(),
                 descricao,
                 telefone,
                 whatsapp,
@@ -52,7 +52,7 @@ const create = async (req, res) => {
     }
 };
 
-// Listar societies por dono (AGORA pode ter vários)
+// Listar societies por dono
 const readByOwner = async (req, res) => {
     try {
         const { usuarioId } = req.params;
@@ -68,7 +68,6 @@ const readByOwner = async (req, res) => {
             }
         });
 
-        // sempre devolve array (vazio ou com itens)
         return res.status(200).json(societies);
 
     } catch (error) {
@@ -77,6 +76,7 @@ const readByOwner = async (req, res) => {
     }
 };
 
+// Buscar por ID
 const readById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -104,7 +104,67 @@ const readById = async (req, res) => {
     }
 };
 
-// Listar todas as societies (para DONO_TIME / PLAYER escolher)
+// 🔥 EDITAR SOCIETY
+const update = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const {
+            nome,
+            descricao,
+            telefone,
+            whatsapp,
+            email,
+            website,
+            instagram,
+            facebook,
+            youtube,
+            cep,
+            endereco,
+            estado,
+            cidade
+        } = req.body;
+
+        const societyExistente = await prisma.society.findUnique({
+            where: { id: Number(id) }
+        });
+
+        if (!societyExistente) {
+            return res.status(404).json({ error: "Society não encontrado." });
+        }
+
+        if (!nome || !nome.trim()) {
+            return res.status(400).json({ error: "Nome é obrigatório." });
+        }
+
+        const societyAtualizado = await prisma.society.update({
+            where: { id: Number(id) },
+            data: {
+                nome: nome.trim(),
+                descricao: descricao || null,
+                telefone: telefone || null,
+                whatsapp: whatsapp || null,
+                email: email || null,
+                website: website || null,
+                instagram: instagram || null,
+                facebook: facebook || null,
+                youtube: youtube || null,
+                cep: cep || null,
+                endereco: endereco || null,
+                estado: estado || null,
+                cidade: cidade || null
+            }
+        });
+
+        return res.status(200).json(societyAtualizado);
+
+    } catch (error) {
+        console.log("ERRO AO ATUALIZAR SOCIETY:", error);
+        return res.status(500).json({ error: "Erro ao atualizar society." });
+    }
+};
+
+// Listar todas
 const listAll = async (req, res) => {
     try {
         const societies = await prisma.society.findMany({
@@ -118,13 +178,17 @@ const listAll = async (req, res) => {
         });
 
         return res.status(200).json(societies);
+
     } catch (error) {
         console.log("ERRO AO LISTAR SOCIETIES:", error);
         return res.status(500).json({ error: "Erro ao listar societies." });
     }
 };
 
-
-module.exports = { create, readByOwner, readById, listAll };
-
-
+module.exports = {
+    create,
+    readByOwner,
+    readById,
+    update, // 👈 NOVO
+    listAll
+};

@@ -5,14 +5,33 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 
 /* ============================================
+   HELPERS
+============================================ */
+const sanitizeUser = (usuario) => {
+    if (!usuario) return null;
+    const { senha, resetToken, resetTokenExpiresAt, ...usuarioSeguro } = usuario;
+    return usuarioSeguro;
+};
+
+const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
+
+/* ============================================
    CRIAR USUÁRIO
 ============================================ */
 const create = async (req, res) => {
     try {
-        const { nome, email, senha, telefone, tipo } = req.body;
+        const nome = String(req.body.nome || "").trim();
+        const email = normalizeEmail(req.body.email);
+        const senha = String(req.body.senha || "").trim();
+        const telefone = req.body.telefone ? String(req.body.telefone).trim() : null;
+        const tipo = String(req.body.tipo || "").trim();
 
         if (!nome || !email || !senha || !tipo) {
             return res.status(400).json({ error: "Preencha todos os campos obrigatórios." });
+        }
+
+        if (senha.length < 6) {
+            return res.status(400).json({ error: "A senha deve ter pelo menos 6 caracteres." });
         }
 
         const existe = await prisma.usuario.findUnique({ where: { email } });
@@ -23,10 +42,16 @@ const create = async (req, res) => {
         const senhaHash = await bcrypt.hash(senha, 10);
 
         const usuario = await prisma.usuario.create({
-            data: { nome, email, senha: senhaHash, telefone, tipo }
+            data: {
+                nome,
+                email,
+                senha: senhaHash,
+                telefone,
+                tipo
+            }
         });
 
-        return res.status(200).json({
+        return res.status(201).json({
             id: usuario.id,
             nome: usuario.nome,
             email: usuario.email,
@@ -44,7 +69,12 @@ const create = async (req, res) => {
 ============================================ */
 const login = async (req, res) => {
     try {
-        const { email, senha } = req.body;
+        const email = normalizeEmail(req.body.email);
+        const senha = String(req.body.senha || "");
+
+        if (!email || !senha) {
+            return res.status(400).json({ error: "E-mail e senha são obrigatórios." });
+        }
 
         const usuario = await prisma.usuario.findUnique({ where: { email } });
 
@@ -57,8 +87,7 @@ const login = async (req, res) => {
             return res.status(400).json({ error: "Senha incorreta." });
         }
 
-        // 🔥 Retornar apenas dados necessários
-        res.status(200).json({
+        return res.status(200).json({
             id: usuario.id,
             nome: usuario.nome,
             email: usuario.email,
@@ -67,16 +96,20 @@ const login = async (req, res) => {
 
     } catch (err) {
         console.log("ERRO NO LOGIN:", err);
-        res.status(500).json({ error: "Erro ao fazer login." });
+        return res.status(500).json({ error: "Erro ao fazer login." });
     }
 };
 
 /* ============================================
-   BUSCAR 1 USUÁRIO (para preencher perfil)
+   BUSCAR 1 USUÁRIO
 ============================================ */
 const readOne = async (req, res) => {
     try {
         const id = Number(req.params.id);
+
+        if (!Number.isFinite(id)) {
+            return res.status(400).json({ error: "ID inválido." });
+        }
 
         const usuario = await prisma.usuario.findUnique({
             where: { id }
@@ -86,25 +119,48 @@ const readOne = async (req, res) => {
             return res.status(404).json({ error: "Usuário não encontrado." });
         }
 
-        const { senha, resetToken, resetTokenExpiresAt, ...usuarioSeguro } = usuario;
-        res.status(200).json(usuarioSeguro);
+        return res.status(200).json(sanitizeUser(usuario));
 
     } catch (error) {
         console.log("ERRO AO BUSCAR USUÁRIO:", error);
-        res.status(500).json({ error: "Erro ao buscar usuário." });
+        return res.status(500).json({ error: "Erro ao buscar usuário." });
     }
 };
 
 /* ============================================
-   ATUALIZAR USUÁRIO (perfil)
+   ATUALIZAR USUÁRIO
 ============================================ */
 const update = async (req, res) => {
     try {
         const id = Number(req.params.id);
-        const data = req.body;
 
-        // Não permitir alterar e-mail para um email que já existe
-        if (data.email) {
+        if (!Number.isFinite(id)) {
+            return res.status(400).json({ error: "ID inválido." });
+        }
+
+        const usuarioExistente = await prisma.usuario.findUnique({
+            where: { id }
+        });
+
+        if (!usuarioExistente) {
+            return res.status(404).json({ error: "Usuário não encontrado." });
+        }
+
+        const data = {};
+
+        if (req.body.nome !== undefined) {
+            data.nome = String(req.body.nome || "").trim();
+            if (!data.nome) {
+                return res.status(400).json({ error: "Nome inválido." });
+            }
+        }
+
+        if (req.body.email !== undefined) {
+            data.email = normalizeEmail(req.body.email);
+            if (!data.email) {
+                return res.status(400).json({ error: "E-mail inválido." });
+            }
+
             const existe = await prisma.usuario.findFirst({
                 where: {
                     email: data.email,
@@ -117,22 +173,43 @@ const update = async (req, res) => {
             }
         }
 
+        if (req.body.telefone !== undefined) {
+            data.telefone = req.body.telefone ? String(req.body.telefone).trim() : null;
+        }
+
+        if (req.body.senha !== undefined) {
+            const senha = String(req.body.senha || "").trim();
+
+            if (!senha) {
+                return res.status(400).json({ error: "Senha inválida." });
+            }
+
+            if (senha.length < 6) {
+                return res.status(400).json({ error: "A senha deve ter pelo menos 6 caracteres." });
+            }
+
+            data.senha = await bcrypt.hash(senha, 10);
+        }
+
         const usuarioAtualizado = await prisma.usuario.update({
             where: { id },
             data
         });
 
-        res.status(200).json(usuarioAtualizado);
+        return res.status(200).json(sanitizeUser(usuarioAtualizado));
 
     } catch (error) {
         console.log("ERRO AO ATUALIZAR USUÁRIO:", error);
-        res.status(500).json({ error: "Erro ao atualizar usuário." });
+        return res.status(500).json({ error: "Erro ao atualizar usuário." });
     }
 };
 
+/* ============================================
+   SOLICITAR RESET DE SENHA
+============================================ */
 const forgotPassword = async (req, res) => {
     try {
-        const { email } = req.body;
+        const email = normalizeEmail(req.body.email);
 
         if (!email) {
             return res.status(400).json({ error: "E-mail é obrigatório." });
@@ -201,18 +278,25 @@ const forgotPassword = async (req, res) => {
     } catch (error) {
         console.log("ERRO AO SOLICITAR RESET:", error);
         return res.status(500).json({
-            error: "Erro ao solicitar redefinição de senha.",
-            details: error.message
+            error: "Erro ao solicitar redefinição de senha."
         });
     }
 };
 
+/* ============================================
+   RESETAR SENHA
+============================================ */
 const resetPassword = async (req, res) => {
     try {
-        const { token, novaSenha } = req.body;
+        const token = String(req.body.token || "").trim();
+        const novaSenha = String(req.body.novaSenha || "").trim();
 
         if (!token || !novaSenha) {
             return res.status(400).json({ error: "Token e nova senha são obrigatórios." });
+        }
+
+        if (novaSenha.length < 6) {
+            return res.status(400).json({ error: "A senha deve ter pelo menos 6 caracteres." });
         }
 
         const usuario = await prisma.usuario.findFirst({
@@ -246,12 +330,10 @@ const resetPassword = async (req, res) => {
     } catch (error) {
         console.log("ERRO AO RESETAR SENHA:", error);
         return res.status(500).json({
-            error: "Erro ao redefinir senha.",
-            details: error.message
+            error: "Erro ao redefinir senha."
         });
     }
 };
-
 
 module.exports = {
     create,
