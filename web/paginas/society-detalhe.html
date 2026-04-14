@@ -31,47 +31,21 @@
 
     <main class="content">
 
-        <h2 class="section-title"><i class="fa fa-map-pin"></i> Informações do Society</h2>
+        <h2 class="section-title">
+            <i class="fa fa-map-pin"></i> Informações do Society
+        </h2>
 
         <div id="societyInfo" class="info-card">
             Carregando informações...
         </div>
 
-        <div id="editArea" class="info-card" style="display:none;">
-            <h3 style="margin-bottom:16px;">Editar Society</h3>
-
-            <div class="society-form-grid">
-                <input id="editNome" class="input" placeholder="Nome do Society">
-                <input id="editTelefone" class="input" placeholder="Telefone">
-                <input id="editWhatsapp" class="input" placeholder="WhatsApp">
-                <input id="editEmail" class="input" placeholder="E-mail">
-                <input id="editWebsite" class="input" placeholder="Website">
-                <input id="editInstagram" class="input" placeholder="Instagram">
-                <input id="editFacebook" class="input" placeholder="Facebook">
-                <input id="editYoutube" class="input" placeholder="YouTube">
-                <input id="editCep" class="input" placeholder="CEP">
-                <input id="editEndereco" class="input" placeholder="Endereço">
-                <input id="editCidade" class="input" placeholder="Cidade">
-                <input id="editEstado" class="input" placeholder="Estado">
-            </div>
-
-            <textarea id="editDescricao" class="textarea" placeholder="Descrição do Society"></textarea>
-
-            <div class="edit-actions">
-                <button class="btn green" onclick="salvarEdicaoSociety()">Salvar Alterações</button>
-                <button class="btn navy" onclick="cancelarEdicaoSociety()">Cancelar</button>
-            </div>
-        </div>
-<!-- teste -->
-        <h2 class="section-title"><i class="fa fa-gear"></i> Acessos</h2>
+        <h2 class="section-title">
+            <i class="fa fa-gear"></i> Acessos
+        </h2>
 
         <div class="buttons-area">
 
             <div id="avisoPermissao" style="display:none; margin:10px 0; color:#b45309; font-weight:800;"></div>
-
-            <button id="btnEditarSociety" class="btn green" style="display:none;" onclick="abrirEdicaoSociety()">
-                ✏️ Editar Society
-            </button>
 
             <button id="btnCampos" class="btn navy" onclick="irCampos()">Ver Campos</button>
             <button id="btnCardapio" class="btn navy" onclick="irCardapio()">Ver Cardápio</button>
@@ -81,6 +55,42 @@
         </div>
 
     </main>
+
+    <!-- MODAL EDITAR SOCIETY -->
+    <div id="editModalOverlay" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Editar Society</h3>
+                <button class="modal-close" onclick="cancelarEdicaoSociety()">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="society-form-grid">
+                    <input id="editNome" class="input" placeholder="Nome do Society">
+                    <input id="editTelefone" class="input" placeholder="Telefone">
+                    <input id="editWhatsapp" class="input" placeholder="WhatsApp">
+                    <input id="editEmail" class="input" placeholder="E-mail">
+                    <input id="editWebsite" class="input" placeholder="Website">
+                    <input id="editInstagram" class="input" placeholder="Instagram">
+                    <input id="editFacebook" class="input" placeholder="Facebook">
+                    <input id="editYoutube" class="input" placeholder="YouTube">
+                    <input id="editCep" class="input" placeholder="CEP">
+                    <input id="editEndereco" class="input" placeholder="Endereço">
+                    <input id="editCidade" class="input" placeholder="Cidade">
+                    <input id="editEstado" class="input" placeholder="Estado">
+                </div>
+
+                <textarea id="editDescricao" class="textarea" placeholder="Descrição do Society"></textarea>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn green" onclick="salvarEdicaoSociety()">Salvar Alterações</button>
+                <button class="btn navy" onclick="cancelarEdicaoSociety()">Cancelar</button>
+            </div>
+        </div>
+    </div>
 
     <script src="../js/goplay_home.js"></script>
     <script src="../scripts/societyDetalhe.js"></script>

@@ -42,8 +42,20 @@ function hideButton(btn) {
 }
 
 function renderSocietyInfo(data) {
+    const usuario = getUsuarioLogado();
+    const tipo = String(usuario?.tipo || "").trim().toUpperCase();
+    const isDonoSociety = tipo === "DONO_SOCIETY";
+
     el("societyInfo").innerHTML = `
-      <h3>${data.nome}</h3>
+      <div class="society-header-row">
+        <h3>${data.nome}</h3>
+        ${isDonoSociety ? `
+          <button class="icon-edit-btn" onclick="abrirEdicaoSociety()" title="Editar Society">
+            <i class="fa fa-pen"></i>
+          </button>
+        ` : ""}
+      </div>
+
       <p>${data.descricao || "Sem descrição"}</p>
       <p><b>Cidade:</b> ${data.cidade || "-"} / ${data.estado || "-"}</p>
       <p><b>Telefone:</b> ${data.telefone || "-"}</p>
@@ -118,19 +130,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         const isPlayer = tipo === "PLAYER";
 
         const btnPag = el("btnPagamentos");
-        const btnEditarSociety = el("btnEditarSociety");
-
-        console.log("usuarioLogado:", usuarioLogado);
-        console.log("tipo detectado:", tipo);
-        console.log("btnEditarSociety:", btnEditarSociety);
-
-        if (btnEditarSociety) {
-            if (isDonoSociety) {
-                btnEditarSociety.style.display = "block";
-            } else {
-                btnEditarSociety.style.display = "none";
-            }
-        }
 
         if (isPlayer) {
             hideButton(btnPag);
@@ -146,6 +145,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!isDonoSociety && aviso) {
             aviso.style.display = "block";
             aviso.textContent = "Você está em modo visualização (sem permissões de gerenciamento).";
+        }
+
+        const modalOverlay = el("editModalOverlay");
+        if (modalOverlay) {
+            modalOverlay.addEventListener("click", (e) => {
+                if (e.target === modalOverlay) {
+                    cancelarEdicaoSociety();
+                }
+            });
         }
 
     } catch (e) {
@@ -169,12 +177,13 @@ function abrirEdicaoSociety() {
     }
 
     preencherFormularioEdicao(societyAtual);
-    el("editArea").style.display = "block";
-    el("editArea").scrollIntoView({ behavior: "smooth", block: "start" });
+    el("editModalOverlay").style.display = "flex";
+    document.body.style.overflow = "hidden";
 }
 
 function cancelarEdicaoSociety() {
-    el("editArea").style.display = "none";
+    el("editModalOverlay").style.display = "none";
+    document.body.style.overflow = "auto";
 }
 
 async function salvarEdicaoSociety() {
