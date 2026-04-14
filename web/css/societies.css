@@ -1,52 +1,124 @@
-/* LISTA DE SOCIETIES */
+/* ============================
+      CONTAINER
+============================ */
 .societies-container {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 20px;
 }
 
-/* CARD */
+/* ============================
+      CARD
+============================ */
 .card {
-    background: #fff;
-    padding: 18px 20px;
-    border-radius: 14px;
-    border: 1px solid #e3e3e3;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
-    transition: .2s;
+    background: #ffffff;
+    padding: 20px 22px;
+    border-radius: 16px;
+    border: 1px solid #e6edf7;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+    transition: .25s;
+    position: relative;
+    overflow: hidden;
 }
 
+/* linha lateral estilo app moderno */
+.card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 6px;
+    height: 100%;
+    background: linear-gradient(180deg, #052748, #0a3c73);
+    border-radius: 16px 0 0 16px;
+}
+
+/* hover premium */
 .card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.10);
 }
 
-/* TÍTULO */
+/* ============================
+      HEADER DO CARD
+============================ */
 .card strong {
-    font-size: 18px;
-    color: #07223c;
+    font-size: 19px;
+    color: #052748;
     display: block;
+    margin-bottom: 6px;
 }
 
-/* CIDADE / ESTADO */
+/* localização */
 .card small {
     font-size: 14px;
-    color: #545f6b;
+    color: #6b7280;
 }
 
-/* BOTÃO */
+/* ============================
+      AÇÕES
+============================ */
+.card-actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 10px;
+}
+
+/* botão principal */
 .btn-details {
-    margin-top: 12px;
-    width: 100%;
+    flex: 1;
     padding: 12px;
     border: none;
     border-radius: 10px;
-    background: #07223c;
+    background: linear-gradient(135deg, #052748, #0a3c73);
     color: white;
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 700;
     cursor: pointer;
     transition: .2s;
 }
 
+/* hover botão */
 .btn-details:hover {
-    background: #05182e;
+    filter: brightness(1.1);
+    transform: scale(1.01);
+}
+
+/* botão secundário (caso queira depois) */
+.btn-secondary {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #dbe3ef;
+    background: #f7faff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* ============================
+      EMPTY STATE
+============================ */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+/* ============================
+      RESPONSIVO
+============================ */
+@media (max-width: 600px) {
+    .card {
+        padding: 16px;
+    }
+
+    .card strong {
+        font-size: 17px;
+    }
+
+    .btn-details {
+        font-size: 13px;
+    }
 }
