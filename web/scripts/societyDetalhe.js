@@ -70,7 +70,7 @@ function renderSocietyInfo(data) {
       <hr>
       <p><b>Campos cadastrados:</b> ${(data.campos || []).length}</p>
       <p><b>Itens no cardápio:</b> ${(data.cardapio || []).length}</p>
-      <p><b>Jogadores:</b> ${(data.societyPlayers || []).length}</p>
+      <p><b>Times cadastrados:</b> ${(data.times || []).length}</p>
     `;
 }
 
@@ -155,7 +155,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             });
         }
-
     } catch (e) {
         console.error(e);
         el("societyInfo").innerHTML = "<p>Erro ao carregar society.</p>";
@@ -237,7 +236,6 @@ async function salvarEdicaoSociety() {
         renderSocietyInfo(societyAtual);
         cancelarEdicaoSociety();
         alert("Society atualizado com sucesso!");
-
     } catch (error) {
         console.error(error);
         alert("Erro ao atualizar society.");
@@ -262,13 +260,9 @@ function irCardapio() {
     return (location.href = `cardapio-view.html?societyId=${encodeURIComponent(societyId || "")}`);
 }
 
-function irJogadores() {
-    const u = getUsuarioLogado();
-    const tipo = String(u?.tipo || "").toUpperCase();
-    const societyId = localStorage.getItem("societyId");
-
-    if (tipo === "DONO_SOCIETY") return (location.href = "jogadores.html");
-    return (location.href = `jogadores-view.html?societyId=${encodeURIComponent(societyId || "")}`);
+function irTimes() {
+    const societyId = localStorage.getItem("societyId") || getQueryParam("societyId") || "";
+    location.href = `times.html?societyId=${encodeURIComponent(societyId)}`;
 }
 
 function irPagamentos() {

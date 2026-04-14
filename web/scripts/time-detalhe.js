@@ -4,6 +4,14 @@ function getParam(name) {
     return new URLSearchParams(location.search).get(name);
 }
 
+function getUsuarioLogado() {
+    try {
+        return JSON.parse(localStorage.getItem("usuarioLogado") || "null");
+    } catch {
+        return null;
+    }
+}
+
 function escapeHtml(s) {
     return String(s ?? "")
         .replaceAll("&", "&amp;")
@@ -26,9 +34,21 @@ async function fetchJSON(url, options = {}) {
     return data;
 }
 
-// ---- helpers de agendamento ----
+function pillStatus(status) {
+    const s = String(status || "").toUpperCase();
+    if (s === "APROVADO") return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #bbf7d0;background:#ecfdf5;color:#065f46;">APROVADO</span>`;
+    if (s === "RECUSADO") return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #fecaca;background:#fee2e2;color:#7f1d1d;">RECUSADO</span>`;
+    if (s === "INATIVO") return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #e5e7eb;background:#f3f4f6;color:#374151;">INATIVO</span>`;
+    return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #fed7aa;background:#fff7ed;color:#9a3412;">PENDENTE</span>`;
+}
+
+function pillTipo(tipo) {
+    const t = String(tipo || "").toUpperCase();
+    if (t === "MENSALISTA") return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;">MENSALISTA</span>`;
+    return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #e5e7eb;background:#f9fafb;color:#111827;">AVULSO</span>`;
+}
+
 function pickDateField(a) {
-    // tenta achar a data em vários formatos
     return (
         a?.data ||
         a?.dataJogo ||
@@ -44,13 +64,11 @@ function pickDateField(a) {
 function toBRDateOnly(value) {
     if (!value) return "-";
 
-    // se vier "YYYY-MM-DD"
     if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
         const d = new Date(value + "T00:00:00");
         if (!Number.isNaN(d.getTime())) return d.toLocaleDateString("pt-BR");
     }
 
-    // se vier ISO completo
     const d = new Date(value);
     if (!Number.isNaN(d.getTime())) return d.toLocaleDateString("pt-BR");
 
@@ -61,17 +79,17 @@ function statusPill(status) {
     const s = String(status || "").toUpperCase();
     if (s === "CONFIRMADO") {
         return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;border:1px solid #bbf7d0;background:#ecfdf5;color:#065f46;">
-      <i class="fa-solid fa-circle-check"></i> CONFIRMADO
-    </span>`;
+          <i class="fa-solid fa-circle-check"></i> CONFIRMADO
+        </span>`;
     }
     if (s === "CANCELADO") {
         return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;border:1px solid #fecaca;background:#fee2e2;color:#7f1d1d;">
-      <i class="fa-solid fa-circle-xmark"></i> CANCELADO
-    </span>`;
+          <i class="fa-solid fa-circle-xmark"></i> CANCELADO
+        </span>`;
     }
     return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;border:1px solid #fed7aa;background:#fff7ed;color:#9a3412;">
-    <i class="fa-solid fa-hourglass-half"></i> PENDENTE
-  </span>`;
+      <i class="fa-solid fa-hourglass-half"></i> PENDENTE
+    </span>`;
 }
 
 function btnMini(label, icon, kind = "neutral", onClickJs = "") {
@@ -86,8 +104,7 @@ async function cancelarAgendamento(id) {
     if (!confirm("Cancelar este agendamento?")) return;
     try {
         await fetchJSON(`${BASE_URL}/agendamentos/${id}/cancelar`, { method: "POST" });
-        alert("✅ Agendamento cancelado!");
-        // recarrega
+        alert("Agendamento cancelado!");
         const timeId = getParam("timeId");
         await carregarAgendamentos(timeId);
     } catch (e) {
@@ -97,14 +114,44 @@ async function cancelarAgendamento(id) {
 }
 
 function abrirPagamentoPorLink(pagamentoId) {
-    // página de pagamento por link
-    // ajuste o nome do param se seu pagamentos.js usa outro (aqui é pagamentoId)
     location.href = `pagamentos.html?pagamentoId=${encodeURIComponent(pagamentoId)}`;
 }
 
 function irMeusPagamentos(timeId) {
-    // seu menu já aponta para meus-pagamentos.html
     location.href = `meus-pagamentos.html?timeId=${encodeURIComponent(timeId)}`;
+}
+
+async function aprovarTime(timeId) {
+    try {
+        await fetchJSON(`${BASE_URL}/time/${timeId}/aprovar`, { method: "POST" });
+        alert("Time aprovado com sucesso!");
+        await carregarTime(timeId);
+    } catch (e) {
+        console.error(e);
+        alert(e.message || "Erro ao aprovar time.");
+    }
+}
+
+async function recusarTime(timeId) {
+    try {
+        await fetchJSON(`${BASE_URL}/time/${timeId}/recusar`, { method: "POST" });
+        alert("Time recusado com sucesso!");
+        await carregarTime(timeId);
+    } catch (e) {
+        console.error(e);
+        alert(e.message || "Erro ao recusar time.");
+    }
+}
+
+async function inativarTime(timeId) {
+    try {
+        await fetchJSON(`${BASE_URL}/time/${timeId}/inativar`, { method: "POST" });
+        alert("Time inativado com sucesso!");
+        await carregarTime(timeId);
+    } catch (e) {
+        console.error(e);
+        alert(e.message || "Erro ao inativar time.");
+    }
 }
 
 async function carregarAgendamentos(timeId) {
@@ -120,7 +167,6 @@ async function carregarAgendamentos(timeId) {
         const lista = await fetchJSON(`${BASE_URL}/agendamentos/time/${timeId}`);
         const ags = Array.isArray(lista) ? lista : [];
 
-        // ordena por data desc e horaInicio
         ags.sort((a, b) => {
             const da = new Date(String(pickDateField(a) || "")).getTime();
             const db = new Date(String(pickDateField(b) || "")).getTime();
@@ -135,22 +181,21 @@ async function carregarAgendamentos(timeId) {
             return;
         }
 
-        // tabela
         wrap.innerHTML = `
-      <div style="overflow:auto;border-radius:14px;">
-        <table style="width:100%;border-collapse:collapse;min-width:860px;background:#fff;border-radius:14px;overflow:hidden;">
-          <thead>
-            <tr>
-              <th style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Data</th>
-              <th style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Horário</th>
-              <th style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Society</th>
-              <th style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Campo</th>
-              <th style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Status</th>
-              <th style="text-align:right;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${ags.map(a => {
+          <div style="overflow:auto;border-radius:14px;">
+            <table style="width:100%;border-collapse:collapse;min-width:860px;background:#fff;border-radius:14px;overflow:hidden;">
+              <thead>
+                <tr>
+                  <th style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Data</th>
+                  <th style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Horário</th>
+                  <th style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Society</th>
+                  <th style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Campo</th>
+                  <th style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Status</th>
+                  <th style="text-align:right;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${ags.map(a => {
             const dt = toBRDateOnly(pickDateField(a));
             const hr = `${escapeHtml(a?.horaInicio || "-")} - ${escapeHtml(a?.horaFim || "-")}`;
             const societyNome = escapeHtml(a?.society?.nome || a?.societyNome || "-");
@@ -164,13 +209,10 @@ async function carregarAgendamentos(timeId) {
                 null;
 
             const podeCancelar = String(a?.status || "").toUpperCase() !== "CANCELADO";
-
             const actions = [];
 
             if (pagamentoId) {
                 actions.push(btnMini("Pagamento", "fa-solid fa-receipt", "ok", `abrirPagamentoPorLink(${JSON.stringify(pagamentoId)})`));
-            } else {
-                // Se você quiser forçar a criação do pagamento aqui, dá pra fazer depois.
             }
 
             if (podeCancelar) {
@@ -178,31 +220,30 @@ async function carregarAgendamentos(timeId) {
             }
 
             return `
-                <tr>
-                  <td style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:14px;">${dt}</td>
-                  <td style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:14px;">${hr}</td>
-                  <td style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:14px;">${societyNome}</td>
-                  <td style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:14px;">${campoNome}</td>
-                  <td style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:14px;">${st}</td>
-                  <td style="text-align:right;padding:12px;border-bottom:1px solid #eef2f6;font-size:14px;">
-                    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
-                      ${actions.join("")}
-                    </div>
-                  </td>
-                </tr>
-              `;
+                      <tr>
+                        <td style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:14px;">${dt}</td>
+                        <td style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:14px;">${hr}</td>
+                        <td style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:14px;">${societyNome}</td>
+                        <td style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:14px;">${campoNome}</td>
+                        <td style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:14px;">${st}</td>
+                        <td style="text-align:right;padding:12px;border-bottom:1px solid #eef2f6;font-size:14px;">
+                          <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+                            ${actions.join("")}
+                          </div>
+                        </td>
+                      </tr>
+                    `;
         }).join("")}
-          </tbody>
-        </table>
-      </div>
-    `;
+              </tbody>
+            </table>
+          </div>
+        `;
     } catch (e) {
         console.error(e);
         wrap.innerHTML = `<div style="color:#b91c1c;font-weight:800;">Erro ao carregar agendamentos: ${escapeHtml(e.message)}</div>`;
     }
 }
 
-// ---- tela atual ----
 document.addEventListener("DOMContentLoaded", () => {
     init();
 });
@@ -217,7 +258,6 @@ async function init() {
         return;
     }
 
-    // Botões
     document.getElementById("btnAgendar").onclick = () => {
         location.href = `time-agendamento.html?timeId=${timeId}`;
     };
@@ -226,6 +266,10 @@ async function init() {
         irMeusPagamentos(timeId);
     };
 
+    document.getElementById("btnAprovarTime").onclick = () => aprovarTime(timeId);
+    document.getElementById("btnRecusarTime").onclick = () => recusarTime(timeId);
+    document.getElementById("btnInativarTime").onclick = () => inativarTime(timeId);
+
     await carregarTime(timeId);
     await carregarAgendamentos(timeId);
 }
@@ -233,6 +277,7 @@ async function init() {
 async function carregarTime(timeId) {
     const infoEl = document.getElementById("info");
     const listEl = document.getElementById("listaJogadores");
+    const usuario = getUsuarioLogado();
 
     infoEl.innerHTML = "Carregando...";
     listEl.innerHTML = "Carregando jogadores...";
@@ -240,14 +285,26 @@ async function carregarTime(timeId) {
     try {
         const time = await fetchJSON(`${BASE_URL}/time/${timeId}`);
 
+        const isDonoSociety = String(usuario?.tipo || "").toUpperCase() === "DONO_SOCIETY";
+        const acoesVinculo = document.getElementById("acoesVinculoSociety");
+
+        if (acoesVinculo) {
+            acoesVinculo.style.display = isDonoSociety ? "block" : "none";
+        }
+
         infoEl.innerHTML = `
-      <div style="text-align:left;">
-        <p><strong>Nome:</strong> ${escapeHtml(time.nome)}</p>
-        <p><strong>Society:</strong> ${escapeHtml(time?.society?.nome || "-")}</p>
-        <p><strong>Cidade:</strong> ${escapeHtml(time.cidade || "-")} / ${escapeHtml(time.estado || "-")}</p>
-        <p><strong>Modalidade:</strong> ${escapeHtml(time.modalidade || "-")}</p>
-      </div>
-    `;
+          <div style="text-align:left;">
+            <p><strong>Nome:</strong> ${escapeHtml(time.nome)}</p>
+            <p><strong>Society:</strong> ${escapeHtml(time?.society?.nome || "-")}</p>
+            <p><strong>Cidade:</strong> ${escapeHtml(time.cidade || "-")} / ${escapeHtml(time.estado || "-")}</p>
+            <p><strong>Modalidade:</strong> ${escapeHtml(time.modalidade || "-")}</p>
+            <p><strong>Tipo de vínculo:</strong> ${pillTipo(time.tipoVinculo)}</p>
+            <p><strong>Status:</strong> ${pillStatus(time.statusVinculo)}</p>
+            <p><strong>Mensalidade:</strong> ${time.valorMensalidade ? `R$ ${Number(time.valorMensalidade).toFixed(2).replace(".", ",")}` : "-"}</p>
+            <p><strong>Vencimento:</strong> ${time.diaVencimento || "-"}</p>
+            <p><strong>Observação:</strong> ${escapeHtml(time.observacaoVinculo || "-")}</p>
+          </div>
+        `;
 
         const jogadores = time.jogadores || [];
 
@@ -257,17 +314,17 @@ async function carregarTime(timeId) {
         }
 
         listEl.innerHTML = `
-      <div style="text-align:left;">
-        ${jogadores.map(j => `
-          <div style="padding:10px 0;border-bottom:1px solid #eee;">
-            <strong>${escapeHtml(j.nome)}</strong><br/>
-            <span style="color:#6b7280;font-size:13px;">
-              ${escapeHtml(j.posicaoCampo || "—")} ${j.goleiro ? "• Goleiro" : ""}
-            </span>
+          <div style="text-align:left;">
+            ${jogadores.map(j => `
+              <div style="padding:10px 0;border-bottom:1px solid #eee;">
+                <strong>${escapeHtml(j.nome)}</strong><br/>
+                <span style="color:#6b7280;font-size:13px;">
+                  ${escapeHtml(j.posicaoCampo || "—")} ${j.goleiro ? "• Goleiro" : ""}
+                </span>
+              </div>
+            `).join("")}
           </div>
-        `).join("")}
-      </div>
-    `;
+        `;
     } catch (err) {
         console.error(err);
         infoEl.innerHTML = `<p style="color:#b91c1c;"><strong>Erro:</strong> ${escapeHtml(err.message)}</p>`;
@@ -275,6 +332,5 @@ async function carregarTime(timeId) {
     }
 }
 
-// expõe pro onclick dos botões da tabela
 window.cancelarAgendamento = cancelarAgendamento;
 window.abrirPagamentoPorLink = abrirPagamentoPorLink;

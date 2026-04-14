@@ -1,6 +1,7 @@
 const BASE_URL = "https://goplay-dzlr.onrender.com";
 
 document.addEventListener("DOMContentLoaded", async () => {
+    ajustarModoTela();
     await carregarSocietiesNoSelect();
     await carregarTimes();
 });
@@ -9,33 +10,53 @@ function getUsuario() {
     return JSON.parse(localStorage.getItem("usuarioLogado") || "null");
 }
 
+function getQueryParam(name) {
+    return new URLSearchParams(window.location.search).get(name);
+}
+
+function ajustarModoTela() {
+    const usuario = getUsuario();
+    const pageTitle = document.getElementById("pageTitle");
+    const blocoCriacao = document.getElementById("blocoCriacaoTime");
+
+    if (!usuario) return;
+
+    if (usuario.tipo === "DONO_SOCIETY") {
+        if (pageTitle) pageTitle.textContent = "⚽ Times do Society";
+        if (blocoCriacao) blocoCriacao.style.display = "none";
+    } else if (usuario.tipo === "DONO_TIME") {
+        if (pageTitle) pageTitle.textContent = "⚽ Meus Times";
+        if (blocoCriacao) blocoCriacao.style.display = "block";
+    } else {
+        if (pageTitle) pageTitle.textContent = "⚽ Times";
+        if (blocoCriacao) blocoCriacao.style.display = "none";
+    }
+}
+
 async function carregarSocietiesNoSelect() {
     const usuario = getUsuario();
     const select = document.getElementById("societyId");
+    if (!select) return;
 
     if (!usuario?.id) {
-        if (select) select.innerHTML = `<option value="">Faça login novamente</option>`;
+        select.innerHTML = `<option value="">Faça login novamente</option>`;
         return;
     }
 
     const societyIdSalvo = localStorage.getItem("societyId");
-
     let lista = [];
+
     try {
-        // ✅ DONO_SOCIETY -> lista as societies dele
         if (usuario.tipo === "DONO_SOCIETY") {
             const res = await fetch(`${BASE_URL}/society/owner/${usuario.id}`);
             lista = await res.json();
         } else {
-            // ✅ DONO_TIME / PLAYER -> lista TODAS as societies
             const res = await fetch(`${BASE_URL}/society`);
             lista = await res.json();
         }
     } catch (e) {
         console.error(e);
     }
-
-    if (!select) return;
 
     if (!Array.isArray(lista) || lista.length === 0) {
         select.innerHTML = `<option value="">Nenhuma society encontrada</option>`;
@@ -50,7 +71,9 @@ async function carregarSocietiesNoSelect() {
         select.appendChild(opt);
     });
 
-    if (societyIdSalvo) select.value = societyIdSalvo;
+    if (societyIdSalvo) {
+        select.value = societyIdSalvo;
+    }
 
     select.onchange = () => {
         const v = select.value;
@@ -58,6 +81,20 @@ async function carregarSocietiesNoSelect() {
     };
 }
 
+function pillStatus(status) {
+    const s = String(status || "").toUpperCase();
+
+    if (s === "APROVADO") return `<span style="background:#dcfce7;color:#166534;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;">APROVADO</span>`;
+    if (s === "RECUSADO") return `<span style="background:#fee2e2;color:#991b1b;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;">RECUSADO</span>`;
+    if (s === "INATIVO") return `<span style="background:#e5e7eb;color:#374151;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;">INATIVO</span>`;
+    return `<span style="background:#fef3c7;color:#92400e;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;">PENDENTE</span>`;
+}
+
+function pillTipo(tipo) {
+    const t = String(tipo || "").toUpperCase();
+    if (t === "MENSALISTA") return `<span style="background:#dbeafe;color:#1d4ed8;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;">MENSALISTA</span>`;
+    return `<span style="background:#f3f4f6;color:#111827;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;">AVULSO</span>`;
+}
 
 async function carregarTimes() {
     const usuario = getUsuario();
@@ -69,29 +106,56 @@ async function carregarTimes() {
     }
 
     try {
-        const res = await fetch(`${BASE_URL}/time/dono/${usuario.id}`);
-        const data = await res.json();
+        let data = [];
+
+        if (usuario.tipo === "DONO_SOCIETY") {
+            const societyId = getQueryParam("societyId") || localStorage.getItem("societyId");
+            if (!societyId) {
+                div.innerHTML = "<p>Nenhum society selecionado.</p>";
+                return;
+            }
+
+            localStorage.setItem("societyId", societyId);
+
+            const res = await fetch(`${BASE_URL}/time/society/${societyId}`);
+            data = await res.json();
+        } else if (usuario.tipo === "DONO_TIME") {
+            const res = await fetch(`${BASE_URL}/time/dono/${usuario.id}`);
+            data = await res.json();
+        } else {
+            div.innerHTML = "<p>Visualização não disponível para este perfil.</p>";
+            return;
+        }
 
         if (!data || data.length === 0) {
             div.innerHTML = "<p>Nenhum time cadastrado ainda.</p>";
             return;
         }
 
-        div.innerHTML = data
-            .map(
-                (t) => `
-        <div class="card" style="margin-bottom:15px;">
-          <strong>${t.nome}</strong><br>
-          ${t?.society?.nome ? `<small>Society: ${t.society.nome}</small><br>` : ""}
-          ${t.cidade || ""} - ${t.estado || ""}<br><br>
+        div.innerHTML = data.map((t) => `
+    <div class="time-card">
+        <div class="time-card-top">
+            <div class="time-card-info">
+                <strong>${t.nome}</strong>
+                ${t?.society?.nome ? `<small>Society: ${t.society.nome}</small>` : ""}
+                <small>${(t.cidade || "")}${t.estado ? ` - ${t.estado}` : ""}</small>
+                <small>Jogadores: ${(t.jogadores || []).length}</small>
+            </div>
 
-          <button class="btn" onclick="verDetalhes(${t.id})">
-            Ver detalhes
-          </button>
+            <div class="time-card-badges">
+                ${pillTipo(t.tipoVinculo)}
+                ${pillStatus(t.statusVinculo)}
+            </div>
         </div>
-      `
-            )
-            .join("");
+
+        <div class="time-card-actions">
+            <button class="btn" onclick="verDetalhes(${t.id})">
+                Ver detalhes
+            </button>
+        </div>
+    </div>
+`).join("");
+
     } catch (e) {
         console.error(e);
         div.innerHTML = "<p>Erro ao carregar times.</p>";
@@ -113,30 +177,23 @@ async function salvarTime() {
         return;
     }
 
-    const data = {
+    const payload = {
         donoId: usuario.id,
         societyId: Number(societyId),
-        nome: document.getElementById("nome").value,
-        // campos extras podem existir na sua tela, mas seu backend ainda NÃO salva eles
-        brasao: document.getElementById("brasao").value,
-        descricao: document.getElementById("descricao").value,
-        estado: document.getElementById("estado").value,
-        cidade: document.getElementById("cidade").value,
-        modalidade: document.getElementById("modalidade").value,
+        nome: document.getElementById("nome").value.trim(),
+        brasao: document.getElementById("brasao").value.trim() || null,
+        descricao: document.getElementById("descricao").value.trim() || null,
+        estado: document.getElementById("estado").value.trim() || null,
+        cidade: document.getElementById("cidade").value.trim() || null,
+        modalidade: document.getElementById("modalidade").value.trim() || null,
+        tipoVinculo: "AVULSO",
+        statusVinculo: "PENDENTE"
     };
 
-    if (!data.nome) {
+    if (!payload.nome) {
         alert("O nome do time é obrigatório.");
         return;
     }
-
-    // ⚠️ seu timeController.create atualmente só salva: nome, societyId, donoId
-    // então vamos mandar só isso pra não confundir
-    const payload = {
-        nome: String(data.nome),
-        societyId: Number(data.societyId),
-        donoId: Number(data.donoId),
-    };
 
     try {
         const res = await fetch(`${BASE_URL}/time`, {
@@ -155,8 +212,12 @@ async function salvarTime() {
         alert("Time cadastrado com sucesso!");
         await carregarTimes();
 
-        // limpa nome
         document.getElementById("nome").value = "";
+        document.getElementById("brasao").value = "";
+        document.getElementById("descricao").value = "";
+        document.getElementById("estado").value = "";
+        document.getElementById("cidade").value = "";
+        document.getElementById("modalidade").value = "";
     } catch (e) {
         console.error(e);
         alert("Erro ao criar time.");
@@ -164,11 +225,8 @@ async function salvarTime() {
 }
 
 function verDetalhes(id) {
-    // DONO DO TIME -> detalhes do time (gestão)
     window.location.href = `time-detalhe.html?timeId=${id}`;
 }
 
-
-// deixa funções globais pro onclick do HTML
 window.salvarTime = salvarTime;
 window.verDetalhes = verDetalhes;

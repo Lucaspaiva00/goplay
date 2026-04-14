@@ -1,5 +1,5 @@
 /* ============================
-      CONTAINER DA PÁGINA
+   CONTAINER DA PÁGINA
 ============================ */
 .content-times {
     max-width: 900px;
@@ -8,7 +8,7 @@
 }
 
 /* ============================
-      TÍTULO
+   TÍTULO
 ============================ */
 .page-title {
     font-size: 28px;
@@ -21,7 +21,7 @@
 }
 
 /* ============================
-      CARD
+   CARD BASE
 ============================ */
 .card {
     background: #fff;
@@ -39,7 +39,7 @@
 }
 
 /* ============================
-      INPUTS
+   INPUTS
 ============================ */
 .input,
 .textarea {
@@ -50,8 +50,9 @@
     border: 1px solid #dcdfe6;
     font-size: 15px;
     outline: none;
-    background: white;
+    background: #fff;
     transition: .2s;
+    box-sizing: border-box;
 }
 
 .input:focus,
@@ -61,12 +62,21 @@
 }
 
 .textarea {
-    min-height: 90px;
-    resize: none;
+    min-height: 100px;
+    resize: vertical;
+}
+
+.label {
+    display: block;
+    margin-top: 14px;
+    margin-bottom: 4px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #052748;
 }
 
 /* ============================
-      BOTÃO
+   BOTÃO
 ============================ */
 .btn {
     width: 100%;
@@ -87,23 +97,133 @@
 }
 
 /* ============================
-      LISTA DE TIMES
+   LISTA DE TIMES
 ============================ */
 .time-card {
-    border-left: 6px solid #052748;
-    padding: 20px;
-    margin-bottom: 18px;
-    border-radius: 12px;
     background: #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
+    border-left: 6px solid #052748;
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
 }
 
-.time-card strong {
-    font-size: 18px;
+.time-card:last-child {
+    margin-bottom: 0;
+}
+
+.time-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.time-card-info strong {
+    display: block;
+    font-size: 20px;
     color: #052748;
+    margin-bottom: 6px;
 }
 
-.time-card small {
+.time-card-info small {
+    display: block;
     color: #6b7280;
     font-size: 14px;
+    margin-bottom: 4px;
+    line-height: 1.5;
+}
+
+.time-card-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.time-card-actions {
+    margin-top: 14px;
+}
+
+.time-card-actions .btn {
+    margin-top: 0;
+}
+
+/* ============================
+   ESTADOS
+============================ */
+.empty-state {
+    color: #6b7280;
+    font-weight: 600;
+    text-align: center;
+    padding: 12px 0;
+}
+
+.error-state {
+    color: #b91c1c;
+    font-weight: 700;
+    text-align: center;
+    padding: 12px 0;
+}
+
+/* ============================
+   RESPONSIVO
+============================ */
+@media (max-width: 768px) {
+    .content-times {
+        padding: 15px;
+        margin-top: 90px;
+    }
+
+    .page-title {
+        font-size: 24px;
+    }
+
+    .card {
+        padding: 20px;
+    }
+
+    .section-title {
+        font-size: 18px;
+    }
+
+    .time-card-top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .time-card-badges {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-title {
+        font-size: 21px;
+    }
+
+    .card {
+        padding: 16px;
+    }
+
+    .input,
+    .textarea {
+        font-size: 14px;
+        padding: 12px;
+    }
+
+    .btn {
+        font-size: 15px;
+        padding: 13px;
+    }
+
+    .time-card-info strong {
+        font-size: 18px;
+    }
+
+    .time-card-info small {
+        font-size: 13px;
+    }
 }
