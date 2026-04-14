@@ -1,5 +1,7 @@
 const BASE_URL = "https://goplay-dzlr.onrender.com";
 
+let societyAtual = null;
+
 function getUsuarioLogado() {
     const keys = ["usuarioLogado", "USUARIO_LOGADO", "OPERADOR_LOGADO"];
     for (const k of keys) {
@@ -39,82 +41,191 @@ function hideButton(btn) {
     btn.style.display = "none";
 }
 
+function renderSocietyInfo(data) {
+    el("societyInfo").innerHTML = `
+      <h3>${data.nome}</h3>
+      <p>${data.descricao || "Sem descrição"}</p>
+      <p><b>Cidade:</b> ${data.cidade || "-"} / ${data.estado || "-"}</p>
+      <p><b>Telefone:</b> ${data.telefone || "-"}</p>
+      <p><b>WhatsApp:</b> ${data.whatsapp || "-"}</p>
+      <p><b>Email:</b> ${data.email || "-"}</p>
+      <p><b>Website:</b> ${data.website || "-"}</p>
+      <p><b>Instagram:</b> ${data.instagram || "-"}</p>
+      <p><b>Facebook:</b> ${data.facebook || "-"}</p>
+      <p><b>YouTube:</b> ${data.youtube || "-"}</p>
+      <p><b>Endereço:</b> ${data.endereco || "-"}</p>
+      <p><b>CEP:</b> ${data.cep || "-"}</p>
+      <hr>
+      <p><b>Campos cadastrados:</b> ${(data.campos || []).length}</p>
+      <p><b>Itens no cardápio:</b> ${(data.cardapio || []).length}</p>
+      <p><b>Jogadores:</b> ${(data.societyPlayers || []).length}</p>
+    `;
+}
+
+function preencherFormularioEdicao(data) {
+    el("editNome").value = data.nome || "";
+    el("editDescricao").value = data.descricao || "";
+    el("editTelefone").value = data.telefone || "";
+    el("editWhatsapp").value = data.whatsapp || "";
+    el("editEmail").value = data.email || "";
+    el("editWebsite").value = data.website || "";
+    el("editInstagram").value = data.instagram || "";
+    el("editFacebook").value = data.facebook || "";
+    el("editYoutube").value = data.youtube || "";
+    el("editCep").value = data.cep || "";
+    el("editEndereco").value = data.endereco || "";
+    el("editCidade").value = data.cidade || "";
+    el("editEstado").value = data.estado || "";
+}
+
+async function carregarSociety() {
+    const societyId = getQueryParam("societyId");
+
+    if (!societyId) {
+        alert("Society inválido.");
+        return;
+    }
+
+    localStorage.setItem("societyId", String(societyId));
+
+    const res = await fetch(`${BASE_URL}/society/${societyId}`);
+    const data = await res.json();
+
+    if (data?.error) {
+        el("societyInfo").innerHTML = `<p>${data.error}</p>`;
+        return;
+    }
+
+    societyAtual = data;
+    renderSocietyInfo(data);
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     const usuarioLogado = getUsuarioLogado();
+
     if (!usuarioLogado?.id) {
         alert("Você precisa fazer login!");
         window.location.href = "login.html";
         return;
     }
 
-    const societyId = getQueryParam("societyId");
-    if (!societyId) {
-        alert("Society inválido.");
-        return;
-    }
-
-    // ✅ salvar societyId pro resto das telas (view)
-    localStorage.setItem("societyId", String(societyId));
-
     try {
-        const res = await fetch(`${BASE_URL}/society/${societyId}`);
-        const data = await res.json();
-
-        if (data?.error) {
-            el("societyInfo").innerHTML = `<p>${data.error}</p>`;
-            return;
-        }
-
-        el("societyInfo").innerHTML = `
-      <h3>${data.nome}</h3>
-      <p>${data.descricao || "Sem descrição"}</p>
-      <p><b>Cidade:</b> ${data.cidade || "-"} / ${data.estado || "-"}</p>
-      <p><b>Telefone:</b> ${data.telefone || "-"}</p>
-      <p><b>Email:</b> ${data.email || "-"}</p>
-      <p><b>Website:</b> ${data.website || "-"}</p>
-      <hr>
-      <p><b>Campos cadastrados:</b> ${(data.campos || []).length}</p>
-      <p><b>Itens no cardápio:</b> ${(data.cardapio || []).length}</p>
-      <p><b>Jogadores:</b> ${(data.societyPlayers || []).length}</p>
-    `;
+        await carregarSociety();
 
         const tipo = String(usuarioLogado.tipo || "").toUpperCase();
         const isDonoSociety = tipo === "DONO_SOCIETY";
         const isDonoTime = tipo === "DONO_TIME";
         const isPlayer = tipo === "PLAYER";
 
-        // ✅ Campos/Cardápio/Jogadores: todos podem VER (não trava)
-
-        // ✅ Pagamentos:
-        // - DONO_SOCIETY: vai pra pagamentos.html (recebimentos do society)
-        // - DONO_TIME: vai pra meus-pagamentos.html
-        // - PLAYER: não mostra
         const btnPag = el("btnPagamentos");
+        const btnEditarSociety = el("btnEditarSociety");
+
+        if (isDonoSociety && btnEditarSociety) {
+            btnEditarSociety.style.display = "block";
+        }
 
         if (isPlayer) {
             hideButton(btnPag);
         } else if (isDonoTime) {
-            // troca texto pra ficar claro
             if (btnPag) btnPag.textContent = "Meus Pagamentos";
         } else if (isDonoSociety) {
-            // ok, mantém Pagamentos (recebimentos)
             if (btnPag) btnPag.textContent = "Pagamentos";
         } else {
-            // qualquer outro caso, trava
             lockButton(btnPag, "Ação não disponível para este perfil.");
         }
 
-        // ✅ aviso (somente se não for dono society)
         const aviso = el("avisoPermissao");
         if (!isDonoSociety && aviso) {
             aviso.style.display = "block";
             aviso.textContent = "Você está em modo visualização (sem permissões de gerenciamento).";
         }
+
     } catch (e) {
         console.error(e);
         el("societyInfo").innerHTML = "<p>Erro ao carregar society.</p>";
     }
 });
+
+function abrirEdicaoSociety() {
+    const usuario = getUsuarioLogado();
+    const tipo = String(usuario?.tipo || "").toUpperCase();
+
+    if (tipo !== "DONO_SOCIETY") {
+        alert("Apenas o dono do society pode editar.");
+        return;
+    }
+
+    if (!societyAtual) {
+        alert("Society ainda não carregado.");
+        return;
+    }
+
+    preencherFormularioEdicao(societyAtual);
+    el("editArea").style.display = "block";
+    el("editArea").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function cancelarEdicaoSociety() {
+    el("editArea").style.display = "none";
+}
+
+async function salvarEdicaoSociety() {
+    try {
+        if (!societyAtual?.id) {
+            alert("Society inválido.");
+            return;
+        }
+
+        const body = {
+            nome: el("editNome").value.trim(),
+            descricao: el("editDescricao").value.trim(),
+            telefone: el("editTelefone").value.trim(),
+            whatsapp: el("editWhatsapp").value.trim(),
+            email: el("editEmail").value.trim(),
+            website: el("editWebsite").value.trim(),
+            instagram: el("editInstagram").value.trim(),
+            facebook: el("editFacebook").value.trim(),
+            youtube: el("editYoutube").value.trim(),
+            cep: el("editCep").value.trim(),
+            endereco: el("editEndereco").value.trim(),
+            cidade: el("editCidade").value.trim(),
+            estado: el("editEstado").value.trim()
+        };
+
+        if (!body.nome) {
+            alert("O nome do society é obrigatório.");
+            return;
+        }
+
+        const res = await fetch(`${BASE_URL}/society/${societyAtual.id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || data?.error) {
+            alert(data?.error || "Erro ao atualizar society.");
+            return;
+        }
+
+        societyAtual = {
+            ...societyAtual,
+            ...data
+        };
+
+        renderSocietyInfo(societyAtual);
+        cancelarEdicaoSociety();
+        alert("Society atualizado com sucesso!");
+
+    } catch (error) {
+        console.error(error);
+        alert("Erro ao atualizar society.");
+    }
+}
 
 function irCampos() {
     const u = getUsuarioLogado();
@@ -143,3 +254,17 @@ function irJogadores() {
     return (location.href = `jogadores-view.html?societyId=${encodeURIComponent(societyId || "")}`);
 }
 
+function irPagamentos() {
+    const u = getUsuarioLogado();
+    const tipo = String(u?.tipo || "").toUpperCase();
+
+    if (tipo === "DONO_SOCIETY") {
+        return (location.href = "recebimentos.html");
+    }
+
+    if (tipo === "DONO_TIME") {
+        return (location.href = "meus-pagamentos.html");
+    }
+
+    alert("Ação não disponível para este perfil.");
+}

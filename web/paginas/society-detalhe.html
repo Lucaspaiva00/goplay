@@ -26,6 +26,7 @@
         <button id="menuBtn" class="menu-btn">
             <i class="fa fa-bars"></i>
         </button>
+        <h1 class="title">Detalhes do Society</h1>
     </header>
 
     <main class="content">
@@ -36,18 +37,45 @@
             Carregando informações...
         </div>
 
+        <div id="editArea" class="info-card" style="display:none;">
+            <h3 style="margin-bottom:16px;">Editar Society</h3>
+
+            <div class="society-form-grid">
+                <input id="editNome" class="input" placeholder="Nome do Society">
+                <input id="editTelefone" class="input" placeholder="Telefone">
+                <input id="editWhatsapp" class="input" placeholder="WhatsApp">
+                <input id="editEmail" class="input" placeholder="E-mail">
+                <input id="editWebsite" class="input" placeholder="Website">
+                <input id="editInstagram" class="input" placeholder="Instagram">
+                <input id="editFacebook" class="input" placeholder="Facebook">
+                <input id="editYoutube" class="input" placeholder="YouTube">
+                <input id="editCep" class="input" placeholder="CEP">
+                <input id="editEndereco" class="input" placeholder="Endereço">
+                <input id="editCidade" class="input" placeholder="Cidade">
+                <input id="editEstado" class="input" placeholder="Estado">
+            </div>
+
+            <textarea id="editDescricao" class="textarea" placeholder="Descrição do Society"></textarea>
+
+            <div class="edit-actions">
+                <button class="btn green" onclick="salvarEdicaoSociety()">Salvar Alterações</button>
+                <button class="btn navy" onclick="cancelarEdicaoSociety()">Cancelar</button>
+            </div>
+        </div>
+
         <h2 class="section-title"><i class="fa fa-gear"></i> Acessos</h2>
 
         <div class="buttons-area">
 
             <div id="avisoPermissao" style="display:none; margin:10px 0; color:#b45309; font-weight:800;"></div>
 
-            <!-- Visualização (todos podem entrar) -->
+            <button id="btnEditarSociety" class="btn green" style="display:none;" onclick="abrirEdicaoSociety()">
+                ✏️ Editar Society
+            </button>
+
             <button id="btnCampos" class="btn navy" onclick="irCampos()">Ver Campos</button>
             <button id="btnCardapio" class="btn navy" onclick="irCardapio()">Ver Cardápio</button>
             <button id="btnJogadores" class="btn navy" onclick="irJogadores()">Ver Jogadores</button>
-
-            <!-- Pagamentos varia por perfil -->
             <button id="btnPagamentos" class="btn navy" onclick="irPagamentos()">Pagamentos</button>
 
         </div>
