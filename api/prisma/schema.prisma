@@ -94,6 +94,23 @@ enum TipoCampeonato {
   COPA
 }
 
+/**
+ * =========================
+ * NOVOS ENUMS PARA TIMES
+ * =========================
+ */
+enum TipoVinculoTime {
+  AVULSO
+  MENSALISTA
+}
+
+enum StatusVinculoTime {
+  PENDENTE
+  APROVADO
+  RECUSADO
+  INATIVO
+}
+
 model Usuario {
   id           Int       @id @default(autoincrement())
   nome         String
@@ -227,6 +244,18 @@ model Time {
 
   jogadores Usuario[] @relation("TimeJogadores")
 
+  /**
+   * =========================
+   * NOVOS CAMPOS PROFISSIONAIS
+   * =========================
+   */
+  tipoVinculo       TipoVinculoTime   @default(AVULSO)
+  statusVinculo     StatusVinculoTime @default(PENDENTE)
+  valorMensalidade  Float?
+  diaVencimento     Int?
+  observacaoVinculo String?
+  aprovadoEm        DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -251,6 +280,8 @@ model Time {
   @@unique([societyId, nome])
   @@index([societyId])
   @@index([donoId])
+  @@index([tipoVinculo])
+  @@index([statusVinculo])
 }
 
 model Pagamento {
@@ -354,10 +385,9 @@ model Campeonato {
   tipo     TipoCampeonato
   maxTimes Int
 
-  // ✅ NOVOS CAMPOS (profissional)
   modalidade ModalidadeCampeonato @default(SOCIETY)
   categoria  CategoriaCampeonato  @default(ADULTO)
-  temporada  String? // ex: "2026" ou "2025/2"
+  temporada  String?
 
   dataInicio DateTime?
   dataFim    DateTime?
@@ -365,9 +395,8 @@ model Campeonato {
   status StatusCampeonato @default(EM_CRIACAO)
 
   regulamentoTexto String?
-  regulamentoUrl   String? // link do pdf
+  regulamentoUrl   String?
 
-  // ✅ você já usa isso no fluxo de grupos/mata-mata:
   faseAtual  String @default("GRUPOS")
   roundAtual Int    @default(1)
 

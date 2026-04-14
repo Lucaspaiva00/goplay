@@ -60,7 +60,10 @@ router.put("/time/:timeId", timeController.update);
 router.delete("/time/:timeId", timeController.remove);
 router.post("/time/entrar", timeController.join);
 router.post("/time/sair", timeController.leave);
-
+router.put("/time/:timeId/vinculo", timeController.updateVinculo);
+router.post("/time/:timeId/aprovar", timeController.aprovar);
+router.post("/time/:timeId/recusar", timeController.recusar);
+router.post("/time/:timeId/inativar", timeController.inativar);
 /* =========================
    CARDÁPIO
 ========================= */
