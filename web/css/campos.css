@@ -1,14 +1,9 @@
-/* ================================
-      LAYOUT DA TELA CAMPOS
-   ================================ */
-
 .content-campos {
     max-width: 900px;
     margin: 40px auto;
     padding: 20px;
 }
 
-/* Título */
 .page-title {
     font-size: 26px;
     font-weight: 700;
@@ -19,7 +14,6 @@
     gap: 10px;
 }
 
-/* Card padrão */
 .card {
     background: #ffffff;
     padding: 25px;
@@ -28,21 +22,13 @@
     margin-bottom: 25px;
 }
 
-/* Card da lista */
-#listaCampos .campo-item {
-    background: #f8f9fc;
-    padding: 18px;
-    border-radius: 12px;
-    margin-bottom: 15px;
-    border: 1px solid #e5e5e5;
-}
-
-#listaCampos strong {
-    font-size: 18px;
+.form-title {
+    font-size: 22px;
+    font-weight: 700;
     color: #052748;
+    margin-bottom: 18px;
 }
 
-/* Inputs */
 .input {
     width: 100%;
     padding: 14px;
@@ -60,12 +46,9 @@
     box-shadow: 0 0 0 2px rgba(5, 39, 72, 0.15);
 }
 
-/* Botão */
 .btn {
     width: 100%;
     padding: 15px;
-    background: #052748;
-    color: #fff;
     border: none;
     margin-top: 20px;
     border-radius: 10px;
@@ -75,16 +58,196 @@
     transition: .2s;
 }
 
-.btn:hover {
+.btn-primary {
+    background: #052748;
+    color: #fff;
+}
+
+.btn-primary:hover {
     background: #031a35;
 }
 
-/* ================================
-      RESPONSIVO
-   ================================ */
+.btn-secondary {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.btn-secondary:hover {
+    background: #d1d5db;
+}
+
+.campo-card {
+    background: #fff;
+    padding: 18px;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    margin-bottom: 16px;
+}
+
+.campo-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.campo-nome {
+    font-size: 20px;
+    font-weight: 800;
+    color: #052748;
+    margin: 0 0 4px 0;
+}
+
+.campo-subinfo {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.campo-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.icon-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 12px;
+    background: #052748;
+    color: #fff;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-btn:hover {
+    background: #031a35;
+}
+
+.icon-btn.danger {
+    background: #b91c1c;
+}
+
+.icon-btn.danger:hover {
+    background: #991b1b;
+}
+
+.campo-info {
+    margin-top: 12px;
+    line-height: 1.8;
+    color: #111827;
+}
+
+.campo-foto-wrap {
+    margin-top: 14px;
+}
+
+.campo-foto {
+    width: 100%;
+    max-height: 260px;
+    object-fit: cover;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+}
+
+.empty-state {
+    color: #6b7280;
+    text-align: center;
+    font-weight: 600;
+}
+
+.error-state {
+    color: #b91c1c;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+.helper-state {
+    color: #374151;
+    line-height: 1.6;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 20px;
+}
+
+.modal-box {
+    width: 100%;
+    max-width: 760px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.20);
+    animation: modalFadeIn 0.18s ease;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 24px;
+    color: #052748;
+}
+
+.modal-close {
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 12px;
+    background: #f3f4f6;
+    color: #111827;
+    cursor: pointer;
+    font-size: 16px;
+    transition: 0.2s;
+}
+
+.modal-close:hover {
+    background: #e5e7eb;
+}
+
+.modal-body {
+    padding: 22px 24px 10px;
+}
+
+.modal-footer {
+    padding: 0 24px 24px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
 
 @media (max-width: 768px) {
-
     .content-campos {
         padding: 15px;
         margin-top: 90px;
@@ -93,10 +256,17 @@
     .page-title {
         font-size: 22px;
     }
+
+    .campo-top {
+        flex-direction: column;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+    }
 }
 
 @media (max-width: 480px) {
-
     .page-title {
         font-size: 20px;
     }
@@ -113,5 +283,9 @@
     .btn {
         font-size: 15px;
         padding: 13px;
+    }
+
+    .campo-nome {
+        font-size: 18px;
     }
 }

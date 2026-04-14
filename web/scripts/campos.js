@@ -1,28 +1,31 @@
 const BASE_URL = "https://goplay-dzlr.onrender.com";
 
+let campoEmEdicao = null;
+
 function el(id) {
   return document.getElementById(id);
 }
 
-/**
- * Pega societyId:
- * 1) tenta pela URL (?societyId=...)
- * 2) se não tiver, tenta localStorage ("societyId")
- * Aceita ID string (cuid/uuid) - NÃO converte pra número.
- */
+function getUsuarioLogado() {
+  try {
+    return JSON.parse(localStorage.getItem("usuarioLogado") || "null");
+  } catch {
+    return null;
+  }
+}
+
 function getSocietyId() {
   const params = new URLSearchParams(window.location.search);
   const fromUrl = (params.get("societyId") || "").trim();
   const fromLS = (localStorage.getItem("societyId") || "").trim();
-
-  const id = fromUrl || fromLS;
-  return id ? id : null;
+  return fromUrl || fromLS || null;
 }
 
 async function fetchJSON(url, options = {}) {
   const res = await fetch(url, options);
   const text = await res.text().catch(() => "");
   let data = {};
+
   try {
     data = text ? JSON.parse(text) : {};
   } catch {
@@ -32,6 +35,7 @@ async function fetchJSON(url, options = {}) {
   if (!res.ok) {
     throw new Error(data?.error || data?.message || text || `HTTP ${res.status}`);
   }
+
   return data;
 }
 
@@ -39,44 +43,57 @@ function formatMoney(v) {
   if (v === null || v === undefined || v === "") return "-";
   const n = Number(v);
   if (!Number.isFinite(n)) return "-";
-  return `R$ ${n.toFixed(2)}`;
+  return `R$ ${n.toFixed(2).replace(".", ",")}`;
 }
 
 function renderCampos(campos) {
   const wrap = el("listaCampos");
   if (!wrap) return;
 
+  const usuario = getUsuarioLogado();
+  const tipo = String(usuario?.tipo || "").toUpperCase();
+  const podeGerenciar = tipo === "DONO_SOCIETY";
+
   if (!Array.isArray(campos) || campos.length === 0) {
-    wrap.innerHTML = `<div style="color:#6b7280;">Nenhum campo cadastrado neste society.</div>`;
+    wrap.innerHTML = `<div class="empty-state">Nenhum campo cadastrado neste society.</div>`;
     return;
   }
 
-  wrap.innerHTML = campos
-    .map(
-      (c) => `
-      <div class="campo-card" style="padding:16px;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.08);margin-bottom:14px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-          <div style="font-weight:800;font-size:18px;color:#111827;">${c.nome || "-"}</div>
+  wrap.innerHTML = campos.map((c) => `
+    <div class="campo-card">
+      <div class="campo-top">
+        <div>
+          <h3 class="campo-nome">${c.nome || "-"}</h3>
+          <p class="campo-subinfo">${c.dimensoes || "-"} • ${c.gramado || "-"}</p>
         </div>
 
-        <div style="color:#111827;line-height:1.5;margin-top:8px;">
-          <div><b>Dimensões:</b> ${c.dimensoes || "-"}</div>
-          <div><b>Gramado:</b> ${c.gramado || "-"}</div>
-          <div><b>Avulso (por hora):</b> ${formatMoney(c.valorAvulso)}</div>
-          <div><b>Mensal:</b> ${formatMoney(c.valorMensal)}</div>
-
-          ${
-            c.fotoUrl
-              ? `<div style="margin-top:10px;">
-                   <img src="${c.fotoUrl}" alt="Foto do campo" style="max-width:100%;border-radius:12px;"/>
-                 </div>`
-              : ""
-          }
-        </div>
+        ${podeGerenciar ? `
+          <div class="campo-actions">
+            <button class="icon-btn" onclick="abrirModalEdicaoCampo(${c.id})" title="Editar campo">
+              <i class="fa fa-pen"></i>
+            </button>
+            <button class="icon-btn danger" onclick="excluirCampo(${c.id}, '${(c.nome || "").replace(/'/g, "\\'")}')" title="Excluir campo">
+              <i class="fa fa-trash"></i>
+            </button>
+          </div>
+        ` : ""}
       </div>
-    `
-    )
-    .join("");
+
+      <div class="campo-info">
+        <div><b>Avulso (por hora):</b> ${formatMoney(c.valorAvulso)}</div>
+        <div><b>Mensal:</b> ${formatMoney(c.valorMensal)}</div>
+      </div>
+
+      ${c.fotoUrl
+      ? `
+            <div class="campo-foto-wrap">
+              <img src="${c.fotoUrl}" alt="Foto do campo" class="campo-foto">
+            </div>
+          `
+      : ""
+    }
+    </div>
+  `).join("");
 }
 
 async function listarCampos() {
@@ -86,33 +103,29 @@ async function listarCampos() {
   if (!societyId) {
     if (wrap) {
       wrap.innerHTML = `
-        <div style="color:#ef4444;font-weight:800;">
-          Society não selecionado.
-        </div>
-        <div style="margin-top:10px;color:#374151;">
-          Volte em <b>Ver Societies</b> → abra o <b>Detalhe</b> → clique em <b>Gerenciar Campos</b>.
+        <div class="error-state">Society não selecionado.</div>
+        <div class="helper-state">
+          Volte em <b>Meu Society</b> e entre novamente pelos detalhes do society.
         </div>
       `;
     }
     return;
   }
 
-  // mantém sincronizado
   localStorage.setItem("societyId", societyId);
 
-  const campos = await fetchJSON(`${BASE_URL}/campos/${encodeURIComponent(societyId)}`);
+  const campos = await fetchJSON(`${BASE_URL}/campos/society/${encodeURIComponent(societyId)}`);
   renderCampos(campos);
 }
 
 window.salvarCampo = async function salvarCampo() {
   try {
     const societyId = getSocietyId();
-    if (!societyId) {
-      return alert("Society não selecionado. Volte no detalhe do society e clique em Gerenciar Campos.");
-    }
 
-    // mantém sincronizado
-    localStorage.setItem("societyId", societyId);
+    if (!societyId) {
+      alert("Society não selecionado. Volte no detalhe do society e clique em Ver Campos.");
+      return;
+    }
 
     const nome = (el("nome")?.value || "").trim();
     const valorAvulso = (el("valorAvulso")?.value || "").trim();
@@ -121,30 +134,34 @@ window.salvarCampo = async function salvarCampo() {
     const estiloGramado = (el("estiloGramado")?.value || "").trim();
     const foto = (el("foto")?.value || "").trim();
 
-    if (!nome) return alert("Informe o nome do campo.");
+    if (!nome) {
+      alert("Informe o nome do campo.");
+      return;
+    }
 
     const payload = {
-      societyId, // STRING
+      societyId,
       nome,
       valorAvulso: valorAvulso !== "" ? Number(valorAvulso) : null,
       valorMensal: valorMensal !== "" ? Number(valorMensal) : null,
       dimensoes: dimensoes || null,
       gramado: estiloGramado || null,
-      fotoUrl: foto || null,
+      fotoUrl: foto || null
     };
 
     await fetchJSON(`${BASE_URL}/campos`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
     });
 
-    // limpa form
     ["nome", "valorAvulso", "valorMensal", "dimensoes", "estiloGramado", "foto"].forEach((id) => {
       if (el(id)) el(id).value = "";
     });
 
-    alert("✅ Campo salvo com sucesso!");
+    alert("Campo salvo com sucesso!");
     await listarCampos();
   } catch (e) {
     console.error(e);
@@ -152,8 +169,105 @@ window.salvarCampo = async function salvarCampo() {
   }
 };
 
+window.abrirModalEdicaoCampo = async function abrirModalEdicaoCampo(campoId) {
+  try {
+    const campo = await fetchJSON(`${BASE_URL}/campos/${campoId}`);
+    campoEmEdicao = campo;
+
+    el("editNome").value = campo.nome || "";
+    el("editValorAvulso").value = campo.valorAvulso ?? "";
+    el("editValorMensal").value = campo.valorMensal ?? "";
+    el("editDimensoes").value = campo.dimensoes || "";
+    el("editEstiloGramado").value = campo.gramado || "";
+    el("editFoto").value = campo.fotoUrl || "";
+
+    el("editCampoModal").style.display = "flex";
+    document.body.style.overflow = "hidden";
+  } catch (e) {
+    console.error(e);
+    alert(e.message || "Erro ao carregar campo.");
+  }
+};
+
+window.fecharModalCampo = function fecharModalCampo() {
+  el("editCampoModal").style.display = "none";
+  document.body.style.overflow = "auto";
+  campoEmEdicao = null;
+};
+
+window.salvarEdicaoCampo = async function salvarEdicaoCampo() {
+  try {
+    if (!campoEmEdicao?.id) {
+      alert("Campo não encontrado.");
+      return;
+    }
+
+    const nome = (el("editNome")?.value || "").trim();
+    const valorAvulso = (el("editValorAvulso")?.value || "").trim();
+    const valorMensal = (el("editValorMensal")?.value || "").trim();
+    const dimensoes = (el("editDimensoes")?.value || "").trim();
+    const estiloGramado = (el("editEstiloGramado")?.value || "").trim();
+    const foto = (el("editFoto")?.value || "").trim();
+
+    if (!nome) {
+      alert("Informe o nome do campo.");
+      return;
+    }
+
+    const payload = {
+      nome,
+      valorAvulso: valorAvulso !== "" ? Number(valorAvulso) : null,
+      valorMensal: valorMensal !== "" ? Number(valorMensal) : null,
+      dimensoes: dimensoes || null,
+      gramado: estiloGramado || null,
+      fotoUrl: foto || null
+    };
+
+    await fetchJSON(`${BASE_URL}/campos/${campoEmEdicao.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    fecharModalCampo();
+    alert("Campo atualizado com sucesso!");
+    await listarCampos();
+  } catch (e) {
+    console.error(e);
+    alert(e.message || "Erro ao atualizar campo.");
+  }
+};
+
+window.excluirCampo = async function excluirCampo(campoId, nome) {
+  const confirmar = confirm(`Deseja realmente excluir o campo "${nome}"?`);
+  if (!confirmar) return;
+
+  try {
+    await fetchJSON(`${BASE_URL}/campos/${campoId}`, {
+      method: "DELETE"
+    });
+
+    alert("Campo excluído com sucesso!");
+    await listarCampos();
+  } catch (e) {
+    console.error(e);
+    alert(e.message || "Erro ao excluir campo.");
+  }
+};
+
 document.addEventListener("DOMContentLoaded", async () => {
   try {
+    const modal = el("editCampoModal");
+    if (modal) {
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          fecharModalCampo();
+        }
+      });
+    }
+
     await listarCampos();
   } catch (e) {
     console.error(e);
