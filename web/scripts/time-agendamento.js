@@ -1,10 +1,11 @@
-// ✅ web/scripts/time-agendamento.js  (ARQUIVO TODO)  -- AJUSTE MENSALIDADE + LIMITES + PIX FIXO
 const BASE_URL = "https://goplay-dzlr.onrender.com";
 
 const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado") || "null");
 if (!usuarioLogado?.id) location.href = "login.html";
 
-function el(id) { return document.getElementById(id); }
+function el(id) {
+    return document.getElementById(id);
+}
 
 function getQueryParam(name) {
     const url = new URL(window.location.href);
@@ -15,8 +16,17 @@ async function fetchJSON(url, options = {}) {
     const res = await fetch(url, options);
     const text = await res.text().catch(() => "");
     let data = {};
-    try { data = text ? JSON.parse(text) : {}; } catch { data = {}; }
-    if (!res.ok) throw new Error(data?.error || data?.message || text || `HTTP ${res.status}`);
+
+    try {
+        data = text ? JSON.parse(text) : {};
+    } catch {
+        data = {};
+    }
+
+    if (!res.ok) {
+        throw new Error(data?.error || data?.message || text || `HTTP ${res.status}`);
+    }
+
     return data;
 }
 
@@ -29,7 +39,7 @@ let horarioSelecionado = null;
 // PIX FIXO (CNPJ)
 const PIX_CHAVE = "47.051.258/0001-58";
 
-// ✅ opcional: alternar mensalidade
+// controle de mensalidade
 let recorrenteSelecionado = false;
 
 async function carregarTimesDoDono() {
@@ -60,7 +70,6 @@ async function carregarTimesDoDono() {
 
         if (!timeSelecionadoId) return;
 
-        // ✅ descobre societyId pelo detalhe do time
         const time = await fetchJSON(`${BASE_URL}/time/${timeSelecionadoId}`);
         societyIdDoTime = time?.society?.id || time?.societyId || null;
 
@@ -77,6 +86,7 @@ async function carregarTimesDoDono() {
 
 function renderResumo(time) {
     if (!time) return;
+
     const resumo = el("resumoTopo");
     el("chipTime").textContent = `Time: ${time?.nome || "-"}`;
     el("chipSociety").textContent = `Society: ${time?.society?.nome || "-"}`;
@@ -84,9 +94,12 @@ function renderResumo(time) {
 }
 
 async function carregarCampos(societyId) {
-    const campos = await fetchJSON(`${BASE_URL}/campos/${societyId}`);
-
     const select = el("campoId");
+    select.innerHTML = `<option value="">Carregando campos...</option>`;
+
+    // ✅ rota corrigida
+    const campos = await fetchJSON(`${BASE_URL}/campos/society/${societyId}`);
+
     select.innerHTML = `<option value="">Selecione</option>`;
 
     if (!campos?.length) {
@@ -95,13 +108,21 @@ async function carregarCampos(societyId) {
     }
 
     campos.forEach(c => {
-        // mostra mensal no select pra ficar claro
-        const mensal = c?.valorMensal ? ` • Mensal ${Number(c.valorMensal).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}` : "";
-        select.innerHTML += `<option value="${c.id}" data-mensal="${c?.valorMensal || ""}">${c.nome}${mensal}</option>`;
+        const mensal = c?.valorMensal
+            ? ` • Mensal ${Number(c.valorMensal).toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL"
+            })}`
+            : "";
+
+        select.innerHTML += `
+            <option value="${c.id}" data-mensal="${c?.valorMensal || ""}">
+                ${c.nome}${mensal}
+            </option>
+        `;
     });
 }
 
-// ✅ limita e melhora os slots (antes "só 6")
 function renderSlots(horarios) {
     const div = el("horarios");
     div.innerHTML = "";
@@ -114,20 +135,22 @@ function renderSlots(horarios) {
         return;
     }
 
-    // ✅ garante que renderiza TODOS
     horarios.forEach(h => {
         const slot = document.createElement("div");
         slot.className = `slot ${h.disponivel ? "livre" : "ocupado"}`;
         slot.textContent = `${h.horaInicio} - ${h.horaFim}`;
 
-        if (h.disponivel) slot.onclick = () => selecionarHorario(slot, h);
+        if (h.disponivel) {
+            slot.onclick = () => selecionarHorario(slot, h);
+        }
+
         div.appendChild(slot);
     });
 }
 
 async function buscarHorarios() {
     campoSelecionado = el("campoId").value ? Number(el("campoId").value) : null;
-    const data = el("data").value; // yyyy-mm-dd
+    const data = el("data").value;
 
     if (!timeSelecionadoId) return alert("Selecione seu time.");
     if (!societyIdDoTime) return alert("Não consegui identificar o society do time.");
@@ -148,22 +171,21 @@ function selecionarHorario(slotEl, h) {
     el("acao").style.display = "block";
 }
 
-// ✅ cria agendamento + pagamento (AVULSO ou MENSALISTA)
 async function criarAgendamento() {
     const data = el("data").value;
+
     if (!timeSelecionadoId) return alert("Selecione seu time.");
     if (!societyIdDoTime) return alert("Não consegui identificar o society do time.");
-    if (!campoSelecionado || !data || !horarioSelecionado?.horaInicio) return alert("Selecione campo, data e horário.");
+    if (!campoSelecionado || !data || !horarioSelecionado?.horaInicio) {
+        return alert("Selecione campo, data e horário.");
+    }
 
-    // ✅ decidir se é mensalista baseado no campo (se tem valorMensal) + checkbox
     const opt = el("campoId").selectedOptions?.[0];
     const valorMensalCampo = opt?.getAttribute("data-mensal");
     const podeMensal = !!valorMensalCampo && Number(valorMensalCampo) > 0;
 
-    // se o usuário marcou recorrente e o campo tem mensal, vira mensalista
     const recorrente = recorrenteSelecionado && podeMensal;
 
-    // 1) cria agendamento (por hora)
     const agendamento = await fetchJSON(`${BASE_URL}/agendamentos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -176,7 +198,6 @@ async function criarAgendamento() {
         }),
     });
 
-    // 2) cria pagamento vinculado (agendamento)
     await fetchJSON(`${BASE_URL}/pagamentos/agendamento`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -187,11 +208,10 @@ async function criarAgendamento() {
             campoId: campoSelecionado,
             agendamentoId: agendamento.id,
             forma: "PIX",
-            recorrente, // ✅ manda pro backend decidir tipo e valor
+            recorrente,
         }),
     });
 
-    // ✅ mostra PIX fixo na tela (sem depender de integração agora)
     alert(
         `✅ Agendamento criado e pagamento gerado!\n\nPague via PIX:\nChave (CNPJ): ${PIX_CHAVE}\n\nDepois veja em "Meus Pagamentos".`
     );
@@ -204,31 +224,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
         await carregarTimesDoDono();
 
-        // ✅ se veio com timeId na URL, pré-seleciona
         const timeIdFromUrl = getQueryParam("timeId");
         if (timeIdFromUrl) {
             el("timeId").value = String(timeIdFromUrl);
             el("timeId").dispatchEvent(new Event("change"));
         }
 
-        // ✅ cria checkbox mensalidade dinamicamente dentro do card "acao"
-        const acao = el("acao");
-        const box = document.createElement("div");
-        box.style.marginTop = "12px";
-        box.innerHTML = `
-      <label style="display:flex;gap:10px;align-items:center;font-weight:800;">
-        <input type="checkbox" id="chkRecorrente" style="width:auto; transform:scale(1.2);" />
-        Repetir toda semana (Mensalista)
-      </label>
-      <div class="muted" style="margin-top:6px;">
-        Se marcado e o campo tiver <b>valor mensal</b>, o pagamento vira <b>MENSALISTA</b>.
-      </div>
-    `;
-        acao.appendChild(box);
-
-        el("chkRecorrente").addEventListener("change", (e) => {
-            recorrenteSelecionado = !!e.target.checked;
-        });
+        // ✅ usa o checkbox que já existe no HTML
+        const chkRecorrente = el("recorrente");
+        if (chkRecorrente) {
+            chkRecorrente.addEventListener("change", (e) => {
+                recorrenteSelecionado = !!e.target.checked;
+            });
+        }
 
         el("btnBuscar").onclick = buscarHorarios;
         el("btnAgendar").onclick = criarAgendamento;
