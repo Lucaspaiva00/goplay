@@ -112,7 +112,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
         await carregarSociety();
 
-        const tipo = String(usuarioLogado.tipo || "").toUpperCase();
+        const tipo = String(usuarioLogado.tipo || "").trim().toUpperCase();
         const isDonoSociety = tipo === "DONO_SOCIETY";
         const isDonoTime = tipo === "DONO_TIME";
         const isPlayer = tipo === "PLAYER";
@@ -120,8 +120,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         const btnPag = el("btnPagamentos");
         const btnEditarSociety = el("btnEditarSociety");
 
-        if (isDonoSociety && btnEditarSociety) {
-            btnEditarSociety.style.display = "block";
+        console.log("usuarioLogado:", usuarioLogado);
+        console.log("tipo detectado:", tipo);
+        console.log("btnEditarSociety:", btnEditarSociety);
+
+        if (btnEditarSociety) {
+            if (isDonoSociety) {
+                btnEditarSociety.style.display = "block";
+            } else {
+                btnEditarSociety.style.display = "none";
+            }
         }
 
         if (isPlayer) {
@@ -148,7 +156,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function abrirEdicaoSociety() {
     const usuario = getUsuarioLogado();
-    const tipo = String(usuario?.tipo || "").toUpperCase();
+    const tipo = String(usuario?.tipo || "").trim().toUpperCase();
 
     if (tipo !== "DONO_SOCIETY") {
         alert("Apenas o dono do society pode editar.");
