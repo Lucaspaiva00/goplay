@@ -25,26 +25,44 @@ async function fetchJSON(url, options = {}) {
     const res = await fetch(url, options);
     const text = await res.text().catch(() => "");
     let data = null;
-    try { data = text ? JSON.parse(text) : null; } catch { }
+
+    try {
+        data = text ? JSON.parse(text) : null;
+    } catch { }
 
     if (!res.ok) {
         const msg = data?.error || data?.message || text || `Erro HTTP ${res.status}`;
         throw new Error(msg);
     }
+
     return data;
 }
 
 function pillStatus(status) {
     const s = String(status || "").toUpperCase();
-    if (s === "APROVADO") return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #bbf7d0;background:#ecfdf5;color:#065f46;">APROVADO</span>`;
-    if (s === "RECUSADO") return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #fecaca;background:#fee2e2;color:#7f1d1d;">RECUSADO</span>`;
-    if (s === "INATIVO") return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #e5e7eb;background:#f3f4f6;color:#374151;">INATIVO</span>`;
+
+    if (s === "APROVADO") {
+        return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #bbf7d0;background:#ecfdf5;color:#065f46;">APROVADO</span>`;
+    }
+
+    if (s === "RECUSADO") {
+        return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #fecaca;background:#fee2e2;color:#7f1d1d;">RECUSADO</span>`;
+    }
+
+    if (s === "INATIVO") {
+        return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #e5e7eb;background:#f3f4f6;color:#374151;">INATIVO</span>`;
+    }
+
     return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #fed7aa;background:#fff7ed;color:#9a3412;">PENDENTE</span>`;
 }
 
 function pillTipo(tipo) {
     const t = String(tipo || "").toUpperCase();
-    if (t === "MENSALISTA") return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;">MENSALISTA</span>`;
+
+    if (t === "MENSALISTA") {
+        return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;">MENSALISTA</span>`;
+    }
+
     return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #e5e7eb;background:#f9fafb;color:#111827;">AVULSO</span>`;
 }
 
@@ -77,16 +95,19 @@ function toBRDateOnly(value) {
 
 function statusPill(status) {
     const s = String(status || "").toUpperCase();
+
     if (s === "CONFIRMADO") {
         return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;border:1px solid #bbf7d0;background:#ecfdf5;color:#065f46;">
           <i class="fa-solid fa-circle-check"></i> CONFIRMADO
         </span>`;
     }
+
     if (s === "CANCELADO") {
         return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;border:1px solid #fecaca;background:#fee2e2;color:#7f1d1d;">
           <i class="fa-solid fa-circle-xmark"></i> CANCELADO
         </span>`;
     }
+
     return `<span style="font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;border:1px solid #fed7aa;background:#fff7ed;color:#9a3412;">
       <i class="fa-solid fa-hourglass-half"></i> PENDENTE
     </span>`;
@@ -95,16 +116,25 @@ function statusPill(status) {
 function btnMini(label, icon, kind = "neutral", onClickJs = "") {
     const base = "border:none;border-radius:10px;padding:8px 10px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px;";
     let style = "background:#f3f4f6;color:#111827;border:1px solid #e5e7eb;";
-    if (kind === "ok") style = "background:#ecfdf5;border:1px solid #bbf7d0;color:#065f46;";
-    if (kind === "danger") style = "background:#fee2e2;border:1px solid #fecaca;color:#7f1d1d;";
+
+    if (kind === "ok") {
+        style = "background:#ecfdf5;border:1px solid #bbf7d0;color:#065f46;";
+    }
+
+    if (kind === "danger") {
+        style = "background:#fee2e2;border:1px solid #fecaca;color:#7f1d1d;";
+    }
+
     return `<button style="${base}${style}" onclick="${onClickJs}"><i class="${icon}"></i> ${label}</button>`;
 }
 
 async function cancelarAgendamento(id) {
     if (!confirm("Cancelar este agendamento?")) return;
+
     try {
         await fetchJSON(`${BASE_URL}/agendamentos/${id}/cancelar`, { method: "POST" });
         alert("Agendamento cancelado!");
+
         const timeId = getParam("timeId");
         await carregarAgendamentos(timeId);
     } catch (e) {
@@ -170,7 +200,11 @@ async function carregarAgendamentos(timeId) {
         ags.sort((a, b) => {
             const da = new Date(String(pickDateField(a) || "")).getTime();
             const db = new Date(String(pickDateField(b) || "")).getTime();
-            if (Number.isFinite(db) && Number.isFinite(da) && db !== da) return db - da;
+
+            if (Number.isFinite(db) && Number.isFinite(da) && db !== da) {
+                return db - da;
+            }
+
             return String(a?.horaInicio || "").localeCompare(String(b?.horaInicio || ""));
         });
 
@@ -212,11 +246,25 @@ async function carregarAgendamentos(timeId) {
             const actions = [];
 
             if (pagamentoId) {
-                actions.push(btnMini("Pagamento", "fa-solid fa-receipt", "ok", `abrirPagamentoPorLink(${JSON.stringify(pagamentoId)})`));
+                actions.push(
+                    btnMini(
+                        "Pagamento",
+                        "fa-solid fa-receipt",
+                        "ok",
+                        `abrirPagamentoPorLink(${JSON.stringify(pagamentoId)})`
+                    )
+                );
             }
 
             if (podeCancelar) {
-                actions.push(btnMini("Cancelar", "fa-solid fa-ban", "danger", `cancelarAgendamento(${Number(a.id)})`));
+                actions.push(
+                    btnMini(
+                        "Cancelar",
+                        "fa-solid fa-ban",
+                        "danger",
+                        `cancelarAgendamento(${Number(a.id)})`
+                    )
+                );
             }
 
             return `
@@ -250,6 +298,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function init() {
     const timeId = getParam("timeId");
+
     if (!timeId) {
         document.getElementById("info").innerHTML = `<p>timeId não informado na URL.</p>`;
         document.getElementById("listaJogadores").innerHTML = `<p>-</p>`;
@@ -285,11 +334,24 @@ async function carregarTime(timeId) {
     try {
         const time = await fetchJSON(`${BASE_URL}/time/${timeId}`);
 
-        const isDonoSociety = String(usuario?.tipo || "").toUpperCase() === "DONO_SOCIETY";
+        const tipoUsuario = String(usuario?.tipo || "").toUpperCase();
+        const isDonoSociety = tipoUsuario === "DONO_SOCIETY";
+        const isDonoTime = tipoUsuario === "DONO_TIME";
+
         const acoesVinculo = document.getElementById("acoesVinculoSociety");
+        const btnAgendar = document.getElementById("btnAgendar");
+        const btnPagamentos = document.getElementById("btnPagamentos");
 
         if (acoesVinculo) {
             acoesVinculo.style.display = isDonoSociety ? "block" : "none";
+        }
+
+        if (btnAgendar) {
+            btnAgendar.style.display = isDonoTime ? "block" : "none";
+        }
+
+        if (btnPagamentos) {
+            btnPagamentos.style.display = isDonoTime ? "block" : "none";
         }
 
         infoEl.innerHTML = `
