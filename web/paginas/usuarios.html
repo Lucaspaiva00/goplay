@@ -24,7 +24,12 @@
 
         <input id="nome" class="input" placeholder="Nome completo">
         <input id="email" class="input" placeholder="E-mail" type="email">
-        <input id="senha" class="input" placeholder="Senha" type="password">
+        <div class="input-password-wrap">
+            <input id="senha" class="input" placeholder="Senha" type="password">
+            <button type="button" class="toggle-password" onclick="toggleSenha('senha', this)">
+                <i class="fa-solid fa-eye"></i>
+            </button>
+        </div>
         <input id="telefone" class="input" placeholder="Telefone (opcional)">
 
         <button class="btn" onclick="criarConta()">Criar Conta</button>
