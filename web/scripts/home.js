@@ -38,7 +38,7 @@ if (usuarioLogado.tipo === "DONO_TIME") {
         ⚽ Gerenciar Meus Times
       </button>
 
-      <button class="btn navy" onclick="location.href='agendar-horario.html'">
+      <button class="btn navy" onclick="location.href='time-agendamento.html'">
         📅 Agendar Horário
       </button>
 

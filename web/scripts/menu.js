@@ -84,7 +84,7 @@ if (!window.menuLoaded) {
       <li onclick="location.href='times.html'">
         <i class="fa fa-users"></i> Meus Times
       </li>
-      <li onclick="location.href='agendar-horario.html'">
+      <li onclick="location.href='time-agendamento.html'">
         <i class="fa fa-calendar"></i> Agendar Horário
       </li>
       <li onclick="location.href='meus-agendamentos.html'">
