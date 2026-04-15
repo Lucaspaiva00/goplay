@@ -56,8 +56,7 @@ async function descobrirSocietiesDoUsuario(usuario) {
             if (s?.id) {
                 return [{ id: s.id, nome: s.nome || `Society #${s.id}` }];
             }
-        } catch {
-        }
+        } catch { }
     }
 
     if (usuario.tipo === "DONO_TIME") {
@@ -74,13 +73,9 @@ async function descobrirSocietiesDoUsuario(usuario) {
         for (const sid of ids) {
             try {
                 const s = await fetchJSON(`${BASE_URL}/society/${encodeURIComponent(sid)}`);
-                if (s?.id) {
-                    out.push({ id: s.id, nome: s.nome || `Society #${s.id}` });
-                }
-            } catch {
-            }
+                if (s?.id) out.push({ id: s.id, nome: s.nome || `Society #${s.id}` });
+            } catch { }
         }
-
         return out;
     }
 
@@ -91,9 +86,7 @@ async function descobrirSocietiesDoUsuario(usuario) {
 
         if (sid) {
             const s = await fetchJSON(`${BASE_URL}/society/${encodeURIComponent(sid)}`);
-            if (s?.id) {
-                return [{ id: s.id, nome: s.nome || `Society #${s.id}` }];
-            }
+            if (s?.id) return [{ id: s.id, nome: s.nome || `Society #${s.id}` }];
         }
 
         return [];
@@ -149,10 +142,12 @@ function renderLista() {
 
     wrap.innerHTML = listaFiltrada.map((c) => `
         <div class="item">
-            <div>
+            <div class="item-main">
                 <b>${escapeHtml(c.nome || "Campeonato")}</b>
-                <div class="muted">
-                    ${escapeHtml(c.status || "Sem status")} • ${escapeHtml(c.tipo || "Sem tipo")}
+                <div class="item-meta">
+                    <span class="mini-chip">${escapeHtml(c.status || "Sem status")}</span>
+                    <span class="mini-chip">${escapeHtml(c.tipo || "Sem tipo")}</span>
+                    <span class="mini-chip">${escapeHtml(c.modalidade || "Sem modalidade")}</span>
                 </div>
             </div>
 
@@ -173,9 +168,7 @@ async function carregarCampeonatos() {
         campeonatosLista = [];
         setText("chipResumo", "0 campeonato(s)");
         const wrap = el("lista");
-        if (wrap) {
-            wrap.innerHTML = `<div class="muted">Society não identificado.</div>`;
-        }
+        if (wrap) wrap.innerHTML = `<div class="muted">Society não identificado.</div>`;
         return;
     }
 

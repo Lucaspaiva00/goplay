@@ -4,19 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <title>Times Disponíveis – GoPlay</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- LAYOUT GLOBAL (sidebar, topbar, etc) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <link rel="stylesheet" href="../css/goplay_home.css">
-
-    <!-- CSS ESPECÍFICO DA PÁGINA -->
     <link rel="stylesheet" href="../css/times-disponiveis.css">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
 <body>
 
-    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
         <div class="logo-area">
             <h2>GoPlay</h2>
@@ -24,27 +20,42 @@
         <ul id="menuDynamic"></ul>
     </aside>
 
-    <!-- OVERLAY MOBILE -->
     <div class="overlay" id="overlay"></div>
 
-    <!-- TOPBAR -->
     <header class="topbar">
+        <button id="menuBtn" class="menu-btn">
+            <i class="fa fa-bars"></i>
+        </button>
         <h1 class="title">
             <i class="fa fa-users"></i>
             Times disponíveis
         </h1>
     </header>
 
-    <!-- CONTEÚDO -->
-    <div class="main-wrapper">
-        <main class="content">
-            <div class="times-wrapper">
-                <div id="listaTimes" class="lista-times"></div>
-            </div>
-        </main>
-    </div>
+    <main class="content">
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+                <div>
+                    <h2 class="page-title" style="margin-bottom:6px;">⚽ Times disponíveis</h2>
+                    <p style="color:#6b7280;">Encontre um time e entre para jogar.</p>
+                </div>
 
-    <!-- JS -->
+                <div id="chipResumo" class="chip">
+                    0 time(s)
+                </div>
+            </div>
+
+            <div style="margin-top:18px;">
+                <input id="buscaTime" class="input" placeholder="Buscar por nome do time..." />
+            </div>
+        </div>
+
+        <div class="times-wrapper">
+            <div id="listaTimes" class="lista-times"></div>
+        </div>
+    </main>
+
+    <script src="../js/goplay_home.js"></script>
     <script src="../scripts/menu.js"></script>
     <script src="../js/timesDisponiveis.js"></script>
 </body>

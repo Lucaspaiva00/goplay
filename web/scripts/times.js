@@ -14,32 +14,46 @@ function getQueryParam(name) {
     return new URLSearchParams(window.location.search).get(name);
 }
 
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
 function ajustarModoTela() {
     const usuario = getUsuario();
     const pageTitle = document.getElementById("pageTitle");
+    const pageSubtitle = document.getElementById("pageSubtitle");
     const blocoCriacao = document.getElementById("blocoCriacaoTime");
 
     if (!usuario) return;
 
     if (usuario.tipo === "DONO_SOCIETY") {
         if (pageTitle) pageTitle.textContent = "⚽ Times do Society";
+        if (pageSubtitle) pageSubtitle.textContent = "Visualize os times vinculados ao seu society.";
         if (blocoCriacao) blocoCriacao.style.display = "none";
         return;
     }
 
     if (usuario.tipo === "DONO_TIME") {
         if (pageTitle) pageTitle.textContent = "⚽ Meus Times";
+        if (pageSubtitle) pageSubtitle.textContent = "Cadastre e gerencie os seus times.";
         if (blocoCriacao) blocoCriacao.style.display = "block";
         return;
     }
 
     if (usuario.tipo === "PLAYER") {
         if (pageTitle) pageTitle.textContent = "⚽ Times do Society";
+        if (pageSubtitle) pageSubtitle.textContent = "Veja os times cadastrados neste society.";
         if (blocoCriacao) blocoCriacao.style.display = "none";
         return;
     }
 
     if (pageTitle) pageTitle.textContent = "⚽ Times";
+    if (pageSubtitle) pageSubtitle.textContent = "";
     if (blocoCriacao) blocoCriacao.style.display = "none";
 }
 
@@ -49,12 +63,12 @@ async function carregarSocietiesNoSelect() {
     const blocoCriacao = document.getElementById("blocoCriacaoTime");
 
     if (!select) return;
+
     if (!usuario?.id) {
         select.innerHTML = `<option value="">Faça login novamente</option>`;
         return;
     }
 
-    // Só precisa carregar select para DONO_TIME
     if (usuario.tipo !== "DONO_TIME") {
         if (blocoCriacao) blocoCriacao.style.display = "none";
         return;
@@ -122,6 +136,51 @@ function pillTipo(tipo) {
     return `<span style="background:#f3f4f6;color:#111827;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;">AVULSO</span>`;
 }
 
+function montarCardTime(t, usuario) {
+    const isPlayer = usuario?.tipo === "PLAYER";
+    const isDonoSociety = usuario?.tipo === "DONO_SOCIETY";
+    const isDonoTime = usuario?.tipo === "DONO_TIME";
+
+    let subtitulo = "";
+
+    if (isDonoTime && t?.society?.nome) {
+        subtitulo = `<small>Society: ${escapeHtml(t.society.nome)}</small>`;
+    }
+
+    const cidadeEstado = `${escapeHtml(t.cidade || "")}${t.estado ? ` - ${escapeHtml(t.estado)}` : ""}`;
+    const jogadores = Array.isArray(t.jogadores) ? t.jogadores.length : 0;
+
+    let botaoTexto = "Ver detalhes";
+    if (isPlayer) botaoTexto = "Ver time";
+    if (isDonoSociety) botaoTexto = "Gerenciar visualização";
+    if (isDonoTime) botaoTexto = "Ver detalhes";
+
+    return `
+        <div class="time-card">
+            <div class="time-card-top" style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;">
+                <div class="time-card-info" style="display:flex;flex-direction:column;gap:6px;">
+                    <strong>${escapeHtml(t.nome || "-")}</strong>
+                    ${subtitulo}
+                    <small>${cidadeEstado || "Cidade não informada"}</small>
+                    <small>Jogadores: ${jogadores}</small>
+                    ${t.modalidade ? `<small>Modalidade: ${escapeHtml(t.modalidade)}</small>` : ""}
+                </div>
+
+                <div class="time-card-badges" style="display:flex;gap:8px;flex-wrap:wrap;">
+                    ${pillTipo(t.tipoVinculo)}
+                    ${pillStatus(t.statusVinculo)}
+                </div>
+            </div>
+
+            <div class="time-card-actions" style="margin-top:16px;">
+                <button class="btn" onclick="verDetalhes(${t.id})">
+                    ${botaoTexto}
+                </button>
+            </div>
+        </div>
+    `;
+}
+
 async function carregarTimes() {
     const usuario = getUsuario();
     const div = document.getElementById("listaTimes");
@@ -159,30 +218,7 @@ async function carregarTimes() {
             return;
         }
 
-        div.innerHTML = data.map((t) => `
-            <div class="time-card">
-                <div class="time-card-top">
-                    <div class="time-card-info">
-                        <strong>${t.nome}</strong>
-                        ${t?.society?.nome ? `<small>Society: ${t.society.nome}</small>` : ""}
-                        <small>${(t.cidade || "")}${t.estado ? ` - ${t.estado}` : ""}</small>
-                        <small>Jogadores: ${(t.jogadores || []).length}</small>
-                    </div>
-
-                    <div class="time-card-badges">
-                        ${pillTipo(t.tipoVinculo)}
-                        ${pillStatus(t.statusVinculo)}
-                    </div>
-                </div>
-
-                <div class="time-card-actions">
-                    <button class="btn" onclick="verDetalhes(${t.id})">
-                        Ver detalhes
-                    </button>
-                </div>
-            </div>
-        `).join("");
-
+        div.innerHTML = data.map((t) => montarCardTime(t, usuario)).join("");
     } catch (e) {
         console.error(e);
         div.innerHTML = "<p>Erro ao carregar times.</p>";

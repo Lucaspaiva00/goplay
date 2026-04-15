@@ -184,7 +184,7 @@ async function inativarTime(timeId) {
     }
 }
 
-async function carregarAgendamentos(timeId) {
+async function carregarAgendamentos(timeId, mostrarAcoes = false) {
     const wrap = document.getElementById("listaAgendamentos");
     const chip = document.getElementById("chipAgendamentos");
 
@@ -245,7 +245,7 @@ async function carregarAgendamentos(timeId) {
             const podeCancelar = String(a?.status || "").toUpperCase() !== "CANCELADO";
             const actions = [];
 
-            if (pagamentoId) {
+            if (pagamentoId && mostrarAcoes) {
                 actions.push(
                     btnMini(
                         "Pagamento",
@@ -256,7 +256,7 @@ async function carregarAgendamentos(timeId) {
                 );
             }
 
-            if (podeCancelar) {
+            if (podeCancelar && mostrarAcoes) {
                 actions.push(
                     btnMini(
                         "Cancelar",
@@ -307,20 +307,29 @@ async function init() {
         return;
     }
 
-    document.getElementById("btnAgendar").onclick = () => {
-        location.href = `time-agendamento.html?timeId=${timeId}`;
-    };
+    const btnAgendar = document.getElementById("btnAgendar");
+    const btnPagamentos = document.getElementById("btnPagamentos");
+    const btnAprovarTime = document.getElementById("btnAprovarTime");
+    const btnRecusarTime = document.getElementById("btnRecusarTime");
+    const btnInativarTime = document.getElementById("btnInativarTime");
 
-    document.getElementById("btnPagamentos").onclick = () => {
-        irMeusPagamentos(timeId);
-    };
+    if (btnAgendar) {
+        btnAgendar.onclick = () => {
+            location.href = `time-agendamento.html?timeId=${timeId}`;
+        };
+    }
 
-    document.getElementById("btnAprovarTime").onclick = () => aprovarTime(timeId);
-    document.getElementById("btnRecusarTime").onclick = () => recusarTime(timeId);
-    document.getElementById("btnInativarTime").onclick = () => inativarTime(timeId);
+    if (btnPagamentos) {
+        btnPagamentos.onclick = () => {
+            irMeusPagamentos(timeId);
+        };
+    }
+
+    if (btnAprovarTime) btnAprovarTime.onclick = () => aprovarTime(timeId);
+    if (btnRecusarTime) btnRecusarTime.onclick = () => recusarTime(timeId);
+    if (btnInativarTime) btnInativarTime.onclick = () => inativarTime(timeId);
 
     await carregarTime(timeId);
-    await carregarAgendamentos(timeId);
 }
 
 async function carregarTime(timeId) {
@@ -337,21 +346,22 @@ async function carregarTime(timeId) {
         const tipoUsuario = String(usuario?.tipo || "").toUpperCase();
         const isDonoSociety = tipoUsuario === "DONO_SOCIETY";
         const isDonoTime = tipoUsuario === "DONO_TIME";
+        const isPlayer = tipoUsuario === "PLAYER";
 
         const acoesVinculo = document.getElementById("acoesVinculoSociety");
-        const btnAgendar = document.getElementById("btnAgendar");
-        const btnPagamentos = document.getElementById("btnPagamentos");
+        const acoesDonoTime = document.getElementById("acoesDonoTime");
+        const blocoAgendamentos = document.getElementById("blocoAgendamentos");
 
         if (acoesVinculo) {
             acoesVinculo.style.display = isDonoSociety ? "block" : "none";
         }
 
-        if (btnAgendar) {
-            btnAgendar.style.display = isDonoTime ? "block" : "none";
+        if (acoesDonoTime) {
+            acoesDonoTime.style.display = isDonoTime ? "block" : "none";
         }
 
-        if (btnPagamentos) {
-            btnPagamentos.style.display = isDonoTime ? "block" : "none";
+        if (blocoAgendamentos) {
+            blocoAgendamentos.style.display = (isDonoTime || isDonoSociety || isPlayer) ? "block" : "none";
         }
 
         infoEl.innerHTML = `
@@ -372,21 +382,22 @@ async function carregarTime(timeId) {
 
         if (!jogadores.length) {
             listEl.innerHTML = `<p>Nenhum jogador no time ainda.</p>`;
-            return;
+        } else {
+            listEl.innerHTML = `
+              <div style="text-align:left;">
+                ${jogadores.map(j => `
+                  <div style="padding:10px 0;border-bottom:1px solid #eee;">
+                    <strong>${escapeHtml(j.nome)}</strong><br/>
+                    <span style="color:#6b7280;font-size:13px;">
+                      ${escapeHtml(j.posicaoCampo || "—")} ${j.goleiro ? "• Goleiro" : ""}
+                    </span>
+                  </div>
+                `).join("")}
+              </div>
+            `;
         }
 
-        listEl.innerHTML = `
-          <div style="text-align:left;">
-            ${jogadores.map(j => `
-              <div style="padding:10px 0;border-bottom:1px solid #eee;">
-                <strong>${escapeHtml(j.nome)}</strong><br/>
-                <span style="color:#6b7280;font-size:13px;">
-                  ${escapeHtml(j.posicaoCampo || "—")} ${j.goleiro ? "• Goleiro" : ""}
-                </span>
-              </div>
-            `).join("")}
-          </div>
-        `;
+        await carregarAgendamentos(timeId, isDonoTime);
     } catch (err) {
         console.error(err);
         infoEl.innerHTML = `<p style="color:#b91c1c;"><strong>Erro:</strong> ${escapeHtml(err.message)}</p>`;

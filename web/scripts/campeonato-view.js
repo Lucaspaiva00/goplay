@@ -24,8 +24,7 @@ async function fetchJSON(url, options = {}) {
 
     try {
         data = text ? JSON.parse(text) : null;
-    } catch {
-    }
+    } catch { }
 
     if (!res.ok) {
         throw new Error(data?.error || data?.message || text || `HTTP ${res.status}`);
@@ -46,6 +45,13 @@ function escapeHtml(s) {
 function safeNum(v, def = 0) {
     const n = Number(v);
     return Number.isFinite(n) ? n : def;
+}
+
+function formatDateTime(value) {
+    if (!value) return "-";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "-";
+    return d.toLocaleString("pt-BR");
 }
 
 function renderRanking(lista) {
@@ -108,6 +114,8 @@ function renderInfo(c) {
             <div><b>Temporada:</b> ${escapeHtml(String(c?.temporada || "-"))}</div>
             <div><b>Categoria:</b> ${escapeHtml(String(c?.categoria || "-"))}</div>
             <div><b>Modalidade:</b> ${escapeHtml(String(c?.modalidade || "-"))}</div>
+            <div><b>Data início:</b> ${escapeHtml(formatDateTime(c?.dataInicio))}</div>
+            <div><b>Data fim:</b> ${escapeHtml(formatDateTime(c?.dataFim))}</div>
         </div>
     `;
 }
@@ -151,11 +159,15 @@ function renderJogos(jogos) {
         const golsB = j?.golsB ?? "-";
         const rodada = j?.round ? `Rodada ${j.round}` : "";
         const status = j?.finalizado ? "Finalizado" : "Pendente";
+        const dataHora = formatDateTime(j?.dataHora);
+        const observacao = j?.observacao || "-";
 
         return `
             <div class="jogo-item">
                 <div class="jogo-placar">${escapeHtml(timeA)} ${golsA} x ${golsB} ${escapeHtml(timeB)}</div>
                 <div class="muted">${escapeHtml(rodada)} • ${escapeHtml(status)}</div>
+                <div class="muted">Data/Hora: ${escapeHtml(dataHora)}</div>
+                <div class="muted">Observação: ${escapeHtml(observacao)}</div>
             </div>
         `;
     }).join("");

@@ -6,13 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Perfil – GoPlay</title>
 
+    <link rel="stylesheet" href="../css/goplay_home.css">
     <link rel="stylesheet" href="../css/perfil.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
 <body>
 
-    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
         <div class="logo-area">
             <h2>GoPlay</h2>
@@ -20,22 +20,20 @@
         <ul id="menuDynamic"></ul>
     </aside>
 
-    <!-- OVERLAY MOBILE -->
     <div class="overlay" id="overlay"></div>
 
-    <!-- TOPBAR -->
     <header class="topbar">
         <button id="menuBtn" class="menu-btn"><i class="fas fa-bars"></i></button>
         <h1 class="title">Meu Perfil</h1>
     </header>
 
-    <!-- ÁREA ÚTIL -->
     <div class="main-wrapper">
         <main class="content">
 
             <div class="card">
 
                 <h2 class="page-title"><i class="fas fa-user-circle"></i> Meu Perfil</h2>
+                <p class="subtitle">Mantenha seus dados atualizados para melhorar sua experiência no GoPlay.</p>
 
                 <h3 class="section-title">Informações pessoais</h3>
                 <input id="nome" class="input" placeholder="Seu nome completo">
@@ -53,7 +51,7 @@
                 <input id="pernaMelhor" class="input" placeholder="Perna boa (Direita / Esquerda / Ambas)">
                 <input id="posicaoCampo" class="input" placeholder="Posição em campo">
                 <input id="altura" class="input" placeholder="Altura (ex: 1.80)">
-                <input id="peso" class="input" placeholder="Peso (ex: 75 kg)">
+                <input id="peso" class="input" placeholder="Peso (ex: 75)">
 
                 <label class="checkbox-label">
                     <input type="checkbox" id="goleiro"> Sou goleiro
@@ -65,6 +63,7 @@
         </main>
     </div>
 
+    <script src="../js/goplay_home.js"></script>
     <script src="../scripts/menu.js"></script>
     <script src="../scripts/perfil.js"></script>
 

@@ -56,8 +56,10 @@ async function carregarCardapio() {
 
         div.innerHTML = data.map((i) => `
             <div class="cardapio-item" style="margin-bottom:12px;">
-                <strong>${i.nome || "-"}</strong><br>
-                <span>Preço: ${money(i.preco)}</span>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <strong style="font-size:18px;">${i.nome || "-"}</strong>
+                    <span style="font-weight:800;color:#052748;">${money(i.preco)}</span>
+                </div>
             </div>
         `).join("");
     } catch (error) {

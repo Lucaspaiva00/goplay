@@ -112,7 +112,7 @@
         .item {
             border: 1px solid #eef2f6;
             border-radius: 14px;
-            padding: 14px;
+            padding: 16px;
             background: #fbfdff;
             display: flex;
             justify-content: space-between;
@@ -121,8 +121,31 @@
             flex-wrap: wrap;
         }
 
+        .item-main {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
         .item b {
-            font-size: 14px;
+            font-size: 16px;
+            color: #052845;
+        }
+
+        .item-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .mini-chip {
+            font-size: 11px;
+            padding: 5px 8px;
+            border-radius: 999px;
+            font-weight: 800;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            color: #374151;
         }
 
         .actions {
@@ -173,7 +196,7 @@
         <div class="card">
             <div class="head">
                 <div>
-                    <div class="h"><i class="fa-solid fa-trophy"></i> Campeonatos (visualização)</div>
+                    <div class="h"><i class="fa-solid fa-trophy"></i> Campeonatos</div>
                     <div class="muted">PLAYER e DONO_TIME podem visualizar os campeonatos do society, sem editar nada.
                     </div>
                 </div>
@@ -199,7 +222,6 @@
             </div>
 
             <div id="msg" class="muted"></div>
-
             <div id="lista" class="list"></div>
         </div>
     </main>

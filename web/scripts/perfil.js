@@ -1,91 +1,102 @@
-// =====================================================
-// VALIDAR LOGIN
-// =====================================================
-const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado"));
+const BASE_URL = "https://goplay-dzlr.onrender.com";
 
-if (!usuarioLogado) {
+function getUsuarioLogado() {
+    try {
+        return JSON.parse(localStorage.getItem("usuarioLogado") || "null");
+    } catch {
+        return null;
+    }
+}
+
+const usuarioLogado = getUsuarioLogado();
+
+if (!usuarioLogado?.id) {
     alert("Sessão expirada. Faça login novamente.");
     window.location.href = "login.html";
 }
 
+async function fetchJSON(url, options = {}) {
+    const res = await fetch(url, options);
+    const text = await res.text().catch(() => "");
+    let data = {};
 
-// =====================================================
-// CARREGAR PERFIL
-// =====================================================
-window.onload = async () => {
     try {
-        const resp = await fetch(`https://goplay-dzlr.onrender.com/usuarios/${usuarioLogado.id}`);
+        data = text ? JSON.parse(text) : {};
+    } catch {
+        data = {};
+    }
 
-        // Se a rota não responder JSON (ex: HTML de erro)
-        if (!resp.ok) {
-            console.log("Erro API:", resp.status);
-            alert("Erro ao carregar dados. (Rota incorreta ou API offline)");
-            return;
-        }
+    if (!res.ok) {
+        throw new Error(data?.error || data?.message || text || `HTTP ${res.status}`);
+    }
 
-        const data = await resp.json();
+    return data;
+}
 
-        if (data.error) {
-            alert(data.error);
-            return;
-        }
+async function carregarPerfil() {
+    try {
+        const data = await fetchJSON(`${BASE_URL}/usuarios/${usuarioLogado.id}`);
 
-        // Preencher formulário
         document.getElementById("nome").value = data.nome || "";
         document.getElementById("telefone").value = data.telefone || "";
-        document.getElementById("nascimento").value = data.nascimento ? data.nascimento.split("T")[0] : "";
+        document.getElementById("nascimento").value = data.nascimento ? String(data.nascimento).split("T")[0] : "";
         document.getElementById("sexo").value = data.sexo || "";
         document.getElementById("pernaMelhor").value = data.pernaMelhor || "";
         document.getElementById("posicaoCampo").value = data.posicaoCampo || "";
         document.getElementById("altura").value = data.altura || "";
         document.getElementById("peso").value = data.peso || "";
-        document.getElementById("goleiro").checked = data.goleiro || false;
-
+        document.getElementById("goleiro").checked = !!data.goleiro;
     } catch (err) {
-        console.log("ERRO LOAD PERFIL:", err);
-        alert("Erro ao carregar os dados.");
+        console.error("ERRO LOAD PERFIL:", err);
+        alert(err.message || "Erro ao carregar os dados.");
     }
-};
+}
 
-
-
-// =====================================================
-// SALVAR PERFIL
-// =====================================================
 async function salvarPerfil() {
-
     const nascimentoValue = document.getElementById("nascimento").value;
 
     const payload = {
-        nome: document.getElementById("nome").value,
-        telefone: document.getElementById("telefone").value,
-        nascimento: nascimentoValue ? new Date(nascimentoValue).toISOString() : null,
+        nome: document.getElementById("nome").value.trim(),
+        telefone: document.getElementById("telefone").value.trim(),
+        nascimento: nascimentoValue ? new Date(`${nascimentoValue}T12:00:00`).toISOString() : null,
         sexo: document.getElementById("sexo").value,
-        pernaMelhor: document.getElementById("pernaMelhor").value,
-        posicaoCampo: document.getElementById("posicaoCampo").value,
+        pernaMelhor: document.getElementById("pernaMelhor").value.trim(),
+        posicaoCampo: document.getElementById("posicaoCampo").value.trim(),
         altura: document.getElementById("altura").value ? Number(document.getElementById("altura").value) : null,
         peso: document.getElementById("peso").value ? Number(document.getElementById("peso").value) : null,
         goleiro: document.getElementById("goleiro").checked
     };
 
+    if (!payload.nome) {
+        alert("O nome é obrigatório.");
+        return;
+    }
+
     try {
-        const resp = await fetch(`https://goplay-dzlr.onrender.com/usuarios/${usuarioLogado.id}`, {
+        const result = await fetchJSON(`${BASE_URL}/usuarios/${usuarioLogado.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         });
 
-        const result = await resp.json();
+        const usuarioAtualizado = {
+            ...usuarioLogado,
+            nome: result.nome || payload.nome,
+            telefone: result.telefone || payload.telefone,
+            tipo: result.tipo || usuarioLogado.tipo
+        };
 
-        if (result.error) {
-            alert(result.error);
-            return;
-        }
+        localStorage.setItem("usuarioLogado", JSON.stringify(usuarioAtualizado));
 
         alert("Perfil atualizado com sucesso!");
-
     } catch (err) {
-        console.log("ERRO UPDATE PERFIL:", err);
-        alert("Erro ao salvar alterações.");
+        console.error("ERRO UPDATE PERFIL:", err);
+        alert(err.message || "Erro ao salvar alterações.");
     }
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    carregarPerfil();
+});
+
+window.salvarPerfil = salvarPerfil;

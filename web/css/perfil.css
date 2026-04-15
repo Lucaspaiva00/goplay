@@ -1,236 +1,35 @@
-/* ============================
-   BASE GERAL
-============================ */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: "Inter", Arial, sans-serif;
-    background: #f4f6fa;
-    color: #1a1a1a;
-}
-
-/* ============================
-   SIDEBAR
-============================ */
-.sidebar {
-    width: 260px;
-    height: 100vh;
-    background: #0a2240;
-    position: fixed;
-    left: 0;
-    top: 0;
-    padding-top: 20px;
-    overflow-y: auto;
-}
-
-.sidebar .logo-area {
-    text-align: center;
-    color: white;
-    margin-bottom: 30px;
-}
-
-#menuDynamic {
-    list-style: none;
-    padding: 0 15px;
-}
-
-#menuDynamic li {
-    display: flex;
-    align-items: center;
-    color: #e6e6e6;
-    padding: 12px 15px;
-    margin-bottom: 5px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 15px;
-    transition: 0.2s ease;
-}
-
-#menuDynamic li i {
-    margin-right: 10px;
-}
-
-#menuDynamic li:hover {
-    background: rgba(255, 255, 255, 0.12);
-}
-
-#menuDynamic li.active {
-    background: #ffffff22;
-    color: #fff;
-    font-weight: 600;
-}
-
-/* ============================
-   OVERLAY MOBILE
-============================ */
-.overlay {
-    display: none;
-}
-
-/* ============================
-   TOPBAR
-============================ */
-.topbar {
-    position: fixed;
-    left: 260px;
-    top: 0;
-    width: calc(100% - 260px);
-    height: 60px;
-    background: #fff;
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-    z-index: 10;
-}
-
-.menu-btn {
-    background: none;
-    border: none;
-    font-size: 22px;
-    cursor: pointer;
-    margin-right: 15px;
-}
-
-.title {
-    font-weight: 600;
-    font-size: 20px;
-}
-
-/* ============================
-   ÁREA ÚTIL (corrigido)
-============================ */
-.main-wrapper {
-    margin-left: 260px;
-    margin-top: 60px;
-    padding: 40px 20px;
-}
-
-/* ============================
-   CONTEÚDO CENTRALIZADO
-============================ */
-.content {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-}
-
-/* ============================
-   CARD CENTRAL
-============================ */
 .card {
-    width: 100%;
-    max-width: 650px;
-    background: #fff;
-    padding: 30px;
-    border-radius: 16px;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    max-width: 720px;
 }
 
 .page-title {
     text-align: center;
-    margin-bottom: 25px;
-    font-weight: 600;
-    font-size: 24px;
-    color: #0a2240;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #6b7280;
+    margin-bottom: 24px;
+    line-height: 1.5;
 }
 
 .section-title {
-    margin: 20px 0 10px;
-    font-size: 17px;
-    font-weight: 600;
-    color: #0a2240;
-}
-
-/* ============================
-   INPUTS PREMIUM
-============================ */
-.input {
-    width: 100%;
-    padding: 14px;
+    margin-top: 20px;
     margin-bottom: 12px;
-    border: 1px solid #d8d8d8;
-    border-radius: 10px;
-    background: #fdfdfd;
-    font-size: 15px;
-    transition: 0.2s ease;
 }
 
-.input:focus {
-    border-color: #0a2240;
-    box-shadow: 0 0 0 3px rgba(10, 34, 64, 0.15);
-    outline: none;
-    background: #fff;
-}
-
-/* ============================
-   CHECKBOX
-============================ */
 .checkbox-label {
     display: flex;
     align-items: center;
-    margin: 10px 0 20px;
+    gap: 10px;
+    margin: 12px 0 20px;
     font-size: 15px;
+    font-weight: 500;
+    color: #111827;
 }
 
 .checkbox-label input {
-    margin-right: 8px;
-}
-
-/* ============================
-   BOTÃO PREMIUM
-============================ */
-.btn {
-    width: 100%;
-    padding: 14px;
-    background: #0a2240;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 600;
-    transition: 0.2s ease;
-}
-
-.btn:hover {
-    background: #183b68;
-}
-
-/* ============================
-   RESPONSIVO
-============================ */
-@media (max-width: 900px) {
-    .sidebar {
-        left: -260px;
-        transition: 0.3s;
-    }
-
-    .sidebar.open {
-        left: 0;
-    }
-
-    .overlay.show {
-        display: block;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.6);
-        z-index: 9;
-    }
-
-    .topbar {
-        left: 0;
-        width: 100%;
-    }
-
-    .main-wrapper {
-        margin-left: 0;
-    }
+    width: auto;
+    transform: scale(1.1);
 }

@@ -1,90 +1,107 @@
 const BASE_URL = "https://goplay-dzlr.onrender.com";
 
-// ========================================================
-// 🔐 VALIDAR LOGIN
-// ========================================================
-const usuario = JSON.parse(localStorage.getItem("usuarioLogado"));
+function getUsuarioLogado() {
+    try {
+        return JSON.parse(localStorage.getItem("usuarioLogado") || "null");
+    } catch {
+        return null;
+    }
+}
 
-if (!usuario) {
+const usuario = getUsuarioLogado();
+
+if (!usuario?.id) {
     alert("Sessão expirada. Faça login novamente.");
     window.location.href = "login.html";
 }
 
 const usuarioId = usuario.id;
 
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
 
-// ========================================================
-// 🔄 CARREGAR MEU TIME
-// ========================================================
+async function fetchJSON(url, options = {}) {
+    const res = await fetch(url, options);
+    const text = await res.text().catch(() => "");
+    let data = {};
+
+    try {
+        data = text ? JSON.parse(text) : {};
+    } catch {
+        data = {};
+    }
+
+    if (!res.ok) {
+        throw new Error(data?.error || data?.message || text || `HTTP ${res.status}`);
+    }
+
+    return data;
+}
+
 async function carregarMeuTime() {
     try {
-        const res = await fetch(`${BASE_URL}/time/details/by-player/${usuarioId}`);
-        const data = await res.json();
+        const data = await fetchJSON(`${BASE_URL}/time/details/by-player/${usuarioId}`);
+
+        const dadosTime = document.getElementById("dadosTime");
+        const listaJogadores = document.getElementById("listaJogadores");
+        const btnSair = document.getElementById("sair");
 
         if (data.error || !data.time) {
-            document.getElementById("dadosTime").innerHTML = `
+            dadosTime.innerHTML = `
                 <div class="time-info-card">
-                    <p>❌ Você ainda não faz parte de nenhum time.</p>
+                    <p>Você ainda não faz parte de nenhum time.</p>
                 </div>
             `;
-            document.getElementById("listaJogadores").innerHTML = "";
-            document.getElementById("sair").style.display = "none";
+            listaJogadores.innerHTML = "";
+            btnSair.style.display = "none";
             return;
         }
 
         const time = data.time;
 
-        // =======================
-        // CARD DO TIME
-        // =======================
-        document.getElementById("dadosTime").innerHTML = `
-            <h2 style="margin-bottom: 8px;">${time.nome}</h2>
-            <p><b>Localidade:</b> ${time.cidade || "—"} - ${time.estado || "—"}</p>
-            <p><b>Descrição:</b> ${time.descricao || "Sem descrição"}</p>
+        dadosTime.innerHTML = `
+            <h2 style="margin-bottom: 10px;">${escapeHtml(time.nome)}</h2>
+            <p><b>Society:</b> ${escapeHtml(time?.society?.nome || "-")}</p>
+            <p><b>Localidade:</b> ${escapeHtml(time.cidade || "—")} - ${escapeHtml(time.estado || "—")}</p>
+            <p><b>Modalidade:</b> ${escapeHtml(time.modalidade || "—")}</p>
+            <p><b>Descrição:</b> ${escapeHtml(time.descricao || "Sem descrição")}</p>
         `;
 
-        // =======================
-        // LISTA DE JOGADORES
-        // =======================
-        if (time.jogadores.length === 0) {
-            document.getElementById("listaJogadores").innerHTML = `
-                <p>Nenhum jogador no time ainda.</p>
-            `;
+        if (!Array.isArray(time.jogadores) || time.jogadores.length === 0) {
+            listaJogadores.innerHTML = `<p>Nenhum jogador no time ainda.</p>`;
         } else {
-            document.getElementById("listaJogadores").innerHTML = time.jogadores
+            listaJogadores.innerHTML = time.jogadores
                 .map(j => `
                     <div class="player-item">
-                        <b>${j.nome}</b><br>
-                        <small>${j.posicaoCampo || "Posição não informada"}</small>
+                        <b>${escapeHtml(j.nome)}</b><br>
+                        <small>${escapeHtml(j.posicaoCampo || "Posição não informada")}</small>
                     </div>
                 `)
                 .join("");
         }
 
-        // exibir botão sair
-        document.getElementById("sair").style.display = "block";
-
+        btnSair.style.display = "block";
     } catch (error) {
         console.error("Erro ao carregar meu time:", error);
-        alert("Erro ao carregar dados do time.");
+        alert(error.message || "Erro ao carregar dados do time.");
     }
 }
 
-
-// ========================================================
-// 🚪 SAIR DO TIME
-// ========================================================
 async function sairDoTime() {
     if (!confirm("Tem certeza que deseja sair do time?")) return;
 
     try {
-        const res = await fetch(`${BASE_URL}/time/leave`, {
+        const data = await fetchJSON(`${BASE_URL}/time/sair`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ usuarioId })
         });
-
-        const data = await res.json();
 
         if (data.error) {
             alert(data.error);
@@ -93,19 +110,17 @@ async function sairDoTime() {
 
         alert("Você saiu do time!");
         window.location.reload();
-
     } catch (error) {
         console.error("Erro ao sair do time:", error);
-        alert("Erro ao tentar sair do time.");
+        alert(error.message || "Erro ao tentar sair do time.");
     }
 }
 
-
-// ========================================================
-// ▶️ INICIALIZAÇÃO
-// ========================================================
 document.addEventListener("DOMContentLoaded", () => {
     carregarMeuTime();
 
-    document.getElementById("sair").addEventListener("click", sairDoTime);
+    const btnSair = document.getElementById("sair");
+    if (btnSair) {
+        btnSair.addEventListener("click", sairDoTime);
+    }
 });
