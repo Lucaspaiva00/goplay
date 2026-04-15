@@ -46,20 +46,21 @@ function renderCampos(campos) {
     }
 
     wrap.innerHTML = campos.map((c) => `
-        <div class="campo-card" style="padding:16px;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.08);margin-bottom:14px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-                <div style="font-weight:800;font-size:18px;color:#111827;">${c.nome || "-"}</div>
-            </div>
-
-            <div style="color:#111827;line-height:1.6;margin-top:8px;">
-                <div><b>Dimensões:</b> ${c.dimensoes || "-"}</div>
-                <div><b>Gramado:</b> ${c.gramado || "-"}</div>
-                <div><b>Valor avulso:</b> ${formatMoney(c.valorAvulso)}</div>
-                <div><b>Valor mensal:</b> ${formatMoney(c.valorMensal)}</div>
+        <div class="campo-card" style="padding:20px;border-radius:16px;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.08);margin-bottom:16px;border:1px solid #e5e7eb;">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:250px;">
+                    <div style="font-weight:800;font-size:24px;color:#111827;margin-bottom:10px;">${c.nome || "-"}</div>
+                    <div style="color:#111827;line-height:1.8;font-size:15px;">
+                        <div><b>Dimensões:</b> ${c.dimensoes || "-"}</div>
+                        <div><b>Gramado:</b> ${c.gramado || "-"}</div>
+                        <div><b>Valor avulso:</b> ${formatMoney(c.valorAvulso)}</div>
+                        <div><b>Valor mensal:</b> ${formatMoney(c.valorMensal)}</div>
+                    </div>
+                </div>
 
                 ${c.fotoUrl ? `
-                    <div style="margin-top:10px;">
-                        <img src="${c.fotoUrl}" alt="Foto do campo" style="max-width:100%;border-radius:12px;" />
+                    <div style="width:280px;max-width:100%;">
+                        <img src="${c.fotoUrl}" alt="Foto do campo" style="width:100%;border-radius:14px;object-fit:cover;border:1px solid #e5e7eb;" />
                     </div>
                 ` : ""}
             </div>

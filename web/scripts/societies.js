@@ -17,13 +17,17 @@ async function carregarSocieties() {
         }
 
         div.innerHTML = societies.map(s => `
-            <div class="card">
-                <strong>${s.nome}</strong><br>
-                <small>${s.cidade || ""}${s.estado ? " / " + s.estado : ""}</small>
+            <div class="card society-card">
+                <div class="society-card-top">
+                    <div class="society-main">
+                        <strong>${s.nome || "-"}</strong>
+                        <small>${s.cidade || ""}${s.estado ? " / " + s.estado : ""}</small>
+                    </div>
 
-                <button class="btn-details" onclick="verDetalhes(${s.id})">
-                    Ver detalhes
-                </button>
+                    <button class="btn-details" onclick="verDetalhes(${s.id})">
+                        Ver detalhes
+                    </button>
+                </div>
             </div>
         `).join("");
     } catch (error) {

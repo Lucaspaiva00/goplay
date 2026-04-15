@@ -5,7 +5,7 @@ if (!window.menuLoaded) {
   const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado") || "null");
   const menu = document.getElementById("menuDynamic");
 
-  if (!usuarioLogado) {
+  if (!usuarioLogado?.id) {
     window.location.href = "login.html";
   }
 
@@ -19,7 +19,7 @@ if (!window.menuLoaded) {
   window.abrirMeuSocietyMenu = function () {
     const usuario = JSON.parse(localStorage.getItem("usuarioLogado") || "null");
 
-    if (!usuario) {
+    if (!usuario?.id) {
       window.location.href = "login.html";
       return;
     }
@@ -39,10 +39,8 @@ if (!window.menuLoaded) {
         }
 
         const meuSociety = lista[0];
-
         localStorage.setItem("societyId", meuSociety.id);
         localStorage.setItem("societyOwnerId", usuario.id);
-
         window.location.href = `society-detalhe.html?societyId=${meuSociety.id}`;
       })
       .catch(() => {
@@ -107,7 +105,7 @@ if (!window.menuLoaded) {
       <li onclick="location.href='campeonatos-view.html'">
         <i class="fa fa-trophy"></i> Campeonatos
       </li>
-      <li onclick="location.href='times-disponiveis.html'">
+      <li onclick="location.href='times.html'">
         <i class="fa fa-users"></i> Times
       </li>
       <li onclick="location.href='meu-time.html'">

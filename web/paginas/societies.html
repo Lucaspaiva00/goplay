@@ -4,43 +4,40 @@
 <head>
     <meta charset="UTF-8">
     <title>Societies – GoPlay</title>
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="../css/goplay_home.css">
     <link rel="stylesheet" href="../css/societies.css">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
 <body>
 
-    <!-- SIDEBAR -->
     <aside id="sidebar" class="sidebar">
         <div class="logo-area">
             <h2>GoPlay</h2>
         </div>
-
         <ul id="menuDynamic"></ul>
-
     </aside>
 
-    <!-- OVERLAY -->
     <div id="overlay" class="overlay"></div>
 
-    <!-- HEADER -->
     <header class="topbar">
         <button id="menuBtn" class="menu-btn">
             <i class="fa fa-bars"></i>
         </button>
-        <h1 class="title">Society</h1>
+        <h1 class="title">Societies</h1>
     </header>
 
-    <!-- CONTEÚDO -->
     <main class="content">
-        <h1 class="page-title">⚽ Societys cadastrados</h1>
+        <div class="societies-header">
+            <h1 class="page-title">⚽ Societies cadastrados</h1>
+            <p class="page-subtitle">Explore os societies disponíveis e veja detalhes antes de entrar em um time.</p>
+        </div>
 
-        <section id="listaSocieties" class="societies-container"></section>
+        <section id="listaSocieties" class="societies-container">
+            Carregando societies...
+        </section>
     </main>
 
     <script src="../js/goplay_home.js"></script>

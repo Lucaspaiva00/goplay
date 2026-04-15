@@ -1,124 +1,91 @@
-/* ============================
-      CONTAINER
-============================ */
-.societies-container {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+.societies-header {
+    margin-bottom: 20px;
 }
 
-/* ============================
-      CARD
-============================ */
-.card {
-    background: #ffffff;
-    padding: 20px 22px;
-    border-radius: 16px;
-    border: 1px solid #e6edf7;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
-    transition: .25s;
-    position: relative;
-    overflow: hidden;
-}
-
-/* linha lateral estilo app moderno */
-.card::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 6px;
-    height: 100%;
-    background: linear-gradient(180deg, #052748, #0a3c73);
-    border-radius: 16px 0 0 16px;
-}
-
-/* hover premium */
-.card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.10);
-}
-
-/* ============================
-      HEADER DO CARD
-============================ */
-.card strong {
-    font-size: 19px;
+.page-title {
+    font-size: 28px;
+    font-weight: 800;
     color: #052748;
-    display: block;
     margin-bottom: 6px;
 }
 
-/* localização */
-.card small {
-    font-size: 14px;
+.page-subtitle {
     color: #6b7280;
-}
-
-/* ============================
-      AÇÕES
-============================ */
-.card-actions {
-    margin-top: 16px;
-    display: flex;
-    gap: 10px;
-}
-
-/* botão principal */
-.btn-details {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #052748, #0a3c73);
-    color: white;
     font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.societies-container {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.society-card {
+    background: #fff;
+    padding: 22px;
+    border-radius: 16px;
+    border: 1px solid #e7eaf0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    transition: .2s;
+}
+
+.society-card:hover {
+    transform: translateY(-2px);
+}
+
+.society-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.society-main {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.society-card strong {
+    font-size: 26px;
+    color: #07223c;
+    line-height: 1.2;
+}
+
+.society-card small {
+    font-size: 15px;
+    color: #667085;
+}
+
+.btn-details {
+    min-width: 180px;
+    padding: 14px 18px;
+    border: none;
+    border-radius: 12px;
+    background: #07223c;
+    color: white;
+    font-size: 15px;
     font-weight: 700;
     cursor: pointer;
     transition: .2s;
 }
 
-/* hover botão */
 .btn-details:hover {
-    filter: brightness(1.1);
-    transform: scale(1.01);
+    background: #05182e;
 }
 
-/* botão secundário (caso queira depois) */
-.btn-secondary {
-    flex: 1;
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid #dbe3ef;
-    background: #f7faff;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-}
-
-/* ============================
-      EMPTY STATE
-============================ */
-.empty-state {
-    text-align: center;
-    padding: 40px;
-    color: #6b7280;
-    font-weight: 600;
-}
-
-/* ============================
-      RESPONSIVO
-============================ */
-@media (max-width: 600px) {
-    .card {
-        padding: 16px;
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 24px;
     }
 
-    .card strong {
-        font-size: 17px;
+    .society-card strong {
+        font-size: 22px;
     }
 
     .btn-details {
-        font-size: 13px;
+        width: 100%;
     }
 }

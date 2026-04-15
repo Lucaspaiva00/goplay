@@ -48,7 +48,11 @@ function renderSocietyInfo(data) {
 
     el("societyInfo").innerHTML = `
       <div class="society-header-row">
-        <h3>${data.nome}</h3>
+        <div>
+            <h3>${data.nome || "-"}</h3>
+            <p class="society-description">${data.descricao || "Sem descrição cadastrada."}</p>
+        </div>
+
         ${isDonoSociety ? `
           <button class="icon-edit-btn" onclick="abrirEdicaoSociety()" title="Editar Society">
             <i class="fa fa-pen"></i>
@@ -56,21 +60,33 @@ function renderSocietyInfo(data) {
         ` : ""}
       </div>
 
-      <p>${data.descricao || "Sem descrição"}</p>
-      <p><b>Cidade:</b> ${data.cidade || "-"} / ${data.estado || "-"}</p>
-      <p><b>Telefone:</b> ${data.telefone || "-"}</p>
-      <p><b>WhatsApp:</b> ${data.whatsapp || "-"}</p>
-      <p><b>Email:</b> ${data.email || "-"}</p>
-      <p><b>Website:</b> ${data.website || "-"}</p>
-      <p><b>Instagram:</b> ${data.instagram || "-"}</p>
-      <p><b>Facebook:</b> ${data.facebook || "-"}</p>
-      <p><b>YouTube:</b> ${data.youtube || "-"}</p>
-      <p><b>Endereço:</b> ${data.endereco || "-"}</p>
-      <p><b>CEP:</b> ${data.cep || "-"}</p>
-      <hr>
-      <p><b>Campos cadastrados:</b> ${(data.campos || []).length}</p>
-      <p><b>Itens no cardápio:</b> ${(data.cardapio || []).length}</p>
-      <p><b>Times cadastrados:</b> ${(data.times || []).length}</p>
+      <div class="society-details-grid">
+        <div><b>Cidade:</b> ${data.cidade || "-"} / ${data.estado || "-"}</div>
+        <div><b>Telefone:</b> ${data.telefone || "-"}</div>
+        <div><b>WhatsApp:</b> ${data.whatsapp || "-"}</div>
+        <div><b>Email:</b> ${data.email || "-"}</div>
+        <div><b>Website:</b> ${data.website || "-"}</div>
+        <div><b>Instagram:</b> ${data.instagram || "-"}</div>
+        <div><b>Facebook:</b> ${data.facebook || "-"}</div>
+        <div><b>YouTube:</b> ${data.youtube || "-"}</div>
+        <div><b>Endereço:</b> ${data.endereco || "-"}</div>
+        <div><b>CEP:</b> ${data.cep || "-"}</div>
+      </div>
+
+      <div class="society-stats">
+        <div class="stat-box">
+            <span>Campos cadastrados</span>
+            <strong>${(data.campos || []).length}</strong>
+        </div>
+        <div class="stat-box">
+            <span>Itens no cardápio</span>
+            <strong>${(data.cardapio || []).length}</strong>
+        </div>
+        <div class="stat-box">
+            <span>Times cadastrados</span>
+            <strong>${(data.times || []).length}</strong>
+        </div>
+      </div>
     `;
 }
 
