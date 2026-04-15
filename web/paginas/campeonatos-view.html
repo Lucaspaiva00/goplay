@@ -40,7 +40,7 @@
         .muted {
             opacity: .75;
             font-size: 12px;
-            margin-top: 4px
+            margin-top: 4px;
         }
 
         .chip {
@@ -52,7 +52,7 @@
             display: inline-flex;
             gap: 6px;
             align-items: center;
-            font-weight: 900
+            font-weight: 900;
         }
 
         .filters {
@@ -60,12 +60,12 @@
             grid-template-columns: 1fr 1fr auto;
             gap: 12px;
             align-items: end;
-            margin: 10px 0 14px
+            margin: 10px 0 14px;
         }
 
         @media(max-width:900px) {
             .filters {
-                grid-template-columns: 1fr
+                grid-template-columns: 1fr;
             }
         }
 
@@ -74,7 +74,7 @@
             opacity: .8;
             display: block;
             margin-bottom: 6px;
-            font-weight: 800
+            font-weight: 800;
         }
 
         select,
@@ -85,7 +85,7 @@
             border: 1px solid #dbe3ef;
             outline: none;
             font-size: 14px;
-            background: #fff
+            background: #fff;
         }
 
         .btn {
@@ -100,13 +100,13 @@
             display: inline-flex;
             justify-content: center;
             align-items: center;
-            gap: 8px
+            gap: 8px;
         }
 
         .list {
             display: flex;
             flex-direction: column;
-            gap: 10px
+            gap: 10px;
         }
 
         .item {
@@ -118,17 +118,17 @@
             justify-content: space-between;
             gap: 12px;
             align-items: center;
-            flex-wrap: wrap
+            flex-wrap: wrap;
         }
 
         .item b {
-            font-size: 14px
+            font-size: 14px;
         }
 
         .actions {
             display: flex;
             gap: 8px;
-            flex-wrap: wrap
+            flex-wrap: wrap;
         }
 
         .btn-mini {
@@ -143,13 +143,13 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            font-size: 12px
+            font-size: 12px;
         }
 
         .btn-mini.ok {
             background: #ecfdf5;
             border-color: #bbf7d0;
-            color: #065f46
+            color: #065f46;
         }
     </style>
 </head>
@@ -174,7 +174,8 @@
             <div class="head">
                 <div>
                     <div class="h"><i class="fa-solid fa-trophy"></i> Campeonatos (visualização)</div>
-                    <div class="muted">PLAYER e DONO_TIME podem ver tudo do campeonato, sem alterar nada.</div>
+                    <div class="muted">PLAYER e DONO_TIME podem visualizar os campeonatos do society, sem editar nada.
+                    </div>
                 </div>
                 <div class="chip" id="chipResumo">0 campeonato(s)</div>
             </div>
@@ -192,7 +193,9 @@
                     <input id="busca" placeholder="Buscar por nome..." />
                 </div>
 
-                <button class="btn" id="btnRecarregar"><i class="fa-solid fa-rotate"></i> Recarregar</button>
+                <button class="btn" id="btnRecarregar">
+                    <i class="fa-solid fa-rotate"></i> Recarregar
+                </button>
             </div>
 
             <div id="msg" class="muted"></div>

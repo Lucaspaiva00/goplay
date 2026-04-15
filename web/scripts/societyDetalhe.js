@@ -247,7 +247,10 @@ function irCampos() {
     const tipo = String(u?.tipo || "").toUpperCase();
     const societyId = localStorage.getItem("societyId");
 
-    if (tipo === "DONO_SOCIETY") return (location.href = "campos.html");
+    if (tipo === "DONO_SOCIETY") {
+        return (location.href = "campos.html");
+    }
+
     return (location.href = `campos-view.html?societyId=${encodeURIComponent(societyId || "")}`);
 }
 
@@ -256,7 +259,10 @@ function irCardapio() {
     const tipo = String(u?.tipo || "").toUpperCase();
     const societyId = localStorage.getItem("societyId");
 
-    if (tipo === "DONO_SOCIETY") return (location.href = "cardapio.html");
+    if (tipo === "DONO_SOCIETY") {
+        return (location.href = "cardapio.html");
+    }
+
     return (location.href = `cardapio-view.html?societyId=${encodeURIComponent(societyId || "")}`);
 }
 

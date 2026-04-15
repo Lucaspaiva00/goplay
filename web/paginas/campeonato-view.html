@@ -101,18 +101,6 @@
             text-align: right;
         }
 
-        .status {
-            font-weight: 900;
-            font-size: 12px;
-            padding: 6px 10px;
-            border-radius: 999px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            border: 1px solid #e5e7eb;
-            background: #f9fafb;
-        }
-
         .box {
             border: 1px solid #eef2f6;
             border-radius: 14px;
@@ -148,18 +136,6 @@
             gap: 8px;
         }
 
-        .two {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        @media (max-width: 980px) {
-            .two {
-                grid-template-columns: 1fr;
-            }
-        }
-
         pre {
             margin: 0;
             padding: 12px;
@@ -169,6 +145,20 @@
             overflow: auto;
             font-size: 12px;
             line-height: 1.4;
+        }
+
+        .jogo-item {
+            padding: 12px;
+            border: 1px solid #eef2f6;
+            border-radius: 12px;
+            background: #fbfdff;
+            margin-bottom: 10px;
+        }
+
+        .jogo-placar {
+            font-weight: 900;
+            color: #052845;
+            margin-bottom: 6px;
         }
     </style>
 </head>
@@ -207,12 +197,13 @@
                     <button class="btn" id="btnRecarregar"><i class="fa-solid fa-rotate"></i> Recarregar</button>
                 </div>
             </div>
+
             <section class="card" style="margin-top:16px;">
                 <h3 style="margin:0 0 10px 0;">📅 Jogos</h3>
                 <div id="listaJogos">Carregando jogos...</div>
             </section>
-            <div class="grid">
 
+            <div class="grid">
                 <div class="card">
                     <div class="section-title"><i class="fa-solid fa-ranking-star"></i> Classificação</div>
                     <div class="table-wrap">
@@ -243,12 +234,9 @@
                     <div style="height:12px;"></div>
 
                     <div class="section-title"><i class="fa-solid fa-code-branch"></i> Mata-mata (bracket)</div>
-                    <div class="muted" style="margin-bottom:10px;">Se seu backend retornar, mostramos. Se não, fica
-                        vazio.</div>
+                    <div class="muted" style="margin-bottom:10px;">Se houver dados, mostramos aqui.</div>
                     <div id="boxBracket" class="box"><span class="muted">Sem dados de bracket.</span></div>
-
                 </div>
-
             </div>
 
         </div>
