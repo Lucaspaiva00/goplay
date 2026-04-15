@@ -1,54 +1,215 @@
+.meu-time-wrap {
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+.content {
+    display: block;
+}
+
 .time-info-card {
     background: #ffffff;
     padding: 24px;
-    border-radius: 14px;
+    border-radius: 16px;
     box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
     margin-bottom: 24px;
     border: 1px solid #eef2f6;
 }
 
-.time-info-card h2 {
-    color: #052845;
-    margin-bottom: 10px;
+.time-header {
+    margin-bottom: 18px;
 }
 
-.time-info-card p {
-    margin-bottom: 8px;
+.time-header-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.time-header-main h2 {
+    color: #052845;
+    font-size: 30px;
+    font-weight: 800;
+    margin: 0;
+}
+
+.time-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.time-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.time-item {
+    background: #f8fafc;
+    border: 1px solid #e5edf6;
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.time-item .label,
+.time-desc .label {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 700;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+}
+
+.time-item strong {
+    color: #111827;
+    font-size: 15px;
+}
+
+.time-desc {
+    background: #fbfdff;
+    border: 1px solid #e5edf6;
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.time-desc p {
     color: #374151;
-    line-height: 1.5;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.bloco-jogadores {
+    margin-bottom: 22px;
 }
 
 .subtitle {
-    margin-top: 10px;
-    margin-bottom: 12px;
-    font-weight: 700;
+    margin-top: 0;
+    margin-bottom: 14px;
+    font-weight: 800;
     color: #0f172a;
-    font-size: 20px;
+    font-size: 24px;
 }
 
 .player-list {
     display: flex;
     flex-direction: column;
     gap: 14px;
-    margin-bottom: 20px;
 }
 
 .player-item {
     background: white;
     padding: 16px 18px;
-    border-radius: 12px;
+    border-radius: 14px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
     border: 1px solid #eef2f6;
+    display: flex;
+    align-items: center;
+    gap: 14px;
 }
 
-.player-item b {
+.player-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #052845;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.player-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.player-info strong {
     color: #052845;
     font-size: 16px;
 }
 
-.player-item small {
+.player-info small {
     color: #6b7280;
     font-size: 13px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 20px 8px;
+}
+
+.empty-state.error .empty-icon {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.empty-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: #eff6ff;
+    color: #052845;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    margin: 0 auto 16px;
+}
+
+.empty-state h2 {
+    color: #052845;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    color: #6b7280;
+    margin-bottom: 18px;
+    line-height: 1.6;
+}
+
+.empty-list {
+    background: #fff;
+    border: 1px solid #eef2f6;
+    border-radius: 14px;
+    padding: 18px;
+    color: #6b7280;
+    text-align: center;
+}
+
+.btn-primary {
+    border: none;
+    border-radius: 12px;
+    padding: 14px 18px;
+    background: #0a2f4d;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary:hover {
+    background: #061f33;
 }
 
 .btn-danger {
@@ -58,11 +219,25 @@
     padding: 14px;
     border: none;
     border-radius: 12px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     transition: 0.2s ease;
 }
 
 .btn-danger:hover {
     background: #dc2626;
+}
+
+@media (max-width: 768px) {
+    .time-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .time-header-main h2 {
+        font-size: 24px;
+    }
+
+    .subtitle {
+        font-size: 22px;
+    }
 }

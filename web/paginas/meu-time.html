@@ -32,19 +32,26 @@
         </h1>
     </header>
 
-    <div class="main-wrapper">
-        <main class="content">
+    <main class="content">
+        <div class="meu-time-wrap">
 
-            <div class="time-info-card" id="dadosTime"></div>
+            <div class="time-info-card" id="dadosTime">
+                Carregando informações do time...
+            </div>
 
-            <h3 class="subtitle">Jogadores</h3>
+            <div class="bloco-jogadores">
+                <h3 class="subtitle">Jogadores</h3>
+                <div id="listaJogadores" class="player-list">
+                    Carregando jogadores...
+                </div>
+            </div>
 
-            <div id="listaJogadores" class="player-list"></div>
+            <button id="sair" class="btn-danger" style="display:none;">
+                Sair do time
+            </button>
 
-            <button id="sair" class="btn-danger">Sair do time</button>
-
-        </main>
-    </div>
+        </div>
+    </main>
 
     <script src="../js/goplay_home.js"></script>
     <script src="../scripts/menu.js"></script>
