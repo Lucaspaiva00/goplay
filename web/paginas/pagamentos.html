@@ -208,9 +208,100 @@
     </div>
     <ul id="menuDynamic"></ul>
   </aside>
+
   <div id="overlay" class="overlay"></div>
 
-  
+  <main class="content">
+    <div class="wrap">
+      <div class="card">
+        <div class="head">
+          <div>
+            <div class="h">
+              <i class="fa-solid fa-receipt"></i>
+              <span>Detalhes do Pagamento</span>
+            </div>
+            <div class="muted" id="msg">Carregando...</div>
+          </div>
+
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <span class="chip" id="chipId">#-</span>
+            <span class="status pendente" id="statusPill">
+              <i class="fa-solid fa-hourglass-half"></i> PENDENTE
+            </span>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="box">
+            <div class="line">
+              <span class="k">Society</span>
+              <span class="v" id="societyNome">-</span>
+            </div>
+
+            <div class="line">
+              <span class="k">Campo</span>
+              <span class="v" id="campoNome">-</span>
+            </div>
+
+            <div class="line">
+              <span class="k">Time</span>
+              <span class="v" id="timeNome">-</span>
+            </div>
+
+            <div class="line">
+              <span class="k">Tipo</span>
+              <span class="v" id="tipo">-</span>
+            </div>
+
+            <div class="line">
+              <span class="k">Agendamento</span>
+              <span class="v" id="jogo">-</span>
+            </div>
+
+            <div class="line">
+              <span class="k">Descrição</span>
+              <span class="v" id="descricao">-</span>
+            </div>
+
+            <div class="line">
+              <span class="k">Valor</span>
+              <span class="v" id="valor">R$ 0,00</span>
+            </div>
+          </div>
+
+          <div class="pixBox">
+            <div style="font-weight:900; color:#052845;">
+              <i class="fa-brands fa-pix"></i> Pagamento via PIX
+            </div>
+
+            <div class="muted">
+              Copie a chave PIX abaixo para realizar o pagamento.
+            </div>
+
+            <div class="pixKey" id="pixKey">47.051.258/0001-58</div>
+
+            <div class="rowBtns">
+              <button class="btn secondary" id="btnCopiar">
+                <i class="fa-solid fa-copy"></i> Copiar PIX
+              </button>
+
+              <button class="btn secondary" id="btnCompartilhar">
+                <i class="fa-solid fa-share-nodes"></i> Compartilhar Link
+              </button>
+            </div>
+
+            <button class="btn ok" id="btnConfirmar">
+              <i class="fa-solid fa-circle-check"></i> Confirmar Pagamento
+            </button>
+
+            <button class="btn primary" id="btnVoltar">
+              <i class="fa-solid fa-arrow-left"></i> Voltar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
 
   <script src="../js/goplay_home.js"></script>
   <script src="../scripts/menu.js"></script>

@@ -1,14 +1,25 @@
 const BASE_URL = "https://goplay-dzlr.onrender.com";
 const PIX_KEY_PADRAO = "47.051.258/0001-58";
 
-function el(id) { return document.getElementById(id); }
+function el(id) {
+    return document.getElementById(id);
+}
 
 async function fetchJSON(url, options = {}) {
     const res = await fetch(url, options);
     const text = await res.text().catch(() => "");
     let data = {};
-    try { data = text ? JSON.parse(text) : {}; } catch { data = {}; }
-    if (!res.ok) throw new Error(data?.error || data?.message || text || `HTTP ${res.status}`);
+
+    try {
+        data = text ? JSON.parse(text) : {};
+    } catch {
+        data = {};
+    }
+
+    if (!res.ok) {
+        throw new Error(data?.error || data?.message || text || `HTTP ${res.status}`);
+    }
+
     return data;
 }
 
@@ -17,7 +28,21 @@ function getParam(name) {
 }
 
 function moneyBR(v) {
-    return Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    return Number(v || 0).toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+    });
+}
+
+function formatarDataHora(valor) {
+    if (!valor) return "-";
+
+    const d = new Date(valor);
+    if (!Number.isNaN(d.getTime())) {
+        return d.toLocaleString("pt-BR");
+    }
+
+    return String(valor);
 }
 
 function setStatusPill(status) {
@@ -32,6 +57,7 @@ function setStatusPill(status) {
         pill.innerHTML = `<i class="fa-solid fa-circle-check"></i> PAGO`;
         return;
     }
+
     if (s === "CANCELADO") {
         pill.classList.add("cancelado");
         pill.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> CANCELADO`;
@@ -43,7 +69,6 @@ function setStatusPill(status) {
 }
 
 async function carregarPagamento(pagamentoId) {
-    // ✅ precisa existir: GET /pagamentos/:id
     const p = await fetchJSON(`${BASE_URL}/pagamentos/${encodeURIComponent(pagamentoId)}`);
 
     el("chipId").textContent = `#${p.id}`;
@@ -54,14 +79,13 @@ async function carregarPagamento(pagamentoId) {
     el("timeNome").textContent = p?.time?.nome || "-";
     el("tipo").textContent = p?.tipo || "-";
 
-    const jogo = p?.agendamento
-        ? `${p.agendamento.data || "-"} • ${p.agendamento.horaInicio || "-"} - ${p.agendamento.horaFim || "-"}`
+    const agendamentoTexto = p?.agendamento
+        ? `${formatarDataHora(p.agendamento.data)} • ${p.agendamento.horaInicio || "-"} - ${p.agendamento.horaFim || "-"}`
         : "-";
-    el("jogo").textContent = jogo;
 
+    el("jogo").textContent = agendamentoTexto;
     el("descricao").textContent = p?.descricao || "-";
     el("valor").textContent = moneyBR(p?.valor);
-
     el("pixKey").textContent = PIX_KEY_PADRAO;
 
     return p;
@@ -70,7 +94,7 @@ async function carregarPagamento(pagamentoId) {
 async function copiarPix() {
     const txt = (el("pixKey")?.textContent || PIX_KEY_PADRAO).trim();
     await navigator.clipboard.writeText(txt);
-    alert("✅ Pix copiado!");
+    alert("PIX copiado com sucesso.");
 }
 
 async function compartilharLink() {
@@ -78,63 +102,103 @@ async function compartilharLink() {
 
     if (navigator.share) {
         try {
-            await navigator.share({ title: "Pagamento GoPlay", text: "Link do pagamento:", url });
+            await navigator.share({
+                title: "Pagamento GoPlay",
+                text: "Link do pagamento:",
+                url
+            });
             return;
-        } catch { }
+        } catch {
+        }
     }
 
     await navigator.clipboard.writeText(url);
-    alert("✅ Link copiado!");
+    alert("Link copiado com sucesso.");
 }
 
 async function confirmarPagamento(pagamentoId) {
-    if (!confirm("Confirmar como PAGO?")) return;
+    if (!confirm("Deseja confirmar este pagamento como PAGO?")) {
+        return;
+    }
 
     await fetchJSON(`${BASE_URL}/pagamentos/${encodeURIComponent(pagamentoId)}/confirmar`, {
         method: "POST",
     });
 
-    alert("✅ Confirmado como pago!");
-    location.reload();
+    alert("Pagamento confirmado com sucesso.");
+    window.location.reload();
 }
 
 function voltar() {
-    history.length > 1 ? history.back() : (location.href = "meus-agendamentos.html");
+    if (history.length > 1) {
+        history.back();
+        return;
+    }
+
+    window.location.href = "meus-agendamentos.html";
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
     const msg = el("msg");
-
     const btnCopiar = el("btnCopiar");
     const btnCompartilhar = el("btnCompartilhar");
     const btnConfirmar = el("btnConfirmar");
     const btnVoltar = el("btnVoltar");
 
-    if (btnCopiar) btnCopiar.onclick = () => copiarPix().catch(console.error);
-    if (btnCompartilhar) btnCompartilhar.onclick = () => compartilharLink().catch(console.error);
-    if (btnVoltar) btnVoltar.onclick = voltar;
+    if (btnCopiar) {
+        btnCopiar.onclick = () => copiarPix().catch(console.error);
+    }
+
+    if (btnCompartilhar) {
+        btnCompartilhar.onclick = () => compartilharLink().catch(console.error);
+    }
+
+    if (btnVoltar) {
+        btnVoltar.onclick = voltar;
+    }
 
     const pagamentoId = getParam("pagamentoId");
+
     if (!pagamentoId) {
-        if (msg) msg.textContent = "❌ Falta pagamentoId na URL. Ex: pagamentos.html?pagamentoId=123";
-        if (btnConfirmar) btnConfirmar.disabled = true;
+        if (msg) {
+            msg.textContent = "Falta pagamentoId na URL. Ex: pagamentos.html?pagamentoId=123";
+        }
+
+        if (btnConfirmar) {
+            btnConfirmar.disabled = true;
+        }
+
         return;
     }
 
     try {
-        if (msg) msg.textContent = "Carregando...";
-        await carregarPagamento(pagamentoId);
+        if (msg) msg.textContent = "Carregando pagamento...";
+        const pagamento = await carregarPagamento(pagamentoId);
         if (msg) msg.textContent = "";
 
         if (btnConfirmar) {
-            btnConfirmar.onclick = () => confirmarPagamento(pagamentoId).catch(e => {
-                console.error(e);
-                alert(e?.message || "Erro ao confirmar.");
-            });
+            if (String(pagamento.status).toUpperCase() === "PAGO") {
+                btnConfirmar.disabled = true;
+                btnConfirmar.innerHTML = `<i class="fa-solid fa-circle-check"></i> Pagamento já confirmado`;
+            } else if (String(pagamento.status).toUpperCase() === "CANCELADO") {
+                btnConfirmar.disabled = true;
+                btnConfirmar.innerHTML = `<i class="fa-solid fa-ban"></i> Pagamento cancelado`;
+            } else {
+                btnConfirmar.onclick = () => confirmarPagamento(pagamentoId).catch(e => {
+                    console.error(e);
+                    alert(e?.message || "Erro ao confirmar pagamento.");
+                });
+            }
         }
     } catch (e) {
         console.error(e);
-        if (msg) msg.textContent = e?.message || "Erro ao carregar pagamento.";
-        if (btnConfirmar) btnConfirmar.disabled = true;
+
+        if (msg) {
+            msg.textContent = e?.message || "Erro ao carregar pagamento.";
+        }
+
+        if (btnConfirmar) {
+            btnConfirmar.disabled = true;
+        }
     }
 });
