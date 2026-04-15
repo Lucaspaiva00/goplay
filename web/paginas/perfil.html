@@ -23,45 +23,156 @@
     <div class="overlay" id="overlay"></div>
 
     <header class="topbar">
-        <button id="menuBtn" class="menu-btn"><i class="fas fa-bars"></i></button>
+        <button id="menuBtn" class="menu-btn">
+            <i class="fas fa-bars"></i>
+        </button>
         <h1 class="title">Meu Perfil</h1>
     </header>
 
-    <div class="main-wrapper">
-        <main class="content">
+    <main class="content perfil-page">
 
-            <div class="card">
-
-                <h2 class="page-title"><i class="fas fa-user-circle"></i> Meu Perfil</h2>
-                <p class="subtitle">Mantenha seus dados atualizados para melhorar sua experiência no GoPlay.</p>
-
-                <h3 class="section-title">Informações pessoais</h3>
-                <input id="nome" class="input" placeholder="Seu nome completo">
-                <input id="telefone" class="input" placeholder="Telefone">
-                <input id="nascimento" type="date" class="input">
-
-                <select id="sexo" class="input">
-                    <option value="">Selecione o sexo</option>
-                    <option value="MASCULINO">Masculino</option>
-                    <option value="FEMININO">Feminino</option>
-                </select>
-
-                <h3 class="section-title">Informações de jogador</h3>
-
-                <input id="pernaMelhor" class="input" placeholder="Perna boa (Direita / Esquerda / Ambas)">
-                <input id="posicaoCampo" class="input" placeholder="Posição em campo">
-                <input id="altura" class="input" placeholder="Altura (ex: 1.80)">
-                <input id="peso" class="input" placeholder="Peso (ex: 75)">
-
-                <label class="checkbox-label">
-                    <input type="checkbox" id="goleiro"> Sou goleiro
-                </label>
-
-                <button class="btn" onclick="salvarPerfil()">Salvar alterações</button>
+        <section class="perfil-hero">
+            <div class="perfil-hero-icon">
+                <i class="fas fa-user"></i>
             </div>
 
-        </main>
-    </div>
+            <div class="perfil-hero-text">
+                <h2>Meu Perfil</h2>
+                <p>Atualize suas informações pessoais e esportivas para manter sua conta completa dentro do GoPlay.</p>
+            </div>
+        </section>
+
+        <section class="perfil-card">
+
+            <div class="perfil-card-header">
+                <div>
+                    <h3>Dados da conta</h3>
+                    <span>Informações utilizadas no seu cadastro e perfil esportivo</span>
+                </div>
+
+                <div class="perfil-badge">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>Conta ativa</span>
+                </div>
+            </div>
+
+            <div id="perfilFeedback" class="perfil-feedback"></div>
+
+            <div class="perfil-section">
+                <div class="section-head">
+                    <div class="section-icon blue">
+                        <i class="fa-solid fa-id-card"></i>
+                    </div>
+                    <div>
+                        <h4>Informações pessoais</h4>
+                        <p>Esses dados ajudam na identificação do seu perfil dentro da plataforma.</p>
+                    </div>
+                </div>
+
+                <div class="form-grid two-cols">
+                    <div class="field">
+                        <label for="nome">Nome completo</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-user"></i>
+                            <input id="nome" class="input" placeholder="Seu nome completo">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="telefone">Telefone</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-phone"></i>
+                            <input id="telefone" class="input" placeholder="(00) 00000-0000">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="nascimento">Data de nascimento</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-calendar-days"></i>
+                            <input id="nascimento" type="date" class="input">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="sexo">Sexo</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-venus-mars"></i>
+                            <select id="sexo" class="input">
+                                <option value="">Selecione</option>
+                                <option value="MASCULINO">Masculino</option>
+                                <option value="FEMININO">Feminino</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="perfil-section">
+                <div class="section-head">
+                    <div class="section-icon green">
+                        <i class="fa-solid fa-futbol"></i>
+                    </div>
+                    <div>
+                        <h4>Informações de jogador</h4>
+                        <p>Complete seu perfil esportivo para se apresentar melhor dentro dos times e campeonatos.</p>
+                    </div>
+                </div>
+
+                <div class="form-grid two-cols">
+                    <div class="field">
+                        <label for="pernaMelhor">Perna dominante</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-shoe-prints"></i>
+                            <input id="pernaMelhor" class="input" placeholder="Direita / Esquerda / Ambas">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="posicaoCampo">Posição em campo</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <input id="posicaoCampo" class="input" placeholder="Ex: Atacante, volante, goleiro">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="altura">Altura</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-ruler-vertical"></i>
+                            <input id="altura" class="input" placeholder="Ex: 1.80">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="peso">Peso</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-weight-scale"></i>
+                            <input id="peso" class="input" placeholder="Ex: 75">
+                        </div>
+                    </div>
+                </div>
+
+                <label class="checkbox-card">
+                    <input type="checkbox" id="goleiro">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-content">
+                        <strong>Sou goleiro</strong>
+                        <small>Marque esta opção caso atue também ou principalmente como goleiro.</small>
+                    </span>
+                </label>
+            </div>
+
+            <div class="perfil-actions">
+                <button class="btn-salvar" onclick="salvarPerfil()">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    Salvar alterações
+                </button>
+            </div>
+
+        </section>
+
+    </main>
 
     <script src="../js/goplay_home.js"></script>
     <script src="../scripts/menu.js"></script>

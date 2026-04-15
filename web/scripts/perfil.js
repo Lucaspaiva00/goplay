@@ -15,6 +15,31 @@ if (!usuarioLogado?.id) {
     window.location.href = "login.html";
 }
 
+function el(id) {
+    return document.getElementById(id);
+}
+
+function mostrarFeedback(msg, tipo = "success") {
+    const box = el("perfilFeedback");
+    if (!box) return;
+
+    box.className = `perfil-feedback show ${tipo}`;
+    box.textContent = msg;
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+function limparFeedback() {
+    const box = el("perfilFeedback");
+    if (!box) return;
+
+    box.className = "perfil-feedback";
+    box.textContent = "";
+}
+
 async function fetchJSON(url, options = {}) {
     const res = await fetch(url, options);
     const text = await res.text().catch(() => "");
@@ -35,44 +60,74 @@ async function fetchJSON(url, options = {}) {
 
 async function carregarPerfil() {
     try {
+        limparFeedback();
+
         const data = await fetchJSON(`${BASE_URL}/usuarios/${usuarioLogado.id}`);
 
-        document.getElementById("nome").value = data.nome || "";
-        document.getElementById("telefone").value = data.telefone || "";
-        document.getElementById("nascimento").value = data.nascimento ? String(data.nascimento).split("T")[0] : "";
-        document.getElementById("sexo").value = data.sexo || "";
-        document.getElementById("pernaMelhor").value = data.pernaMelhor || "";
-        document.getElementById("posicaoCampo").value = data.posicaoCampo || "";
-        document.getElementById("altura").value = data.altura || "";
-        document.getElementById("peso").value = data.peso || "";
-        document.getElementById("goleiro").checked = !!data.goleiro;
+        el("nome").value = data.nome || "";
+        el("telefone").value = data.telefone || "";
+        el("nascimento").value = data.nascimento ? String(data.nascimento).split("T")[0] : "";
+        el("sexo").value = data.sexo || "";
+        el("pernaMelhor").value = data.pernaMelhor || "";
+        el("posicaoCampo").value = data.posicaoCampo || "";
+        el("altura").value = data.altura || "";
+        el("peso").value = data.peso || "";
+        el("goleiro").checked = !!data.goleiro;
     } catch (err) {
         console.error("ERRO LOAD PERFIL:", err);
-        alert(err.message || "Erro ao carregar os dados.");
+        mostrarFeedback(err.message || "Erro ao carregar os dados do perfil.", "error");
     }
 }
 
 async function salvarPerfil() {
-    const nascimentoValue = document.getElementById("nascimento").value;
+    limparFeedback();
 
-    const payload = {
-        nome: document.getElementById("nome").value.trim(),
-        telefone: document.getElementById("telefone").value.trim(),
-        nascimento: nascimentoValue ? new Date(`${nascimentoValue}T12:00:00`).toISOString() : null,
-        sexo: document.getElementById("sexo").value,
-        pernaMelhor: document.getElementById("pernaMelhor").value.trim(),
-        posicaoCampo: document.getElementById("posicaoCampo").value.trim(),
-        altura: document.getElementById("altura").value ? Number(document.getElementById("altura").value) : null,
-        peso: document.getElementById("peso").value ? Number(document.getElementById("peso").value) : null,
-        goleiro: document.getElementById("goleiro").checked
-    };
+    const btn = document.querySelector(".btn-salvar");
+    const nome = el("nome").value.trim();
+    const telefone = el("telefone").value.trim();
+    const nascimentoValue = el("nascimento").value;
+    const sexo = el("sexo").value;
+    const pernaMelhor = el("pernaMelhor").value.trim();
+    const posicaoCampo = el("posicaoCampo").value.trim();
+    const alturaValue = el("altura").value.trim().replace(",", ".");
+    const pesoValue = el("peso").value.trim().replace(",", ".");
 
-    if (!payload.nome) {
-        alert("O nome é obrigatório.");
+    if (!nome) {
+        mostrarFeedback("O nome é obrigatório.", "error");
+        el("nome").focus();
         return;
     }
 
+    if (alturaValue && Number.isNaN(Number(alturaValue))) {
+        mostrarFeedback("A altura precisa ser numérica. Ex: 1.80", "error");
+        el("altura").focus();
+        return;
+    }
+
+    if (pesoValue && Number.isNaN(Number(pesoValue))) {
+        mostrarFeedback("O peso precisa ser numérico. Ex: 75", "error");
+        el("peso").focus();
+        return;
+    }
+
+    const payload = {
+        nome,
+        telefone,
+        nascimento: nascimentoValue ? new Date(`${nascimentoValue}T12:00:00`).toISOString() : null,
+        sexo,
+        pernaMelhor,
+        posicaoCampo,
+        altura: alturaValue ? Number(alturaValue) : null,
+        peso: pesoValue ? Number(pesoValue) : null,
+        goleiro: el("goleiro").checked
+    };
+
     try {
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Salvando alterações...`;
+        }
+
         const result = await fetchJSON(`${BASE_URL}/usuarios/${usuarioLogado.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -88,10 +143,15 @@ async function salvarPerfil() {
 
         localStorage.setItem("usuarioLogado", JSON.stringify(usuarioAtualizado));
 
-        alert("Perfil atualizado com sucesso!");
+        mostrarFeedback("Perfil atualizado com sucesso!", "success");
     } catch (err) {
         console.error("ERRO UPDATE PERFIL:", err);
-        alert(err.message || "Erro ao salvar alterações.");
+        mostrarFeedback(err.message || "Erro ao salvar alterações.", "error");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Salvar alterações`;
+        }
     }
 }
 
