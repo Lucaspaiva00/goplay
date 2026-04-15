@@ -58,28 +58,6 @@ if (usuarioLogado.tipo === "DONO_SOCIETY") {
     <section class="action-card">
       <h3>Painel do Society</h3>
 
-      <div class="dashboard-grid">
-        <div class="dashboard-card">
-          <span class="dashboard-label">Times</span>
-          <strong id="totalTimes">...</strong>
-        </div>
-
-        <div class="dashboard-card">
-          <span class="dashboard-label">Agendamentos</span>
-          <strong id="totalAgendamentos">...</strong>
-        </div>
-
-        <div class="dashboard-card">
-          <span class="dashboard-label">Recebido</span>
-          <strong id="valorPago">R$ ...</strong>
-        </div>
-
-        <div class="dashboard-card">
-          <span class="dashboard-label">Pendente</span>
-          <strong id="valorPendente">R$ ...</strong>
-        </div>
-      </div>
-
       <button class="btn green" onclick="abrirMeuSociety()">
         👀 Ver meu Society
       </button>
@@ -94,14 +72,6 @@ if (usuarioLogado.tipo === "DONO_SOCIETY") {
 
       <button class="btn navy" onclick="location.href='recebimentos.html'">
         💰 Recebimentos
-      </button>
-
-      <button class="btn navy" onclick="location.href='campos.html'">
-        🏟️ Gerenciar Campos
-      </button>
-
-      <button class="btn navy" onclick="location.href='cardapio.html'">
-        🍔 Gerenciar Cardápio
       </button>
 
       <button class="btn navy" onclick="location.href='horarios.html'">
