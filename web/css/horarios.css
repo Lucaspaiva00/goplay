@@ -1,0 +1,35 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+#data {
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+}
+
+.slot {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 120px;
+    padding: 14px;
+    border-bottom: 1px solid #eee;
+    font-weight: 500;
+}
+
+.slot:hover {
+    background: #f9fafb;
+}
+
+.slot.CONFIRMADO {
+    background: #ecfdf5;
+}
+
+.slot.PENDENTE {
+    background: #fff7ed;
+}
+
+.status {
+    font-weight: 700;
+}
