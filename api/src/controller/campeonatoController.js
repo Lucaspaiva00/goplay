@@ -356,6 +356,32 @@ const listBySociety = async (req, res) => {
 };
 
 /* ============================
+   LISTAR TODOS OS CAMPEONATOS (GLOBAL)
+   🔥 NOVO - PARA PLAYER E DONO_TIME
+============================ */
+const listAll = async (req, res) => {
+    try {
+        const lista = await prisma.campeonato.findMany({
+            include: {
+                society: true, // 👈 necessário pro front mostrar o nome
+                campeao: true,
+                viceCampeao: true,
+                times: { include: { time: true } },
+            },
+            orderBy: [
+                { status: "asc" },
+                { id: "desc" }
+            ],
+        });
+
+        return res.json(lista);
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Erro ao listar todos os campeonatos." });
+    }
+};
+
+/* ============================
    ADICIONAR TIME
 ============================ */
 const addTime = async (req, res) => {
@@ -1189,6 +1215,7 @@ module.exports = {
     create,
     readOne,
     listBySociety,
+    listAll,
     addTime,
     generateGroups,
     generateGroupMatches,

@@ -112,6 +112,7 @@ router.get("/pagamentos/:id", pagamentoController.readOne);
    CAMPEONATOS
 ========================= */
 router.post("/campeonato", campeonatoController.create);
+router.get("/campeonato", campeonatoController.listAll);
 router.get("/campeonato/society/:societyId", campeonatoController.listBySociety);
 router.get("/campeonato/:id", campeonatoController.readOne);
 router.put("/campeonato/:id", campeonatoController.updateInfo);

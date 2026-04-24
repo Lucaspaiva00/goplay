@@ -48,68 +48,13 @@ let sociedadesDisponiveis = [];
 let campeonatosLista = [];
 
 /* =========================================================
-   🔥 CORREÇÃO PRINCIPAL AQUI
-   - Remove prioridade do localStorage
-   - PLAYER agora suporta múltiplos societys
+   BUSCAR SOCIETIES (SÓ PARA DONO_SOCIETY)
 ========================================================= */
 async function descobrirSocietiesDoUsuario(usuario) {
 
-    // 🔹 DONO_TIME (já estava certo)
-    if (usuario.tipo === "DONO_TIME") {
-        const times = await fetchJSON(`${BASE_URL}/time/dono/${usuario.id}`);
-
-        const ids = [
-            ...new Set(
-                (times || [])
-                    .map((t) => t?.society?.id || t?.societyId)
-                    .filter(Boolean)
-            )
-        ];
-
-        const out = [];
-        for (const sid of ids) {
-            try {
-                const s = await fetchJSON(`${BASE_URL}/society/${encodeURIComponent(sid)}`);
-                if (s?.id) out.push({ id: s.id, nome: s.nome || `Society #${s.id}` });
-            } catch { }
-        }
-        return out;
-    }
-
-    // 🔹 PLAYER (CORRIGIDO PARA MULTI SOCIETY)
-    if (usuario.tipo === "PLAYER") {
-        try {
-            const payload = await fetchJSON(`${BASE_URL}/time/details/by-player/${usuario.id}`);
-
-            // 👇 tenta pegar múltiplos times (fallback pro formato antigo)
-            const times = payload?.times || (payload?.time ? [payload.time] : []);
-
-            const ids = [
-                ...new Set(
-                    (times || [])
-                        .map((t) => t?.society?.id || t?.societyId)
-                        .filter(Boolean)
-                )
-            ];
-
-            const out = [];
-            for (const sid of ids) {
-                try {
-                    const s = await fetchJSON(`${BASE_URL}/society/${encodeURIComponent(sid)}`);
-                    if (s?.id) out.push({ id: s.id, nome: s.nome || `Society #${s.id}` });
-                } catch { }
-            }
-
-            return out;
-        } catch {
-            return [];
-        }
-    }
-
-    // 🔹 DONO_SOCIETY (já estava certo)
     if (usuario.tipo === "DONO_SOCIETY") {
         const lista = await fetchJSON(`${BASE_URL}/society/owner/${usuario.id}`);
-        return (lista || []).map((s) => ({
+        return (lista || []).map(s => ({
             id: s.id,
             nome: s.nome || `Society #${s.id}`
         }));
@@ -119,8 +64,18 @@ async function descobrirSocietiesDoUsuario(usuario) {
 }
 
 /* =========================================================
-   SELECT DE SOCIETY
-   - Agora usa localStorage apenas como preferência
+   UI
+========================================================= */
+function ajustarUI(usuario) {
+    const filtroSociety = el("selSociety")?.parentElement?.parentElement;
+
+    if (usuario.tipo !== "DONO_SOCIETY") {
+        if (filtroSociety) filtroSociety.style.display = "none";
+    }
+}
+
+/* =========================================================
+   SELECT
 ========================================================= */
 function preencherSelectSocieties(lista) {
     const sel = el("selSociety");
@@ -129,15 +84,14 @@ function preencherSelectSocieties(lista) {
     if (!sel) return;
 
     if (!sociedadesDisponiveis.length) {
-        sel.innerHTML = `<option value="">Society não identificado</option>`;
+        sel.innerHTML = `<option value="">Nenhum society</option>`;
         return;
     }
 
     sel.innerHTML = sociedadesDisponiveis
-        .map((s) => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.nome)}</option>`)
+        .map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.nome)}</option>`)
         .join("");
 
-    // 🔥 Usa localStorage apenas como "última seleção"
     const lastSociety = localStorage.getItem("societyId");
 
     if (lastSociety && sociedadesDisponiveis.some(s => String(s.id) === String(lastSociety))) {
@@ -151,10 +105,9 @@ function preencherSelectSocieties(lista) {
    RENDER
 ========================================================= */
 function renderLista() {
-    const inputBusca = el("busca");
-    const busca = (inputBusca?.value || "").trim().toLowerCase();
+    const busca = (el("busca")?.value || "").toLowerCase();
 
-    const listaFiltrada = campeonatosLista.filter((c) =>
+    const listaFiltrada = campeonatosLista.filter(c =>
         !busca || String(c.nome || "").toLowerCase().includes(busca)
     );
 
@@ -164,11 +117,11 @@ function renderLista() {
     if (!wrap) return;
 
     if (!listaFiltrada.length) {
-        wrap.innerHTML = `<div class="muted">Nenhum campeonato encontrado para este society.</div>`;
+        wrap.innerHTML = `<div class="muted">Nenhum campeonato encontrado.</div>`;
         return;
     }
 
-    wrap.innerHTML = listaFiltrada.map((c) => `
+    wrap.innerHTML = listaFiltrada.map(c => `
         <div class="item">
             <div class="item-main">
                 <b>${escapeHtml(c.nome || "Campeonato")}</b>
@@ -176,6 +129,7 @@ function renderLista() {
                     <span class="mini-chip">${escapeHtml(c.status || "Sem status")}</span>
                     <span class="mini-chip">${escapeHtml(c.tipo || "Sem tipo")}</span>
                     <span class="mini-chip">${escapeHtml(c.modalidade || "Sem modalidade")}</span>
+                    ${c.society?.nome ? `<span class="mini-chip">🏟 ${escapeHtml(c.society.nome)}</span>` : ""}
                 </div>
             </div>
 
@@ -189,34 +143,45 @@ function renderLista() {
 }
 
 /* =========================================================
-   LOAD CAMPEONATOS
+   LOAD CAMPEONATOS (🔥 REGRA NOVA)
 ========================================================= */
 async function carregarCampeonatos() {
-    const sel = el("selSociety");
-    const societyId = (sel?.value || "").trim();
-
-    if (!societyId) {
-        campeonatosLista = [];
-        setText("chipResumo", "0 campeonato(s)");
-        const wrap = el("lista");
-        if (wrap) wrap.innerHTML = `<div class="muted">Society não identificado.</div>`;
-        return;
-    }
-
-    // 🔥 agora só salva como preferência
-    localStorage.setItem("societyId", societyId);
+    const u = getUsuarioLogado();
 
     setText("msg", "Carregando campeonatos...");
 
     try {
-        const lista = await fetchJSON(`${BASE_URL}/campeonato/society/${encodeURIComponent(societyId)}`);
+        let lista = [];
+
+        // 🔹 DONO_SOCIETY continua filtrando
+        if (u.tipo === "DONO_SOCIETY") {
+            const societyId = el("selSociety")?.value;
+
+            if (!societyId) {
+                campeonatosLista = [];
+                renderLista();
+                return;
+            }
+
+            localStorage.setItem("societyId", societyId);
+
+            lista = await fetchJSON(`${BASE_URL}/campeonato/society/${societyId}`);
+        }
+
+        // 🔥 PLAYER e DONO_TIME veem TODOS
+        else {
+            lista = await fetchJSON(`${BASE_URL}/campeonato`);
+        }
+
         campeonatosLista = Array.isArray(lista) ? lista : [];
+
         setText("msg", "");
         renderLista();
+
     } catch (e) {
         console.error(e);
         campeonatosLista = [];
-        setText("msg", e.message || "Erro ao carregar campeonatos.");
+        setText("msg", "Erro ao carregar campeonatos.");
         renderLista();
     }
 }
@@ -224,7 +189,7 @@ async function carregarCampeonatos() {
 /* =========================================================
    NAV
 ========================================================= */
-window.abrirCampeonato = function abrirCampeonato(id) {
+window.abrirCampeonato = function (id) {
     location.href = `campeonato-view.html?id=${encodeURIComponent(id)}`;
 };
 
@@ -240,18 +205,19 @@ async function boot() {
         return;
     }
 
-    setText("msg", "Identificando societies...");
+    ajustarUI(u);
 
     try {
-        const sociedades = await descobrirSocietiesDoUsuario(u);
-        preencherSelectSocieties(sociedades);
-        setText("msg", "");
+        if (u.tipo === "DONO_SOCIETY") {
+            const sociedades = await descobrirSocietiesDoUsuario(u);
+            preencherSelectSocieties(sociedades);
+        }
+
         await carregarCampeonatos();
+
     } catch (e) {
         console.error(e);
-        preencherSelectSocieties([]);
-        setText("msg", e.message || "Não foi possível identificar os societys.");
-        await carregarCampeonatos();
+        setText("msg", "Erro ao inicializar.");
     }
 }
 
@@ -259,13 +225,9 @@ async function boot() {
    EVENTS
 ========================================================= */
 document.addEventListener("DOMContentLoaded", () => {
-    const btnRecarregar = el("btnRecarregar");
-    const selSociety = el("selSociety");
-    const busca = el("busca");
-
-    if (btnRecarregar) btnRecarregar.onclick = () => carregarCampeonatos();
-    if (selSociety) selSociety.onchange = () => carregarCampeonatos();
-    if (busca) busca.oninput = () => renderLista();
+    el("btnRecarregar")?.addEventListener("click", carregarCampeonatos);
+    el("selSociety")?.addEventListener("change", carregarCampeonatos);
+    el("busca")?.addEventListener("input", renderLista);
 
     boot();
 });
