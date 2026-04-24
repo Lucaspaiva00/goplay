@@ -47,20 +47,17 @@ function setText(id, value) {
 let sociedadesDisponiveis = [];
 let campeonatosLista = [];
 
+/* =========================================================
+   🔥 CORREÇÃO PRINCIPAL AQUI
+   - Remove prioridade do localStorage
+   - PLAYER agora suporta múltiplos societys
+========================================================= */
 async function descobrirSocietiesDoUsuario(usuario) {
-    const societyIdLS = (localStorage.getItem("societyId") || "").trim();
 
-    if (societyIdLS) {
-        try {
-            const s = await fetchJSON(`${BASE_URL}/society/${encodeURIComponent(societyIdLS)}`);
-            if (s?.id) {
-                return [{ id: s.id, nome: s.nome || `Society #${s.id}` }];
-            }
-        } catch { }
-    }
-
+    // 🔹 DONO_TIME (já estava certo)
     if (usuario.tipo === "DONO_TIME") {
         const times = await fetchJSON(`${BASE_URL}/time/dono/${usuario.id}`);
+
         const ids = [
             ...new Set(
                 (times || [])
@@ -79,19 +76,37 @@ async function descobrirSocietiesDoUsuario(usuario) {
         return out;
     }
 
+    // 🔹 PLAYER (CORRIGIDO PARA MULTI SOCIETY)
     if (usuario.tipo === "PLAYER") {
-        const payload = await fetchJSON(`${BASE_URL}/time/details/by-player/${usuario.id}`);
-        const time = payload?.time || null;
-        const sid = time?.society?.id || time?.societyId || null;
+        try {
+            const payload = await fetchJSON(`${BASE_URL}/time/details/by-player/${usuario.id}`);
 
-        if (sid) {
-            const s = await fetchJSON(`${BASE_URL}/society/${encodeURIComponent(sid)}`);
-            if (s?.id) return [{ id: s.id, nome: s.nome || `Society #${s.id}` }];
+            // 👇 tenta pegar múltiplos times (fallback pro formato antigo)
+            const times = payload?.times || (payload?.time ? [payload.time] : []);
+
+            const ids = [
+                ...new Set(
+                    (times || [])
+                        .map((t) => t?.society?.id || t?.societyId)
+                        .filter(Boolean)
+                )
+            ];
+
+            const out = [];
+            for (const sid of ids) {
+                try {
+                    const s = await fetchJSON(`${BASE_URL}/society/${encodeURIComponent(sid)}`);
+                    if (s?.id) out.push({ id: s.id, nome: s.nome || `Society #${s.id}` });
+                } catch { }
+            }
+
+            return out;
+        } catch {
+            return [];
         }
-
-        return [];
     }
 
+    // 🔹 DONO_SOCIETY (já estava certo)
     if (usuario.tipo === "DONO_SOCIETY") {
         const lista = await fetchJSON(`${BASE_URL}/society/owner/${usuario.id}`);
         return (lista || []).map((s) => ({
@@ -103,6 +118,10 @@ async function descobrirSocietiesDoUsuario(usuario) {
     return [];
 }
 
+/* =========================================================
+   SELECT DE SOCIETY
+   - Agora usa localStorage apenas como preferência
+========================================================= */
 function preencherSelectSocieties(lista) {
     const sel = el("selSociety");
     sociedadesDisponiveis = lista || [];
@@ -118,10 +137,19 @@ function preencherSelectSocieties(lista) {
         .map((s) => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.nome)}</option>`)
         .join("");
 
-    sel.value = sociedadesDisponiveis[0].id;
-    localStorage.setItem("societyId", String(sociedadesDisponiveis[0].id));
+    // 🔥 Usa localStorage apenas como "última seleção"
+    const lastSociety = localStorage.getItem("societyId");
+
+    if (lastSociety && sociedadesDisponiveis.some(s => String(s.id) === String(lastSociety))) {
+        sel.value = lastSociety;
+    } else {
+        sel.value = sociedadesDisponiveis[0].id;
+    }
 }
 
+/* =========================================================
+   RENDER
+========================================================= */
 function renderLista() {
     const inputBusca = el("busca");
     const busca = (inputBusca?.value || "").trim().toLowerCase();
@@ -160,6 +188,9 @@ function renderLista() {
     `).join("");
 }
 
+/* =========================================================
+   LOAD CAMPEONATOS
+========================================================= */
 async function carregarCampeonatos() {
     const sel = el("selSociety");
     const societyId = (sel?.value || "").trim();
@@ -172,7 +203,9 @@ async function carregarCampeonatos() {
         return;
     }
 
+    // 🔥 agora só salva como preferência
     localStorage.setItem("societyId", societyId);
+
     setText("msg", "Carregando campeonatos...");
 
     try {
@@ -188,10 +221,16 @@ async function carregarCampeonatos() {
     }
 }
 
+/* =========================================================
+   NAV
+========================================================= */
 window.abrirCampeonato = function abrirCampeonato(id) {
     location.href = `campeonato-view.html?id=${encodeURIComponent(id)}`;
 };
 
+/* =========================================================
+   INIT
+========================================================= */
 async function boot() {
     const u = getUsuarioLogado();
 
@@ -201,7 +240,7 @@ async function boot() {
         return;
     }
 
-    setText("msg", "Identificando society...");
+    setText("msg", "Identificando societies...");
 
     try {
         const sociedades = await descobrirSocietiesDoUsuario(u);
@@ -211,11 +250,14 @@ async function boot() {
     } catch (e) {
         console.error(e);
         preencherSelectSocieties([]);
-        setText("msg", e.message || "Não foi possível identificar o society.");
+        setText("msg", e.message || "Não foi possível identificar os societys.");
         await carregarCampeonatos();
     }
 }
 
+/* =========================================================
+   EVENTS
+========================================================= */
 document.addEventListener("DOMContentLoaded", () => {
     const btnRecarregar = el("btnRecarregar");
     const selSociety = el("selSociety");
