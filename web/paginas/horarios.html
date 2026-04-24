@@ -8,13 +8,11 @@
 
     <link rel="stylesheet" href="../css/goplay_home.css">
     <link rel="stylesheet" href="../css/horarios.css">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
 <body>
 
-    <!-- SIDEBAR -->
     <aside id="sidebar" class="sidebar">
         <div class="logo-area">
             <h2>GoPlay</h2>
@@ -24,7 +22,6 @@
 
     <div id="overlay" class="overlay"></div>
 
-    <!-- TOPBAR -->
     <header class="topbar">
         <button id="menuBtn" class="menu-btn">
             <i class="fa fa-bars"></i>
@@ -34,15 +31,58 @@
 
     <main class="content">
 
-        <div class="agenda-header">
-            <button onclick="voltarSemana()">◀</button>
-            <span id="rangeSemana"></span>
-            <button onclick="avancarSemana()">▶</button>
-        </div>
+        <section class="agenda-hero">
+            <div>
+                <h2>Agenda semanal do Society</h2>
+                <p>Visualize horários livres, ocupados e arraste reservas para reorganizar a agenda.</p>
+            </div>
 
-        <div id="agendaGrid" class="agenda-grid"></div>
+            <div class="agenda-actions">
+                <button id="btnSemanaAnterior"><i class="fa-solid fa-chevron-left"></i></button>
+                <strong id="rangeSemana">Carregando...</strong>
+                <button id="btnProximaSemana"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+        </section>
+
+        <section class="agenda-toolbar">
+            <div class="legend">
+                <span><i class="dot livre"></i> Livre</span>
+                <span><i class="dot ocupado"></i> Ocupado</span>
+                <span><i class="dot pendente"></i> Pendente</span>
+            </div>
+
+            <button class="btn-refresh" id="btnAtualizar">
+                <i class="fa-solid fa-rotate"></i> Atualizar
+            </button>
+        </section>
+
+        <section class="agenda-shell">
+            <div id="agendaGrid" class="agenda-grid"></div>
+        </section>
 
     </main>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <button class="modal-close" id="btnFecharModal">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="modal-icon">
+                <i class="fa-solid fa-calendar-check"></i>
+            </div>
+
+            <h3 id="modalTitulo">Horário</h3>
+            <p id="modalDescricao">Detalhes do horário selecionado.</p>
+
+            <div class="modal-info" id="modalInfo"></div>
+
+            <div class="modal-actions">
+                <button class="btn-secondary" id="btnCancelarModal">Fechar</button>
+                <button class="btn-primary" id="btnAcaoModal">Agendar</button>
+            </div>
+        </div>
+    </div>
 
     <script src="../js/goplay_home.js"></script>
     <script src="../scripts/menu.js"></script>
