@@ -4,186 +4,179 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Dashboard do Society — GoPlay</title>
+    <title>Dashboard Executivo — GoPlay</title>
 
     <link rel="stylesheet" href="../css/goplay_home.css" />
-    <link rel="stylesheet" href="../css/society_dashboard" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <style>
+
+    </style>
 </head>
 
 <body class="with-sidebar">
 
-    <aside id="sidebar" class="sidebar">
-        <div class="logo-area">
-            <h2>GoPlay</h2>
-        </div>
-        <ul id="menuDynamic"></ul>
-    </aside>
-
-    <div id="overlay" class="overlay"></div>
-
-    <header class="topbar">
-        <button id="menuBtn" class="menu-btn"><i class="fa fa-bars"></i></button>
-        <h1 class="title">Dashboard</h1>
-    </header>
-
     <main class="content">
 
-        <div class="dashboard-header">
-            <div class="dashboard-title">
-                <i class="fa-solid fa-chart-line"></i>
-                Dashboard do Society
-            </div>
-            <div>Visão geral financeira e operacional</div>
+        <div class="hero">
+            <h1>Dashboard Inteligente do Society</h1>
+            <p>Gestão completa da sua operação em tempo real</p>
         </div>
 
-        <!-- KPIs -->
         <div class="kpis">
-            <div class="kpi">
-                <span>Recebido</span>
-                <strong id="kpiRecebido">R$ 0</strong>
-            </div>
-            <div class="kpi">
-                <span>Pendente</span>
-                <strong id="kpiPendente">R$ 0</strong>
-            </div>
-            <div class="kpi">
-                <span>Hoje</span>
-                <strong id="kpiHoje">R$ 0</strong>
-            </div>
-            <div class="kpi">
-                <span>Mês</span>
-                <strong id="kpiMes">R$ 0</strong>
-            </div>
-            <div class="kpi">
-                <span>Ticket Médio</span>
-                <strong id="kpiTicket">R$ 0</strong>
-            </div>
+            <div class="kpi"><span>Receita Total</span><strong id="receitaTotal"></strong></div>
+            <div class="kpi"><span>Receita Mês</span><strong id="receitaMes"></strong></div>
+            <div class="kpi"><span>Hoje</span><strong id="receitaHoje"></strong></div>
+            <div class="kpi"><span>Pendente</span><strong id="pendente"></strong></div>
+            <div class="kpi"><span>Ticket Médio</span><strong id="ticket"></strong></div>
+            <div class="kpi"><span>Ocupação</span><strong id="ocupacao"></strong></div>
         </div>
 
         <div class="grid">
-
-            <!-- Receita por dia -->
             <div class="card">
-                <h3>Receita por dia</h3>
+                <h3>📈 Receita por dia</h3>
                 <canvas id="chartLinha"></canvas>
             </div>
 
-            <!-- Tipo -->
             <div class="card">
-                <h3>Tipo de receita</h3>
+                <h3>💰 Tipo de receita</h3>
                 <canvas id="chartPizza"></canvas>
             </div>
 
-            <!-- Horários -->
             <div class="card">
-                <h3>Horários mais vendidos</h3>
+                <h3>🔥 Horários mais vendidos</h3>
                 <canvas id="chartBarra"></canvas>
             </div>
 
+            <div class="card">
+                <h3>🏆 Ranking de Times</h3>
+                <div id="rankingTimes"></div>
+            </div>
         </div>
 
-    </main>
+        <div class="insights" id="insights"></div>
 
-    <script src="../js/goplay_home.js"></script>
-    <script src="../scripts/menu.js"></script>
+    </main>
 
     <script>
         const BASE_URL = "https://goplay-dzlr.onrender.com";
 
         function money(v) {
-            return Number(v || 0).toLocaleString("pt-BR", {
-                style: "currency",
-                currency: "BRL"
-            });
+            return Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
         }
 
         async function carregar() {
-            const societyId = localStorage.getItem("societyId");
 
+            const societyId = localStorage.getItem("societyId");
             const res = await fetch(`${BASE_URL}/pagamentos/society/${societyId}`);
             const lista = await res.json();
 
             const pagos = lista.filter(p => p.status === "PAGO");
-            const pendentes = lista.filter(p => p.status === "PENDENTE");
 
-            const recebido = pagos.reduce((s, p) => s + p.valor, 0);
-            const pendente = pendentes.reduce((s, p) => s + p.valor, 0);
+            const total = pagos.reduce((s, p) => s + p.valor, 0);
 
             const hoje = new Date().toDateString();
-
             const hojeTotal = pagos
                 .filter(p => new Date(p.pagoEm).toDateString() === hoje)
                 .reduce((s, p) => s + p.valor, 0);
 
             const mes = new Date().getMonth();
-
             const mesTotal = pagos
                 .filter(p => new Date(p.pagoEm).getMonth() === mes)
                 .reduce((s, p) => s + p.valor, 0);
 
-            const ticket = pagos.length ? recebido / pagos.length : 0;
+            const pendente = lista
+                .filter(p => p.status === "PENDENTE")
+                .reduce((s, p) => s + p.valor, 0);
 
-            document.getElementById("kpiRecebido").innerText = money(recebido);
-            document.getElementById("kpiPendente").innerText = money(pendente);
-            document.getElementById("kpiHoje").innerText = money(hojeTotal);
-            document.getElementById("kpiMes").innerText = money(mesTotal);
-            document.getElementById("kpiTicket").innerText = money(ticket);
+            const ticket = pagos.length ? total / pagos.length : 0;
 
-            // 📈 Linha
+            // OCUPAÇÃO (estimada)
+            const totalSlots = 12 * 30; // 12 horários por dia * mês
+            const ocupacao = (pagos.length / totalSlots) * 100;
+
+            document.getElementById("receitaTotal").innerText = money(total);
+            document.getElementById("receitaMes").innerText = money(mesTotal);
+            document.getElementById("receitaHoje").innerText = money(hojeTotal);
+            document.getElementById("pendente").innerText = money(pendente);
+            document.getElementById("ticket").innerText = money(ticket);
+            document.getElementById("ocupacao").innerText = ocupacao.toFixed(1) + "%";
+
+            // 📈 Receita por dia
             const dias = {};
             pagos.forEach(p => {
                 const d = new Date(p.pagoEm).toLocaleDateString("pt-BR");
                 dias[d] = (dias[d] || 0) + p.valor;
             });
 
-            new Chart(document.getElementById("chartLinha"), {
+            new Chart(chartLinha, {
                 type: "line",
                 data: {
                     labels: Object.keys(dias),
-                    datasets: [{
-                        label: "Receita",
-                        data: Object.values(dias),
-                        fill: true
-                    }]
+                    datasets: [{ data: Object.values(dias), fill: true }]
                 }
             });
 
-            // 🥧 Pizza
+            // 🥧 Tipo
             const tipos = { AVULSO: 0, MENSALISTA: 0 };
             pagos.forEach(p => tipos[p.tipo] += p.valor);
 
-            new Chart(document.getElementById("chartPizza"), {
+            new Chart(chartPizza, {
                 type: "pie",
                 data: {
                     labels: Object.keys(tipos),
-                    datasets: [{
-                        data: Object.values(tipos)
-                    }]
+                    datasets: [{ data: Object.values(tipos) }]
                 }
             });
 
-            // 📊 Barra
+            // 📊 Horários
             const horas = {};
             lista.forEach(p => {
-                const h = p.agendamento?.horaInicio || "Outros";
+                const h = p.agendamento?.horaInicio || "Outro";
                 horas[h] = (horas[h] || 0) + 1;
             });
 
-            new Chart(document.getElementById("chartBarra"), {
+            new Chart(chartBarra, {
                 type: "bar",
                 data: {
                     labels: Object.keys(horas),
-                    datasets: [{
-                        label: "Agendamentos",
-                        data: Object.values(horas)
-                    }]
+                    datasets: [{ data: Object.values(horas) }]
                 }
             });
+
+            // 🏆 Ranking Times
+            const ranking = {};
+            pagos.forEach(p => {
+                const t = p.time?.nome || "Desconhecido";
+                ranking[t] = (ranking[t] || 0) + p.valor;
+            });
+
+            document.getElementById("rankingTimes").innerHTML =
+                Object.entries(ranking)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([t, v]) => `<div>${t} — ${money(v)}</div>`)
+                    .join("");
+
+            // 🧠 INSIGHTS AUTOMÁTICOS
+            const insights = [];
+
+            if (ocupacao < 40) {
+                insights.push("⚠️ Baixa ocupação: você está perdendo dinheiro em horários vazios.");
+            }
+
+            const melhorHora = Object.entries(horas).sort((a, b) => b[1] - a[1])[0];
+            if (melhorHora) {
+                insights.push(`🔥 Horário mais forte: ${melhorHora[0]}`);
+            }
+
+            const melhorTime = Object.entries(ranking).sort((a, b) => b[1] - a[1])[0];
+            if (melhorTime) {
+                insights.push(`🏆 Time que mais gera receita: ${melhorTime[0]}`);
+            }
+
+            document.getElementById("insights").innerHTML =
+                insights.map(i => `<div class="insight">${i}</div>`).join("");
+
         }
 
         carregar();
