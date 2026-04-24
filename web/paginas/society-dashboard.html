@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Dashboard do Society — GoPlay</title>
+
+    <link rel="stylesheet" href="../css/goplay_home.css" />
+    <link rel="stylesheet" href="../css/society_dashboard" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body class="with-sidebar">
+
+    <aside id="sidebar" class="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+        <ul id="menuDynamic"></ul>
+    </aside>
+
+    <div id="overlay" class="overlay"></div>
+
+    <header class="topbar">
+        <button id="menuBtn" class="menu-btn"><i class="fa fa-bars"></i></button>
+        <h1 class="title">Dashboard</h1>
+    </header>
+
+    <main class="content">
+
+        <div class="dashboard-header">
+            <div class="dashboard-title">
+                <i class="fa-solid fa-chart-line"></i>
+                Dashboard do Society
+            </div>
+            <div>Visão geral financeira e operacional</div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="kpis">
+            <div class="kpi">
+                <span>Recebido</span>
+                <strong id="kpiRecebido">R$ 0</strong>
+            </div>
+            <div class="kpi">
+                <span>Pendente</span>
+                <strong id="kpiPendente">R$ 0</strong>
+            </div>
+            <div class="kpi">
+                <span>Hoje</span>
+                <strong id="kpiHoje">R$ 0</strong>
+            </div>
+            <div class="kpi">
+                <span>Mês</span>
+                <strong id="kpiMes">R$ 0</strong>
+            </div>
+            <div class="kpi">
+                <span>Ticket Médio</span>
+                <strong id="kpiTicket">R$ 0</strong>
+            </div>
+        </div>
+
+        <div class="grid">
+
+            <!-- Receita por dia -->
+            <div class="card">
+                <h3>Receita por dia</h3>
+                <canvas id="chartLinha"></canvas>
+            </div>
+
+            <!-- Tipo -->
+            <div class="card">
+                <h3>Tipo de receita</h3>
+                <canvas id="chartPizza"></canvas>
+            </div>
+
+            <!-- Horários -->
+            <div class="card">
+                <h3>Horários mais vendidos</h3>
+                <canvas id="chartBarra"></canvas>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script src="../js/goplay_home.js"></script>
+    <script src="../scripts/menu.js"></script>
+
+    <script>
+        const BASE_URL = "https://goplay-dzlr.onrender.com";
+
+        function money(v) {
+            return Number(v || 0).toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL"
+            });
+        }
+
+        async function carregar() {
+            const societyId = localStorage.getItem("societyId");
+
+            const res = await fetch(`${BASE_URL}/pagamentos/society/${societyId}`);
+            const lista = await res.json();
+
+            const pagos = lista.filter(p => p.status === "PAGO");
+            const pendentes = lista.filter(p => p.status === "PENDENTE");
+
+            const recebido = pagos.reduce((s, p) => s + p.valor, 0);
+            const pendente = pendentes.reduce((s, p) => s + p.valor, 0);
+
+            const hoje = new Date().toDateString();
+
+            const hojeTotal = pagos
+                .filter(p => new Date(p.pagoEm).toDateString() === hoje)
+                .reduce((s, p) => s + p.valor, 0);
+
+            const mes = new Date().getMonth();
+
+            const mesTotal = pagos
+                .filter(p => new Date(p.pagoEm).getMonth() === mes)
+                .reduce((s, p) => s + p.valor, 0);
+
+            const ticket = pagos.length ? recebido / pagos.length : 0;
+
+            document.getElementById("kpiRecebido").innerText = money(recebido);
+            document.getElementById("kpiPendente").innerText = money(pendente);
+            document.getElementById("kpiHoje").innerText = money(hojeTotal);
+            document.getElementById("kpiMes").innerText = money(mesTotal);
+            document.getElementById("kpiTicket").innerText = money(ticket);
+
+            // 📈 Linha
+            const dias = {};
+            pagos.forEach(p => {
+                const d = new Date(p.pagoEm).toLocaleDateString("pt-BR");
+                dias[d] = (dias[d] || 0) + p.valor;
+            });
+
+            new Chart(document.getElementById("chartLinha"), {
+                type: "line",
+                data: {
+                    labels: Object.keys(dias),
+                    datasets: [{
+                        label: "Receita",
+                        data: Object.values(dias),
+                        fill: true
+                    }]
+                }
+            });
+
+            // 🥧 Pizza
+            const tipos = { AVULSO: 0, MENSALISTA: 0 };
+            pagos.forEach(p => tipos[p.tipo] += p.valor);
+
+            new Chart(document.getElementById("chartPizza"), {
+                type: "pie",
+                data: {
+                    labels: Object.keys(tipos),
+                    datasets: [{
+                        data: Object.values(tipos)
+                    }]
+                }
+            });
+
+            // 📊 Barra
+            const horas = {};
+            lista.forEach(p => {
+                const h = p.agendamento?.horaInicio || "Outros";
+                horas[h] = (horas[h] || 0) + 1;
+            });
+
+            new Chart(document.getElementById("chartBarra"), {
+                type: "bar",
+                data: {
+                    labels: Object.keys(horas),
+                    datasets: [{
+                        label: "Agendamentos",
+                        data: Object.values(horas)
+                    }]
+                }
+            });
+        }
+
+        carregar();
+    </script>
+
+</body>
+
+</html>
