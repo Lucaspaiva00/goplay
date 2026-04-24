@@ -1,11 +1,66 @@
+/* =========================
+   BASE VISUAL PREMIUM
+========================= */
+:root {
+    --bg: #f5f7fb;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #6b7280;
+
+    --primary: #0a2f4d;
+    --primary-light: #1e4f78;
+
+    --green: #16a34a;
+    --red: #dc2626;
+
+    --border: #e5e7eb;
+    --shadow: 0 10px 30px rgba(0, 0, 0, .08);
+}
+
+body {
+    background: var(--bg);
+}
+
+/* =========================
+   HERO (TOPO)
+========================= */
 .hero {
-    background: linear-gradient(135deg, #052845, #0a3b63);
+    background: linear-gradient(135deg, #0a2f4d, #1e4f78);
     color: #fff;
-    padding: 24px;
-    border-radius: 16px;
+    padding: 28px;
+    border-radius: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::after {
+    content: "";
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    top: -80px;
+    right: -80px;
+}
+
+.hero h1 {
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+}
+
+.hero p {
+    opacity: 0.85;
+    font-size: 14px;
+}
+
+.hero-value {
+    text-align: right;
 }
 
 .hero-value span {
@@ -15,81 +70,176 @@
 
 .hero-value strong {
     display: block;
-    font-size: 22px;
+    font-size: 28px;
     font-weight: 900;
+    margin-top: 4px;
 }
 
+/* =========================
+   KPIs
+========================= */
 .kpis {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px;
-    margin: 20px 0;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin: 22px 0;
 }
 
 .kpi {
-    background: #fff;
-    padding: 14px;
-    border-radius: 12px;
-    box-shadow: 0 6px 14px rgba(0, 0, 0, .08);
+    background: var(--card);
+    padding: 16px;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    transition: 0.25s ease;
+    border: 1px solid var(--border);
+    position: relative;
 }
 
-.kpi.destaque {
-    background: #0dbf45;
-    color: #fff;
+.kpi:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, .12);
 }
 
 .kpi span {
     font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
 }
 
 .kpi strong {
     display: block;
     margin-top: 6px;
-    font-size: 18px;
-    font-weight: 800;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--text);
 }
 
+.kpi.destaque {
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    color: #fff;
+    border: none;
+}
+
+.kpi.destaque strong,
+.kpi.destaque span {
+    color: #fff;
+}
+
+/* =========================
+   GRID
+========================= */
 .grid {
     display: grid;
     grid-template-columns: 2fr 1fr;
-    gap: 16px;
+    gap: 18px;
 }
 
+/* =========================
+   CARDS
+========================= */
 .card {
-    background: #fff;
-    padding: 16px;
-    border-radius: 14px;
-    box-shadow: 0 6px 14px rgba(0, 0, 0, .08);
+    background: var(--card);
+    padding: 18px;
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    transition: 0.2s;
 }
 
+.card:hover {
+    box-shadow: 0 20px 45px rgba(0, 0, 0, .12);
+}
+
+.card h3 {
+    font-size: 15px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    color: var(--text);
+}
+
+/* GRID AJUSTES */
 .card.big {
-    grid-column: 1 / 2;
+    grid-column: span 1;
 }
 
 .card.full {
     grid-column: 1 / -1;
 }
 
-.ranking .rank {
+/* =========================
+   RANKING
+========================= */
+.ranking {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.rank {
     display: flex;
     justify-content: space-between;
-    padding: 10px;
-    border-bottom: 1px solid #eee;
+    align-items: center;
+    background: #f9fafb;
+    padding: 12px;
+    border-radius: 12px;
+    transition: 0.2s;
+    border: 1px solid var(--border);
 }
 
+.rank:hover {
+    background: #eef2ff;
+}
+
+.rank span {
+    font-weight: 900;
+    color: var(--primary);
+}
+
+.rank strong {
+    flex: 1;
+    margin-left: 10px;
+}
+
+.rank b {
+    color: var(--green);
+}
+
+/* =========================
+   INSIGHTS
+========================= */
 .insight {
     background: #f3f4f6;
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 8px;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    border-left: 4px solid var(--primary);
+    margin-bottom: 10px;
 }
 
+/* =========================
+   CHART
+========================= */
 canvas {
-    height: 240px !important;
+    height: 260px !important;
 }
 
-@media(max-width:900px) {
+/* =========================
+   RESPONSIVO
+========================= */
+@media (max-width: 900px) {
+
+    .hero {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .hero-value {
+        text-align: left;
+    }
+
     .grid {
         grid-template-columns: 1fr;
     }
+
 }
