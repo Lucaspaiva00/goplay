@@ -7,39 +7,75 @@
     <title>Dashboard Executivo — GoPlay</title>
 
     <link rel="stylesheet" href="../css/goplay_home.css" />
+    <link rel="stylesheet" href="../css/society-dashboard.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <style>
-
-    </style>
 </head>
 
 <body class="with-sidebar">
 
     <main class="content">
 
+        <!-- HERO -->
         <div class="hero">
-            <h1>Dashboard Inteligente do Society</h1>
-            <p>Gestão completa da sua operação em tempo real</p>
+            <div>
+                <h1>Dashboard do Society</h1>
+                <p>Visão completa do seu faturamento e operação</p>
+            </div>
+
+            <div class="hero-value">
+                <span>Receita Total</span>
+                <strong id="receitaTotal"></strong>
+            </div>
         </div>
 
+        <!-- KPIs -->
         <div class="kpis">
-            <div class="kpi"><span>Receita Total</span><strong id="receitaTotal"></strong></div>
-            <div class="kpi"><span>Receita Mês</span><strong id="receitaMes"></strong></div>
-            <div class="kpi"><span>Hoje</span><strong id="receitaHoje"></strong></div>
-            <div class="kpi"><span>Pendente</span><strong id="pendente"></strong></div>
-            <div class="kpi"><span>Ticket Médio</span><strong id="ticket"></strong></div>
-            <div class="kpi"><span>Ocupação</span><strong id="ocupacao"></strong></div>
+
+            <div class="kpi destaque">
+                <span>Hoje</span>
+                <strong id="receitaHoje"></strong>
+            </div>
+
+            <div class="kpi">
+                <span>Este mês</span>
+                <strong id="receitaMes"></strong>
+            </div>
+
+            <div class="kpi">
+                <span>Pendente</span>
+                <strong id="pendente"></strong>
+            </div>
+
+            <div class="kpi">
+                <span>Ticket médio</span>
+                <strong id="ticket"></strong>
+            </div>
+
+            <div class="kpi">
+                <span>Ocupação</span>
+                <strong id="ocupacao"></strong>
+            </div>
+
         </div>
 
+        <!-- GRID PRINCIPAL -->
         <div class="grid">
-            <div class="card">
+
+            <!-- GRÁFICO PRINCIPAL -->
+            <div class="card big">
                 <h3>📈 Receita por dia</h3>
                 <canvas id="chartLinha"></canvas>
             </div>
 
+            <!-- RESUMO LATERAL -->
             <div class="card">
-                <h3>💰 Tipo de receita</h3>
+                <h3>💡 Insights</h3>
+                <div id="insights"></div>
+            </div>
+
+            <!-- GRÁFICOS SECUNDÁRIOS -->
+            <div class="card">
+                <h3>💰 Tipos de receita</h3>
                 <canvas id="chartPizza"></canvas>
             </div>
 
@@ -48,13 +84,13 @@
                 <canvas id="chartBarra"></canvas>
             </div>
 
-            <div class="card">
+            <!-- RANKING -->
+            <div class="card full">
                 <h3>🏆 Ranking de Times</h3>
-                <div id="rankingTimes"></div>
+                <div id="rankingTimes" class="ranking"></div>
             </div>
-        </div>
 
-        <div class="insights" id="insights"></div>
+        </div>
 
     </main>
 
@@ -91,8 +127,7 @@
 
             const ticket = pagos.length ? total / pagos.length : 0;
 
-            // OCUPAÇÃO (estimada)
-            const totalSlots = 12 * 30; // 12 horários por dia * mês
+            const totalSlots = 12 * 30;
             const ocupacao = (pagos.length / totalSlots) * 100;
 
             document.getElementById("receitaTotal").innerText = money(total);
@@ -102,34 +137,44 @@
             document.getElementById("ticket").innerText = money(ticket);
             document.getElementById("ocupacao").innerText = ocupacao.toFixed(1) + "%";
 
-            // 📈 Receita por dia
+            // 📈 linha
             const dias = {};
             pagos.forEach(p => {
                 const d = new Date(p.pagoEm).toLocaleDateString("pt-BR");
                 dias[d] = (dias[d] || 0) + p.valor;
             });
 
+            if (Object.keys(dias).length === 0) dias["Sem dados"] = 0;
+
             new Chart(chartLinha, {
                 type: "line",
                 data: {
                     labels: Object.keys(dias),
-                    datasets: [{ data: Object.values(dias), fill: true }]
+                    datasets: [{
+                        label: "Receita",
+                        data: Object.values(dias),
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
                 }
             });
 
-            // 🥧 Tipo
+            // 🥧 pizza
             const tipos = { AVULSO: 0, MENSALISTA: 0 };
             pagos.forEach(p => tipos[p.tipo] += p.valor);
 
             new Chart(chartPizza, {
-                type: "pie",
+                type: "doughnut",
                 data: {
                     labels: Object.keys(tipos),
-                    datasets: [{ data: Object.values(tipos) }]
+                    datasets: [{
+                        data: Object.values(tipos)
+                    }]
                 }
             });
 
-            // 📊 Horários
+            // 📊 barra
             const horas = {};
             lista.forEach(p => {
                 const h = p.agendamento?.horaInicio || "Outro";
@@ -140,11 +185,14 @@
                 type: "bar",
                 data: {
                     labels: Object.keys(horas),
-                    datasets: [{ data: Object.values(horas) }]
+                    datasets: [{
+                        label: "Reservas",
+                        data: Object.values(horas)
+                    }]
                 }
             });
 
-            // 🏆 Ranking Times
+            // ranking
             const ranking = {};
             pagos.forEach(p => {
                 const t = p.time?.nome || "Desconhecido";
@@ -154,25 +202,19 @@
             document.getElementById("rankingTimes").innerHTML =
                 Object.entries(ranking)
                     .sort((a, b) => b[1] - a[1])
-                    .map(([t, v]) => `<div>${t} — ${money(v)}</div>`)
-                    .join("");
+                    .map(([t, v], i) =>
+                        `<div class="rank">
+                            <span>#${i + 1}</span>
+                            <strong>${t}</strong>
+                            <b>${money(v)}</b>
+                        </div>`
+                    ).join("");
 
-            // 🧠 INSIGHTS AUTOMÁTICOS
+            // insights
             const insights = [];
 
-            if (ocupacao < 40) {
-                insights.push("⚠️ Baixa ocupação: você está perdendo dinheiro em horários vazios.");
-            }
-
-            const melhorHora = Object.entries(horas).sort((a, b) => b[1] - a[1])[0];
-            if (melhorHora) {
-                insights.push(`🔥 Horário mais forte: ${melhorHora[0]}`);
-            }
-
-            const melhorTime = Object.entries(ranking).sort((a, b) => b[1] - a[1])[0];
-            if (melhorTime) {
-                insights.push(`🏆 Time que mais gera receita: ${melhorTime[0]}`);
-            }
+            if (ocupacao < 40) insights.push("⚠️ Baixa ocupação");
+            if (ticket < 50) insights.push("💰 Ticket médio baixo");
 
             document.getElementById("insights").innerHTML =
                 insights.map(i => `<div class="insight">${i}</div>`).join("");
