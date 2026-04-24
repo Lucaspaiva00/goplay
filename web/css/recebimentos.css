@@ -1,0 +1,378 @@
+.finance-header {
+    background: linear-gradient(135deg, #052845, #0a3b63);
+    color: #fff;
+    border-radius: 22px;
+    padding: 24px;
+    box-shadow: 0 14px 35px rgba(5, 40, 69, .22);
+    margin: 18px auto;
+    max-width: 1100px;
+    position: relative;
+    overflow: hidden;
+}
+
+.finance-header::after {
+    content: "";
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 180px;
+    height: 180px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .08);
+}
+
+.finance-title {
+    font-size: 28px;
+    font-weight: 950;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.finance-subtitle {
+    opacity: .9;
+    font-size: 14px;
+    max-width: 680px;
+    line-height: 1.5;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+}
+
+.btn-action {
+    border: 1px solid rgba(255, 255, 255, .22);
+    background: rgba(255, 255, 255, .12);
+    color: #fff;
+    border-radius: 12px;
+    padding: 11px 14px;
+    font-weight: 900;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-action:hover {
+    background: rgba(255, 255, 255, .18);
+}
+
+.kpi-grid {
+    max-width: 1100px;
+    margin: 0 auto 18px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+}
+
+.kpi-card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 16px;
+    border: 1px solid #e8eef7;
+    box-shadow: 0 8px 22px rgba(16, 24, 40, .08);
+    min-height: 112px;
+}
+
+.kpi-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f7ff;
+    color: #052845;
+    margin-bottom: 10px;
+}
+
+.kpi-label {
+    font-size: 12px;
+    font-weight: 800;
+    color: #6b7280;
+    margin-bottom: 5px;
+}
+
+.kpi-value {
+    font-size: 20px;
+    font-weight: 950;
+    color: #052845;
+    line-height: 1.2;
+}
+
+.kpi-small {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 5px;
+}
+
+.card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 18px;
+    box-shadow: 0 8px 24px rgba(16, 24, 40, .08);
+    margin: 18px auto;
+    max-width: 1100px;
+    border: 1px solid #edf2f7;
+}
+
+.card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.card-title {
+    font-size: 20px;
+    font-weight: 950;
+    color: #052845;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.muted {
+    color: #6b7280;
+    font-size: 13px;
+    margin-top: 4px;
+}
+
+.pill {
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: #f7faff;
+    border: 1px solid #dbeafe;
+    color: #052845;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1.4fr auto;
+    gap: 10px;
+    align-items: end;
+    margin: 14px 0 18px;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 900;
+    color: #334155;
+}
+
+select,
+input {
+    width: 100%;
+    padding: 11px 12px;
+    border-radius: 12px;
+    border: 1px solid #dbe3ef;
+    background: #fff;
+    outline: none;
+    font-size: 14px;
+}
+
+select:focus,
+input:focus {
+    border-color: #052845;
+    box-shadow: 0 0 0 3px rgba(5, 40, 69, .10);
+}
+
+.btn-filter {
+    border: none;
+    background: #052845;
+    color: #fff;
+    border-radius: 12px;
+    padding: 12px 15px;
+    font-weight: 950;
+    cursor: pointer;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    min-width: 120px;
+}
+
+.btn-filter:hover {
+    background: #031e34;
+}
+
+.summary-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.summary-box {
+    background: #f8fafc;
+    border: 1px solid #e5edf7;
+    border-radius: 14px;
+    padding: 13px;
+}
+
+.summary-box small {
+    color: #64748b;
+    font-weight: 800;
+}
+
+.summary-box strong {
+    display: block;
+    color: #052845;
+    font-size: 18px;
+    margin-top: 4px;
+}
+
+.table-wrap {
+    overflow: auto;
+    border: 1px solid #eef2f6;
+    border-radius: 16px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1050px;
+}
+
+th,
+td {
+    padding: 13px 14px;
+    border-bottom: 1px solid #eef2f6;
+    text-align: left;
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+thead th {
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 950;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+
+tbody tr:hover {
+    background: #fbfdff;
+}
+
+.right {
+    text-align: right;
+}
+
+.money {
+    font-weight: 950;
+    color: #052845;
+    white-space: nowrap;
+}
+
+.desc {
+    color: #334155;
+    max-width: 260px;
+}
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 950;
+    white-space: nowrap;
+}
+
+.status.pago {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #bbf7d0;
+}
+
+.status.pendente {
+    background: #fff7ed;
+    color: #9a3412;
+    border: 1px solid #fed7aa;
+}
+
+.status.cancelado {
+    background: #fee2e2;
+    color: #7f1d1d;
+    border: 1px solid #fecaca;
+}
+
+.tipo {
+    display: inline-flex;
+    padding: 6px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 950;
+    background: #eff6ff;
+    color: #1e3a8a;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+}
+
+.empty {
+    padding: 28px;
+    text-align: center;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.loading {
+    padding: 18px;
+    color: #64748b;
+    font-weight: 800;
+}
+
+.alert-error {
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #7f1d1d;
+    border-radius: 14px;
+    padding: 13px;
+    font-weight: 800;
+    display: none;
+    margin-bottom: 14px;
+}
+
+@media(max-width: 1100px) {
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .filters {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .summary-strip {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media(max-width: 640px) {
+    .finance-title {
+        font-size: 22px;
+    }
+
+    .kpi-grid,
+    .filters {
+        grid-template-columns: 1fr;
+    }
+
+    .card,
+    .finance-header {
+        margin-left: 0;
+        margin-right: 0;
+    }
+}

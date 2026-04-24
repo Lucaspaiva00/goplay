@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Recebimentos — GoPlay</title>
+
+    <link rel="stylesheet" href="../css/goplay_home.css" />
+    <link rel="stylesheet" href="../css/recebimentos.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+</head>
+
+<body class="with-sidebar">
+
+    <aside id="sidebar" class="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+        <ul id="menuDynamic"></ul>
+    </aside>
+
+    <div id="overlay" class="overlay"></div>
+
+    <header class="topbar">
+        <button id="menuBtn" class="menu-btn"><i class="fa fa-bars"></i></button>
+        <h1 class="title">Recebimentos</h1>
+    </header>
+
+    <main class="content">
+
+        <section class="finance-header">
+            <div class="finance-title">
+                <i class="fa-solid fa-chart-line"></i>
+                Painel de Recebimentos
+            </div>
+            <div class="finance-subtitle">
+                Acompanhe tudo que entrou e está pendente no seu society: mensalidades, horários avulsos, pagamentos por time e histórico financeiro.
+            </div>
+
+            <div class="header-actions">
+                <button class="btn-action" id="btnAtualizar">
+                    <i class="fa-solid fa-rotate"></i> Atualizar
+                </button>
+                <button class="btn-action" id="btnExportar">
+                    <i class="fa-solid fa-file-csv"></i> Exportar CSV
+                </button>
+            </div>
+        </section>
+
+        <section class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-icon"><i class="fa-solid fa-wallet"></i></div>
+                <div class="kpi-label">Recebido</div>
+                <div class="kpi-value" id="kpiRecebido">R$ 0,00</div>
+                <div class="kpi-small">Somente pagamentos pagos</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+                <div class="kpi-label">Pendente</div>
+                <div class="kpi-value" id="kpiPendente">R$ 0,00</div>
+                <div class="kpi-small">Valores ainda não confirmados</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-icon"><i class="fa-solid fa-calendar-day"></i></div>
+                <div class="kpi-label">Hoje</div>
+                <div class="kpi-value" id="kpiHoje">R$ 0,00</div>
+                <div class="kpi-small">Recebido no dia atual</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-icon"><i class="fa-solid fa-calendar-days"></i></div>
+                <div class="kpi-label">Mês atual</div>
+                <div class="kpi-value" id="kpiMes">R$ 0,00</div>
+                <div class="kpi-small">Recebido neste mês</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-icon"><i class="fa-solid fa-receipt"></i></div>
+                <div class="kpi-label">Ticket médio</div>
+                <div class="kpi-value" id="kpiTicket">R$ 0,00</div>
+                <div class="kpi-small" id="kpiQtd">0 pagamento(s)</div>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-head">
+                <div>
+                    <div class="card-title">
+                        <i class="fa-solid fa-filter-circle-dollar"></i>
+                        Controle financeiro
+                    </div>
+                    <div class="muted">Filtre por período, status, tipo ou pesquise por time, campo e descrição.</div>
+                </div>
+                <div class="pill" id="pillResultado">0 registro(s)</div>
+            </div>
+
+            <div class="alert-error" id="msgErro"></div>
+
+            <div class="filters">
+                <div>
+                    <label>De</label>
+                    <input type="date" id="filtroDe">
+                </div>
+
+                <div>
+                    <label>Até</label>
+                    <input type="date" id="filtroAte">
+                </div>
+
+                <div>
+                    <label>Status</label>
+                    <select id="filtroStatus">
+                        <option value="">Todos</option>
+                        <option value="PAGO">Pago</option>
+                        <option value="PENDENTE">Pendente</option>
+                        <option value="CANCELADO">Cancelado</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Tipo</label>
+                    <select id="filtroTipo">
+                        <option value="">Todos</option>
+                        <option value="AVULSO">Avulso</option>
+                        <option value="MENSALISTA">Mensalista</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Buscar</label>
+                    <input type="text" id="filtroBusca" placeholder="Time, campo, descrição...">
+                </div>
+
+                <button class="btn-filter" id="btnFiltrar">
+                    <i class="fa-solid fa-magnifying-glass"></i> Filtrar
+                </button>
+            </div>
+
+            <div class="summary-strip">
+                <div class="summary-box">
+                    <small>Recebido no filtro</small>
+                    <strong id="resumoRecebido">R$ 0,00</strong>
+                </div>
+
+                <div class="summary-box">
+                    <small>Pendente no filtro</small>
+                    <strong id="resumoPendente">R$ 0,00</strong>
+                </div>
+
+                <div class="summary-box">
+                    <small>Total exibido</small>
+                    <strong id="resumoTotal">R$ 0,00</strong>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Time</th>
+                            <th>Campo</th>
+                            <th>Tipo</th>
+                            <th>Descrição</th>
+                            <th class="right">Valor</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody">
+                        <tr>
+                            <td colspan="7" class="loading">Carregando recebimentos...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="../js/goplay_home.js"></script>
+    <script src="../scripts/menu.js"></script>
+    <script src="../scripts/recebimentos.js"></script>
+</body>
+
+</html>
