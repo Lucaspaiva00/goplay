@@ -13,7 +13,6 @@ async function carregarHorarios() {
             return;
         }
 
-        // 🔥 pega society do dono
         const societies = await fetch(`${BASE_URL}/society/owner/${usuario.id}`)
             .then(r => r.json());
 
@@ -25,22 +24,28 @@ async function carregarHorarios() {
             return;
         }
 
-        const data = document.getElementById("data").value;
+        const dataSelecionada = document.getElementById("data").value;
 
-        if (!data) return;
+        if (!dataSelecionada) return;
 
-        // 🔥 busca horários
-        const lista = await fetch(`${BASE_URL}/agendamentos/society/${societyId}?data=${data}`)
+        const lista = await fetch(`${BASE_URL}/agendamentos/society/${societyId}`)
             .then(r => r.json());
+
+        const filtrados = lista.filter(a => {
+            const data = new Date(a.data || a.dataAgendamento || a.dia);
+            const selecionada = new Date(dataSelecionada);
+
+            return data.toDateString() === selecionada.toDateString();
+        });
 
         const div = document.getElementById("listaHorarios");
 
-        if (!lista.length) {
+        if (!filtrados.length) {
             div.innerHTML = "<p>Nenhum horário encontrado.</p>";
             return;
         }
 
-        div.innerHTML = lista.map(a => `
+        div.innerHTML = filtrados.map(a => `
             <div class="slot ${a.status}">
                 <div>
                     <strong>${a.horaInicio} - ${a.horaFim}</strong>
