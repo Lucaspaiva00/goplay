@@ -1,35 +1,90 @@
-.header {
+.agenda-header {
     display: flex;
-    justify-content: space-between;
-    margin-bottom: 16px;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+    font-weight: 700;
 }
 
-#data {
-    padding: 10px;
-    border-radius: 10px;
-    border: 1px solid #ddd;
+.agenda-header button {
+    background: #052845;
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
 }
 
-.slot {
+/* GRID */
+.agenda-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 120px;
-    padding: 14px;
-    border-bottom: 1px solid #eee;
-    font-weight: 500;
+    grid-template-columns: 90px repeat(7, 1fr);
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* HEADER DIAS */
+.day-header {
+    background: linear-gradient(135deg, #052845, #0a3b63);
+    color: #fff;
+    text-align: center;
+    padding: 12px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+/* COLUNA HORA */
+.hour {
+    background: #f3f4f6;
+    text-align: center;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+/* SLOT */
+.slot {
+    border: 1px solid #f1f5f9;
+    height: 75px;
+    padding: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .slot:hover {
-    background: #f9fafb;
+    background: #e0f2fe;
 }
 
-.slot.CONFIRMADO {
-    background: #ecfdf5;
+/* STATUS */
+.free {
+    background: #dcfce7;
+    color: #166534;
 }
 
-.slot.PENDENTE {
-    background: #fff7ed;
+.busy {
+    background: #fee2e2;
+    color: #991b1b;
 }
 
-.status {
-    font-weight: 700;
+.mine {
+    background: #fef9c3;
+    color: #92400e;
+}
+
+/* EVENTO */
+.event-title {
+    font-weight: 800;
+    font-size: 12px;
+}
+
+.event-sub {
+    font-size: 11px;
+    opacity: 0.7;
 }

@@ -3,13 +3,10 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>GoPlay – Horários</title>
+    <title>GoPlay – Ver Horários</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- BASE -->
     <link rel="stylesheet" href="../css/goplay_home.css">
-
-    <!-- PAGE -->
     <link rel="stylesheet" href="../css/horarios.css">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -32,24 +29,21 @@
         <button id="menuBtn" class="menu-btn">
             <i class="fa fa-bars"></i>
         </button>
-        <h1 class="title">Horários</h1>
+        <h1 class="title">Ver Horários</h1>
     </header>
 
-    <!-- CONTEÚDO -->
     <main class="content">
 
-        <div class="card">
-            <div class="header">
-                <h2>Agenda do Society</h2>
-                <input type="date" id="data">
-            </div>
-
-            <div id="listaHorarios"></div>
+        <div class="agenda-header">
+            <button onclick="voltarSemana()">◀</button>
+            <span id="rangeSemana"></span>
+            <button onclick="avancarSemana()">▶</button>
         </div>
+
+        <div id="agendaGrid" class="agenda-grid"></div>
 
     </main>
 
-    <!-- JS -->
     <script src="../js/goplay_home.js"></script>
     <script src="../scripts/menu.js"></script>
     <script src="../scripts/horarios.js"></script>

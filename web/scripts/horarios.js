@@ -1,68 +1,121 @@
 const BASE_URL = "https://goplay-dzlr.onrender.com";
 
+let semanaAtual = new Date();
+
 function getUsuario() {
     return JSON.parse(localStorage.getItem("usuarioLogado") || "null");
 }
 
-async function carregarHorarios() {
-    try {
-        const usuario = getUsuario();
-
-        if (!usuario?.id) {
-            alert("Sessão expirada");
-            return;
-        }
-
-        const societies = await fetch(`${BASE_URL}/society/owner/${usuario.id}`)
-            .then(r => r.json());
-
-        const societyId = societies?.[0]?.id;
-
-        if (!societyId) {
-            document.getElementById("listaHorarios").innerHTML =
-                "<p>Nenhum society encontrado.</p>";
-            return;
-        }
-
-        const dataSelecionada = document.getElementById("data").value;
-
-        if (!dataSelecionada) return;
-
-        const lista = await fetch(`${BASE_URL}/agendamentos/society/${societyId}`)
-            .then(r => r.json());
-
-        const filtrados = lista.filter(a => {
-            const data = new Date(a.data || a.dataAgendamento || a.dia);
-            const selecionada = new Date(dataSelecionada);
-
-            return data.toDateString() === selecionada.toDateString();
-        });
-
-        const div = document.getElementById("listaHorarios");
-
-        if (!filtrados.length) {
-            div.innerHTML = "<p>Nenhum horário encontrado.</p>";
-            return;
-        }
-
-        div.innerHTML = filtrados.map(a => `
-            <div class="slot ${a.status}">
-                <div>
-                    <strong>${a.horaInicio} - ${a.horaFim}</strong>
-                </div>
-
-                <div>${a.campo?.nome || "-"}</div>
-
-                <div>${a.time?.nome || "Livre"}</div>
-
-                <div class="status">${a.status}</div>
-            </div>
-        `).join("");
-
-    } catch (e) {
-        console.error(e);
-        alert("Erro ao carregar horários");
-    }
+function inicioSemana(data) {
+    const d = new Date(data);
+    const dia = d.getDay();
+    const diff = d.getDate() - dia;
+    return new Date(d.setDate(diff));
 }
 
-document.getElementById("data").addEventListener("change", carregarHorarios);
+function formatDate(d) {
+    return d.toISOString().split("T")[0];
+}
+
+function gerarSemana() {
+    const inicio = inicioSemana(semanaAtual);
+
+    const dias = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(inicio);
+        d.setDate(inicio.getDate() + i);
+        dias.push(d);
+    }
+
+    return dias;
+}
+
+async function carregarAgenda() {
+
+    const usuario = getUsuario();
+
+    const societies = await fetch(`${BASE_URL}/society/owner/${usuario.id}`)
+        .then(r => r.json());
+
+    const societyId = societies?.[0]?.id;
+
+    const agendamentos = await fetch(`${BASE_URL}/agendamentos/society/${societyId}`)
+        .then(r => r.json());
+
+    montarGrid(agendamentos);
+}
+
+function montarGrid(agendamentos) {
+
+    const grid = document.getElementById("agendaGrid");
+    grid.innerHTML = "";
+
+    const dias = gerarSemana();
+
+    document.getElementById("rangeSemana").innerText =
+        `${dias[0].toLocaleDateString()} - ${dias[6].toLocaleDateString()}`;
+
+    const horas = [
+        "18:00", "19:00", "20:00", "21:00", "22:00"
+    ];
+
+    // HEADER
+    grid.innerHTML += `<div></div>`;
+    dias.forEach(d => {
+        grid.innerHTML += `
+            <div class="day-header">
+                ${d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" })}
+            </div>
+        `;
+    });
+
+    // LINHAS
+    horas.forEach(hora => {
+
+        grid.innerHTML += `<div class="hour">${hora}</div>`;
+
+        dias.forEach(dia => {
+
+            const dataStr = formatDate(dia);
+
+            const ag = agendamentos.find(a => {
+                const dAg = formatDate(new Date(a.data || a.dataAgendamento));
+                return dAg === dataStr && a.horaInicio === hora;
+            });
+
+            let classe = "free";
+            let conteudo = `<div class="event-title">Livre</div>`;
+
+            if (ag) {
+                classe = "busy";
+                conteudo = `
+                    <div class="event-title">${ag.time?.nome || "Reservado"}</div>
+                    <div class="event-sub">${ag.campo?.nome || ""}</div>
+                `;
+            }
+
+            grid.innerHTML += `
+                <div class="slot ${classe}" onclick="clicarSlot('${dataStr}','${hora}')">
+                    ${conteudo}
+                </div>
+            `;
+        });
+
+    });
+}
+
+function clicarSlot(data, hora) {
+    location.href = `time-agendamento.html?data=${data}&hora=${hora}`;
+}
+
+function avancarSemana() {
+    semanaAtual.setDate(semanaAtual.getDate() + 7);
+    carregarAgenda();
+}
+
+function voltarSemana() {
+    semanaAtual.setDate(semanaAtual.getDate() - 7);
+    carregarAgenda();
+}
+
+document.addEventListener("DOMContentLoaded", carregarAgenda);
