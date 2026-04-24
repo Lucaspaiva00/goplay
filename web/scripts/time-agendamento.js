@@ -227,7 +227,7 @@ async function criarAgendamento() {
         el("acao").style.display = "none";
 
         setTimeout(() => {
-            window.location.href = `meus-pagamentos.html?timeId=${encodeURIComponent(timeSelecionadoId)}`;
+            window.location.href = `meus-agendamentos.html?timeId=${encodeURIComponent(timeSelecionadoId)}`;
         }, 1500);
 
     } catch (e) {
