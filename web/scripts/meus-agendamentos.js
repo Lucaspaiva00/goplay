@@ -25,7 +25,6 @@ async function fetchJSON(url, options = {}) {
 
 // 🔥 tenta pegar a data do jogo independente do nome que veio do backend
 function pickDataJogo(a) {
-    // mais comuns
     const v =
         a?.data ??
         a?.dataJogo ??
@@ -45,20 +44,17 @@ function pickDataJogo(a) {
 function dtBRDateOnly(value) {
     if (!value) return "-";
 
-    // se já vier Date
     if (value instanceof Date) {
         return Number.isNaN(value.getTime()) ? "-" : value.toLocaleDateString("pt-BR");
     }
 
     const s = String(value);
 
-    // se vier "YYYY-MM-DD"
     if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
         const x = new Date(`${s}T00:00:00`);
         return Number.isNaN(x.getTime()) ? "-" : x.toLocaleDateString("pt-BR");
     }
 
-    // se vier ISO com T
     const x = new Date(s);
     return Number.isNaN(x.getTime()) ? "-" : x.toLocaleDateString("pt-BR");
 }
@@ -130,13 +126,11 @@ async function carregarAgendamentosBackend() {
         }
     }
 
-    // ✅ ordena por data do jogo desc e horaInicio
     all.sort((a, b) => {
         const da = getTimeMsFromDateOnly(pickDataJogo(a));
         const db = getTimeMsFromDateOnly(pickDataJogo(b));
         if (!Number.isNaN(db) && !Number.isNaN(da) && db !== da) return db - da;
 
-        // fallback: createdAt
         const ca = new Date(a?.createdAt || 0).getTime();
         const cb = new Date(b?.createdAt || 0).getTime();
         if (cb !== ca) return cb - ca;
@@ -156,7 +150,6 @@ function aplicarFiltroLocal() {
 
     if (timeId) lista = lista.filter(a => Number(a.timeId) === Number(timeId));
 
-    // filtra por data do jogo (independente do nome do campo)
     if (from) {
         const f = new Date(`${from}T00:00:00`).getTime();
         lista = lista.filter(a => {
@@ -194,13 +187,21 @@ function renderTabela(lista) {
 
         const status = String(a.status || "").toUpperCase();
         const podeCancelar = status !== "CANCELADO";
+
         const btnCancelar = podeCancelar
             ? `<button class="btn-mini danger" onclick="cancelarAgendamento(${a.id})"><i class="fa-solid fa-ban"></i> Cancelar</button>`
             : "";
 
-        const pagId = a?.pagamento?.id || a?.pagamentoId || null;
-        const btnPag = pagId
-            ? `<button class="btn-mini ok" onclick="irParaPagamento(${pagId})"><i class="fa-solid fa-receipt"></i> Pagamento</button>`
+        // 🔥 CORREÇÃO AQUI
+        const pagamento = a?.pagamento || null;
+        const pagStatus = String(pagamento?.status || "").toUpperCase();
+
+        const podePagar = pagamento && pagStatus !== "CONFIRMADO" && pagStatus !== "CANCELADO";
+
+        const btnPag = podePagar
+            ? `<button class="btn-mini ok" onclick="irParaPagamento(${pagamento.id})">
+                <i class="fa-solid fa-receipt"></i> Pagar
+              </button>`
             : "";
 
         return `
