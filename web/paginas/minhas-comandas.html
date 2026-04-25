@@ -27,7 +27,7 @@
             <i class="fa fa-bars"></i>
         </button>
         <h1 class="title">
-           
+
         </h1>
     </header>
 
@@ -40,7 +40,27 @@
         </section>
 
     </main>
+    <div id="modalDetalheComanda" class="modal-overlay">
+        <div class="modal-box modal-large">
+            <button class="modal-close" onclick="fecharModalComanda()">
+                <i class="fa fa-times"></i>
+            </button>
 
+            <div class="modal-icon">
+                <i class="fa fa-receipt"></i>
+            </div>
+
+            <h3 id="tituloComanda">Comanda</h3>
+            <p id="subtituloComanda">Detalhes do consumo</p>
+
+            <div id="itensDetalheComanda" class="detalhe-itens"></div>
+
+            <div class="total-box" style="margin-top:20px;">
+                <span>Total</span>
+                <strong id="totalDetalheComanda">R$ 0,00</strong>
+            </div>
+        </div>
+    </div>
     <script src="../js/goplay_home.js"></script>
     <script src="../scripts/menu.js"></script>
     <script src="../scripts/minhas-comandas.js"></script>

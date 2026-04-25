@@ -564,3 +564,25 @@
     }
 
 }
+
+.detalhe-itens {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.badge.aberta {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.badge.fechada {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge.paga {
+    background: #dbeafe;
+    color: #1e3a8a;
+}
