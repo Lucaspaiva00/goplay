@@ -1,10 +1,12 @@
 const BASE_URL = "https://goplay-dzlr.onrender.com";
 
-const usuario = JSON.parse(localStorage.getItem("usuarioLogado"));
+const usuarioMC = JSON.parse(localStorage.getItem("usuarioLogado") || "null");
 
-if (!usuario?.id) {
+if (!usuarioMC?.id) {
     window.location.href = "login.html";
 }
+
+let societyId = localStorage.getItem("societyId");
 
 function money(v) {
     return Number(v || 0).toLocaleString("pt-BR", {
@@ -13,32 +15,53 @@ function money(v) {
     });
 }
 
-async function carregar() {
+async function fetchJSON(url) {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data?.error || "Erro");
+
+    return data;
+}
+
+async function carregarComandas() {
     try {
 
-        const res = await fetch(`${BASE_URL}/pagamentos/usuario/${usuario.id}`);
-        const data = await res.json();
+        if (!societyId) {
+            const lista = await fetchJSON(`${BASE_URL}/society/owner/${usuarioMC.id}`);
+            societyId = lista[0]?.id;
+            localStorage.setItem("societyId", societyId);
+        }
 
-        const lista = data.pagamentos || [];
+        const comandas = await fetchJSON(`${BASE_URL}/comanda/society/${societyId}`);
+
+        // 🔥 FILTRA SOMENTE AS DO USUÁRIO
+        const minhas = comandas.filter(c => Number(c.usuarioId) === Number(usuarioMC.id));
 
         const wrap = document.getElementById("listaMinhasComandas");
 
-        if (!lista.length) {
+        if (!minhas.length) {
             wrap.innerHTML = `<div class="empty-state">Você não possui comandas.</div>`;
             return;
         }
 
-        wrap.innerHTML = lista.map(p => `
+        wrap.innerHTML = minhas.map(c => `
             <div class="comanda-admin-card">
-                <h4>${p.descricao || "Comanda"}</h4>
-                <p>Status: ${p.status}</p>
-                <p>Valor: ${money(p.valor)}</p>
+                <div style="display:flex; justify-content:space-between;">
+                    <h4>#${c.codigo || c.id}</h4>
+                    <span class="badge ${c.status.toLowerCase()}">${c.status}</span>
+                </div>
+
+                <p><strong>Total:</strong> ${money(c.total)}</p>
+                <p><strong>Criada em:</strong> ${new Date(c.createdAt).toLocaleString("pt-BR")}</p>
             </div>
         `).join("");
 
     } catch (e) {
         console.error(e);
+        document.getElementById("listaMinhasComandas").innerHTML =
+            `<div class="empty-state">${e.message}</div>`;
     }
 }
 
-document.addEventListener("DOMContentLoaded", carregar);
+document.addEventListener("DOMContentLoaded", carregarComandas);
