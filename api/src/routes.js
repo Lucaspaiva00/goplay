@@ -13,6 +13,7 @@ const campeonatoController = require("./controller/campeonatoController");
 const jogoController = require("./controller/jogoController");
 const pagamentoController = require("./controller/pagamentoController");
 const agendamentoController = require("./controller/agendamentoController");
+const comandaController = require("./controller/comandaController");
 
 /* =========================
    AUTENTICAÇÃO / USUÁRIOS
@@ -140,7 +141,27 @@ router.post("/jogo/:id/finalizar", campeonatoController.finalizarJogo);
 // se quiser manter compatibilidade com front antigo, pode deixar temporariamente também:
 router.post("/campeonato/jogo/:id/finalizar", campeonatoController.finalizarJogo);
 
-// futura rota útil para dataHora / observacao do jogo
-// router.put("/jogo/:id/info", jogoController.updateInfo);
+router.post("/comanda", comandaController.abrir);
+
+// adicionar item
+router.post("/comanda/:id/item", comandaController.adicionarItem);
+
+// remover item
+router.delete("/comanda/item/:itemId", comandaController.removerItem);
+
+// listar comandas do society
+router.get("/comanda/society/:societyId", comandaController.listBySociety);
+
+// detalhe da comanda
+router.get("/comanda/:id", comandaController.readOne);
+
+// fechar comanda
+router.post("/comanda/:id/fechar", comandaController.fechar);
+
+// gerar pagamento da comanda
+router.post("/comanda/:id/gerar-pagamento", comandaController.gerarPagamento);
+
+// pagar comanda
+router.post("/comanda/:id/pagar", comandaController.pagar);
 
 module.exports = router;

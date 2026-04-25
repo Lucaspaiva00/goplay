@@ -19,6 +19,13 @@ enum TipoPagamento {
   CONSUMO_BAR
 }
 
+enum StatusComanda {
+  ABERTA
+  FECHADA
+  PAGA
+  CANCELADA
+}
+
 enum DesempateTipo {
   PENALTIS
   WO
@@ -151,8 +158,9 @@ model Usuario {
   eventosSaindo   JogoEvento[] @relation("EventoJogadorSaindo")
   eventosEntrando JogoEvento[] @relation("EventoJogadorEntrando")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  comandas  Comanda[]
 
   @@index([timeRelacionadoId])
   @@index([resetToken])
@@ -187,8 +195,9 @@ model Society {
   times          Time[]
   agendamentos   Agendamento[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  comandas  Comanda[]
 
   @@index([usuarioId])
 }
@@ -201,7 +210,8 @@ model Cardapio {
   nome  String
   preco Float
 
-  createdAt DateTime @default(now())
+  createdAt    DateTime      @default(now())
+  comandaItems ComandaItem[]
 
   @@index([societyId])
 }
@@ -276,6 +286,7 @@ model Time {
   jogoEventos       JogoEvento[]
   agendamentos      Agendamento[]
   pagamentos        Pagamento[]
+  comandas          Comanda[]
 
   @@unique([societyId, nome])
   @@index([societyId])
@@ -301,6 +312,9 @@ model Pagamento {
 
   agendamentoId Int?         @unique
   agendamento   Agendamento? @relation(fields: [agendamentoId], references: [id], onDelete: Cascade)
+
+  // 🔥 RELAÇÃO COM COMANDA (1:1)
+  comanda Comanda? @relation("ComandaPagamento")
 
   tipo      TipoPagamento
   valor     Float
@@ -623,4 +637,63 @@ model JogoEvento {
   @@index([jogadorId])
   @@index([jogadorSaindoId])
   @@index([jogadorEntrandoId])
+}
+
+model Comanda {
+  id Int @id @default(autoincrement())
+
+  societyId Int
+  society   Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  usuarioId Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  timeId Int?
+  time   Time? @relation(fields: [timeId], references: [id], onDelete: SetNull)
+
+  status StatusComanda @default(ABERTA)
+
+  total Float @default(0)
+
+  observacao String?
+
+  codigo String? @unique
+
+  fechadaEm DateTime?
+  pagaEm    DateTime?
+
+  // 🔥 RELAÇÃO COM ITENS
+  itens ComandaItem[]
+
+  // 🔥 RELAÇÃO COM PAGAMENTO (1:1 REAL)
+  pagamentoId Int?       @unique
+  pagamento   Pagamento? @relation("ComandaPagamento", fields: [pagamentoId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([societyId])
+  @@index([usuarioId])
+  @@index([timeId])
+  @@index([status])
+}
+
+model ComandaItem {
+  id Int @id @default(autoincrement())
+
+  comandaId Int
+  comanda   Comanda @relation(fields: [comandaId], references: [id], onDelete: Cascade)
+
+  cardapioId Int
+  cardapio   Cardapio @relation(fields: [cardapioId], references: [id], onDelete: Restrict)
+
+  nomeProduto   String
+  precoUnitario Float
+  quantidade    Int
+  total         Float
+
+  createdAt DateTime @default(now())
+
+  @@index([comandaId])
+  @@index([cardapioId])
 }
