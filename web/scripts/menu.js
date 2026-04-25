@@ -62,9 +62,6 @@ if (!window.menuLoaded) {
       <li onclick="location.href='comanda-admin.html'">
         <i class="fa fa-eye"></i> Comandas
       </li>
-      <li onclick="location.href='minhas-comandas.html'">
-      <i class="fa fa-receipt"></i> Minhas Comandas
-      </li>
       <li onclick="location.href='society-create.html'">
         <i class="fa fa-plus"></i> Cadastrar Society
       </li>
@@ -116,6 +113,9 @@ if (!window.menuLoaded) {
       </li>
       <li onclick="location.href='comanda.html'">
         <i class="fa fa-eye"></i> Comandas
+      </li>
+      <li onclick="location.href='minhas-comandas.html'">
+      <i class="fa fa-receipt"></i> Minhas Comandas
       </li>
       <li onclick="location.href='campeonatos-view.html'">
         <i class="fa fa-trophy"></i> Campeonatos
