@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>GoPlay – Comandas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="../css/goplay_home.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+        <ul id="menuDynamic"></ul>
+    </aside>
+
+    <div id="overlay" class="overlay"></div>
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <button id="menuBtn" class="menu-btn">
+            <i class="fa fa-bars"></i>
+        </button>
+        <h1 class="title">
+            <i class="fa fa-chart-line"></i> Comandas
+        </h1>
+    </header>
+
+    <!-- CONTEÚDO -->
+    <main class="content">
+
+        <!-- FILTROS -->
+        <div class="card">
+            <h2 class="section-title">📊 Filtros</h2>
+
+            <button class="btn navy" onclick="filtrar('ABERTA')">Abertas</button>
+            <button class="btn navy" onclick="filtrar('FECHADA')">Fechadas</button>
+            <button class="btn navy" onclick="filtrar('PAGA')">Pagas</button>
+        </div>
+
+        <!-- LISTA -->
+        <div class="card">
+            <h2 class="section-title">📋 Lista de Comandas</h2>
+
+            <div id="listaComandas"></div>
+        </div>
+
+    </main>
+
+    <script src="../js/goplay_home.js"></script>
+    <script src="../scripts/menu.js"></script>
+    <script src="../scripts/comanda-admin.js"></script>
+
+</body>
+
+</html>

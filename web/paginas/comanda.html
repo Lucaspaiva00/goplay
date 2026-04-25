@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>GoPlay – Comanda</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="../css/goplay_home.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+        <ul id="menuDynamic"></ul>
+    </aside>
+
+    <div id="overlay" class="overlay"></div>
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <button id="menuBtn" class="menu-btn">
+            <i class="fa fa-bars"></i>
+        </button>
+        <h1 class="title">
+            <i class="fa fa-receipt"></i> Comanda
+        </h1>
+    </header>
+
+    <!-- CONTEÚDO -->
+    <main class="content">
+
+        <!-- STATUS -->
+        <div class="card">
+            <h2 class="section-title">🧾 Minha Comanda</h2>
+
+            <div id="statusComanda"></div>
+
+            <div style="margin-top: 15px;">
+                <span class="chip">Status: <span id="statusTexto">-</span></span>
+            </div>
+        </div>
+
+        <!-- CARDÁPIO -->
+        <div class="card">
+            <h2 class="section-title">🍺 Cardápio</h2>
+
+            <div id="listaProdutos"></div>
+        </div>
+
+        <!-- ITENS -->
+        <div class="card">
+            <h2 class="section-title">🛒 Consumo</h2>
+
+            <div id="itensComanda"></div>
+
+            <div style="margin-top: 20px;">
+                <strong>Total: R$ <span id="totalComanda">0.00</span></strong>
+            </div>
+
+            <button class="btn green" onclick="fecharComanda()">
+                <i class="fa fa-check"></i> Fechar Comanda
+            </button>
+        </div>
+
+    </main>
+
+    <script src="../js/goplay_home.js"></script>
+    <script src="../scripts/menu.js"></script>
+    <script src="../scripts/comanda.js"></script>
+
+</body>
+
+</html>

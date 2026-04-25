@@ -551,3 +551,28 @@ label {
     margin: 0;
     cursor: pointer;
 }
+
+.produto {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.produto button {
+    background: #0dbf45;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.comanda {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
