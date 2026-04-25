@@ -330,7 +330,7 @@ function renderComanda() {
 
     const total = Number(comandaAtual?.total || 0);
 
-    const heroTotal = el("heroTotalComanda");
+    const heroTotal = el("totalComandaHero");
     if (heroTotal) heroTotal.textContent = money(total);
 
     const totalEl = el("totalComanda") || el("total");

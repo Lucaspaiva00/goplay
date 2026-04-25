@@ -545,3 +545,22 @@
     gap: 10px;
     margin-top: 10px;
 }
+
+/* =========================
+   FIX MOBILE CARDÁPIO
+========================= */
+@media (max-width: 768px) {
+
+    .comanda-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .produtos-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .produto-card {
+        width: 100%;
+    }
+
+}

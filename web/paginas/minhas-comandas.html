@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Minhas Comandas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="../css/goplay_home.css">
+    <link rel="stylesheet" href="../css/comanda.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+
+    <aside id="sidebar" class="sidebar">
+        <div class="logo-area">
+            <h2>GoPlay</h2>
+        </div>
+        <ul id="menuDynamic"></ul>
+    </aside>
+
+    <div id="overlay" class="overlay"></div>
+
+    <header class="topbar">
+        <button id="menuBtn" class="menu-btn">
+            <i class="fa fa-bars"></i>
+        </button>
+        <h1 class="title">
+            <i class="fa fa-receipt"></i> Minhas Comandas
+        </h1>
+    </header>
+
+    <main class="content">
+
+        <section class="comanda-card">
+            <div id="listaMinhasComandas">
+                <div class="loading">Carregando comandas...</div>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="../js/goplay_home.js"></script>
+    <script src="../scripts/menu.js"></script>
+    <script src="../scripts/minhas-comandas.js"></script>
+
+</body>
+
+</html>
