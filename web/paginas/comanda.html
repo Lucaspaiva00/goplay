@@ -7,12 +7,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="../css/goplay_home.css">
+    <link rel="stylesheet" href="../css/comanda.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
 <body>
 
-    <!-- SIDEBAR -->
     <aside id="sidebar" class="sidebar">
         <div class="logo-area">
             <h2>GoPlay</h2>
@@ -22,53 +22,105 @@
 
     <div id="overlay" class="overlay"></div>
 
-    <!-- TOPBAR -->
     <header class="topbar">
         <button id="menuBtn" class="menu-btn">
             <i class="fa fa-bars"></i>
         </button>
         <h1 class="title">
-            <i class="fa fa-receipt"></i> Comanda
+            <i class="fa fa-receipt"></i> Minha Comanda
         </h1>
     </header>
 
-    <!-- CONTEÚDO -->
     <main class="content">
 
-        <!-- STATUS -->
-        <div class="card">
-            <h2 class="section-title">🧾 Minha Comanda</h2>
-
-            <div id="statusComanda"></div>
-
-            <div style="margin-top: 15px;">
-                <span class="chip">Status: <span id="statusTexto">-</span></span>
-            </div>
-        </div>
-
-        <!-- CARDÁPIO -->
-        <div class="card">
-            <h2 class="section-title">🍺 Cardápio</h2>
-
-            <div id="listaProdutos"></div>
-        </div>
-
-        <!-- ITENS -->
-        <div class="card">
-            <h2 class="section-title">🛒 Consumo</h2>
-
-            <div id="itensComanda"></div>
-
-            <div style="margin-top: 20px;">
-                <strong>Total: R$ <span id="totalComanda">0.00</span></strong>
+        <section class="comanda-hero">
+            <div>
+                <h2>Comanda do Bar</h2>
+                <p>Abra sua comanda, adicione produtos do cardápio e acompanhe o consumo em tempo real.</p>
             </div>
 
-            <button class="btn green" onclick="fecharComanda()">
-                <i class="fa fa-check"></i> Fechar Comanda
+            <div class="comanda-hero-total">
+                <span>Total atual</span>
+                <strong id="totalComandaHero">R$ 0,00</strong>
+            </div>
+        </section>
+
+        <section class="comanda-status-card">
+            <div>
+                <span class="status-label">Status da comanda</span>
+                <strong id="statusComanda">Nenhuma comanda aberta</strong>
+            </div>
+
+            <button class="btn-open-comanda" id="btnAbrirComanda">
+                <i class="fa fa-plus"></i> Abrir Comanda
             </button>
-        </div>
+        </section>
+
+        <section class="comanda-layout">
+
+            <div class="comanda-card produtos-card">
+                <div class="comanda-card-head">
+                    <div>
+                        <h3><i class="fa fa-utensils"></i> Cardápio</h3>
+                        <p>Escolha os produtos consumidos no bar.</p>
+                    </div>
+                </div>
+
+                <div id="listaProdutos" class="produtos-grid">
+                    <div class="loading">Carregando cardápio...</div>
+                </div>
+            </div>
+
+            <div class="comanda-card resumo-card">
+                <div class="comanda-card-head">
+                    <div>
+                        <h3><i class="fa fa-basket-shopping"></i> Consumo</h3>
+                        <p>Itens adicionados na comanda.</p>
+                    </div>
+                </div>
+
+                <div id="itensComanda" class="itens-list">
+                    <div class="empty-state">Nenhum item adicionado.</div>
+                </div>
+
+                <div class="total-box">
+                    <span>Total</span>
+                    <strong id="totalComanda">R$ 0,00</strong>
+                </div>
+
+                <button class="btn-fechar" id="btnFecharComanda">
+                    <i class="fa fa-lock"></i> Fechar Comanda
+                </button>
+            </div>
+
+        </section>
 
     </main>
+
+    <div id="modalProduto" class="modal-overlay">
+        <div class="modal-box">
+            <button class="modal-close" id="btnFecharModal">
+                <i class="fa fa-times"></i>
+            </button>
+
+            <div class="modal-icon">
+                <i class="fa fa-cart-plus"></i>
+            </div>
+
+            <h3 id="modalProdutoNome">Produto</h3>
+            <p id="modalProdutoPreco">R$ 0,00</p>
+
+            <div class="quantidade-box">
+                <button id="btnMenos">-</button>
+                <strong id="quantidadeProduto">1</strong>
+                <button id="btnMais">+</button>
+            </div>
+
+            <button class="btn-confirmar-item" id="btnConfirmarItem">
+                Adicionar à comanda
+            </button>
+        </div>
+    </div>
 
     <script src="../js/goplay_home.js"></script>
     <script src="../scripts/menu.js"></script>

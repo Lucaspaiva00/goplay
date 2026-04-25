@@ -59,6 +59,9 @@ if (!window.menuLoaded) {
       <li onclick="abrirMeuSocietyMenu()">
         <i class="fa fa-futbol"></i> Meu Society
       </li>
+      <li onclick="location.href='comanda-admin.html'">
+        <i class="fa fa-eye"></i> Comandas
+      </li>
       <li onclick="location.href='society-create.html'">
         <i class="fa fa-plus"></i> Cadastrar Society
       </li>
@@ -78,6 +81,9 @@ if (!window.menuLoaded) {
     html += `
       <li onclick="location.href='societies.html'">
         <i class="fa fa-eye"></i> Ver Societies
+      </li>
+      <li onclick="location.href='comanda.html'">
+        <i class="fa fa-eye"></i> Comandas
       </li>
       <li onclick="location.href='times.html'">
         <i class="fa fa-users"></i> Meus Times
@@ -101,6 +107,9 @@ if (!window.menuLoaded) {
     html += `
       <li onclick="location.href='societies.html'">
         <i class="fa fa-eye"></i> Ver Societies
+      </li>
+      <li onclick="location.href='comanda.html'">
+        <i class="fa fa-eye"></i> Comandas
       </li>
       <li onclick="location.href='campeonatos-view.html'">
         <i class="fa fa-trophy"></i> Campeonatos
