@@ -218,7 +218,7 @@ function alterarQuantidade(delta) {
     if (quantidadeSelecionada < 1) quantidadeSelecionada = 1;
     if (quantidadeSelecionada > 99) quantidadeSelecionada = 99;
 
-    const qtd = el("qtdProduto") || el("qtd");
+    const qtd = el("quantidadeProduto");
     if (qtd) qtd.textContent = String(quantidadeSelecionada);
 }
 
@@ -381,7 +381,13 @@ function escapeHtml(s) {
 
 document.addEventListener("DOMContentLoaded", async () => {
     const modal = el("modalProduto") || el("modal");
+    const modalBox = document.querySelector(".modal-box");
 
+    if (modalBox) {
+        modalBox.addEventListener("click", (e) => {
+            e.stopPropagation();
+        });
+    }
     if (modal) {
         modal.addEventListener("click", (e) => {
             if (e.target === modal) fecharModalProduto();
@@ -399,6 +405,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const btnModalClose = el("btnFecharModal") || el("btnCancelarModal");
     if (btnModalClose) btnModalClose.onclick = fecharModalProduto;
+
+    const btnMais = el("btnMais");
+    const btnMenos = el("btnMenos");
+
+    if (btnMais) {
+        btnMais.addEventListener("click", (e) => {
+            e.stopPropagation();
+            alterarQuantidade(1);
+        });
+    }
+
+    if (btnMenos) {
+        btnMenos.addEventListener("click", (e) => {
+            e.stopPropagation();
+            alterarQuantidade(-1);
+        });
+    }
 
     await buscarComandaAbertaDoUsuario();
     await carregarCardapio();
