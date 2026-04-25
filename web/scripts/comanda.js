@@ -192,16 +192,16 @@ function abrirModalProduto(produtoId) {
     produtoSelecionado = produto;
     quantidadeSelecionada = 1;
 
-    const nome = el("nomeProdutoModal") || el("produtoNome");
-    const preco = el("precoProdutoModal");
-    const qtd = el("qtdProduto") || el("qtd");
+    // ✅ IDs CORRETOS DO HTML
+    const nome = el("modalProdutoNome");
+    const preco = el("modalProdutoPreco");
+    const qtd = el("quantidadeProduto");
 
     if (nome) nome.textContent = produto.nome;
     if (preco) preco.textContent = money(produto.preco);
-    if (qtd) qtd.textContent = String(quantidadeSelecionada);
+    if (qtd) qtd.textContent = quantidadeSelecionada;
 
-    const modal = el("modalProduto") || el("modal");
-    if (modal) modal.classList.add("show");
+    el("modalProduto").classList.add("show");
 }
 
 function fecharModalProduto() {
