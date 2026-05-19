@@ -151,7 +151,6 @@ const create = async (req, res) => {
 /* ======================================================
    LIST ALL
 ====================================================== */
-
 const listAll = async (req, res) => {
 
     try {
@@ -160,7 +159,15 @@ const listAll = async (req, res) => {
             await prisma.campeonato.findMany({
 
                 include: {
-                    society: true
+                    society: true,
+
+                    times: {
+                        include: {
+                            time: true
+                        }
+                    },
+
+                    jogos: true
                 },
 
                 orderBy: {
@@ -175,7 +182,7 @@ const listAll = async (req, res) => {
         console.error(err);
 
         return res.status(500).json({
-            error: "Erro ao listar."
+            error: "Erro ao listar campeonatos."
         });
     }
 };
@@ -199,7 +206,16 @@ const listBySociety = async (req, res) => {
                 },
 
                 include: {
-                    society: true
+
+                    society: true,
+
+                    times: {
+                        include: {
+                            time: true
+                        }
+                    },
+
+                    jogos: true
                 },
 
                 orderBy: {
@@ -214,7 +230,7 @@ const listBySociety = async (req, res) => {
         console.error(err);
 
         return res.status(500).json({
-            error: "Erro ao listar."
+            error: "Erro ao listar campeonatos."
         });
     }
 };
