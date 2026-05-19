@@ -1,86 +1,337 @@
-/* ============================================
-   CAMPEONATOS – LISTAGEM PREMIUM
-============================================ */
+/* =========================================
+   HERO
+========================================= */
 
-/* .campeonatos-wrapper {
+.hero-campeonatos {
     width: 100%;
-    max-width: 900px;
-    margin: 0 auto;
-} */
-
-.titulo-pagina {
-    text-align: center;
-    font-size: 28px;
-    font-weight: 600;
-    color: #0a2240;
-    margin-bottom: 25px;
+    background:
+        linear-gradient(135deg,
+            #052845 0%,
+            #0a3b63 100%);
+    border-radius: 24px;
+    padding: 42px;
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+    align-items: center;
+    color: white;
+    margin-bottom: 32px;
+    overflow: hidden;
+    position: relative;
 }
 
-/* BOTÃO NOVO CAMPEONATO */
-.btn-novo-campeonato {
-    background: #0a2240;
-    color: #fff;
-    font-weight: 600;
-    border: none;
-    padding: 14px 18px;
-    border-radius: 10px;
-    cursor: pointer;
-    width: 100%;
-    margin-bottom: 30px;
-    transition: 0.2s ease;
+.hero-campeonatos::before {
+    content: "";
+    position: absolute;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    top: -120px;
+    right: -100px;
+}
+
+.hero-left {
+    flex: 1;
+    position: relative;
+    z-index: 2;
+}
+
+.hero-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 18px;
+}
+
+.hero-left h1 {
+    font-size: 44px;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    font-weight: 900;
+}
+
+.hero-left h1 span {
+    color: #38bdf8;
+}
+
+.hero-left p {
     font-size: 16px;
+    line-height: 1.7;
+    max-width: 620px;
+    opacity: 0.92;
 }
 
-.btn-novo-campeonato:hover {
-    background: #183b68;
-}
-
-/* CARD DO CAMPEONATO */
-.card-campeonato {
-    background: #fff;
-    padding: 22px;
+.btn-criar {
+    margin-top: 28px;
+    background: white;
+    color: #052845;
+    border: none;
     border-radius: 14px;
-    margin: 0 auto 25px auto;
+    padding: 16px 22px;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: .25s ease;
+}
+
+.btn-criar:hover {
+    transform: translateY(-2px);
+}
+
+.hero-right {
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    z-index: 2;
+}
+
+.hero-stat {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 18px;
+    padding: 22px;
+    backdrop-filter: blur(10px);
+}
+
+.hero-stat strong {
+    display: block;
+    font-size: 34px;
+    font-weight: 900;
+    margin-bottom: 6px;
+}
+
+.hero-stat span {
+    font-size: 14px;
+    opacity: .9;
+}
+
+/* =========================================
+   SECTION
+========================================= */
+
+.lista-section {
     width: 100%;
-    max-width: 100px;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-    transition: 0.25s ease;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 26px;
+}
+
+.section-header h2 {
+    font-size: 28px;
+    color: #052845;
+    margin-bottom: 6px;
+}
+
+.section-header p {
+    color: #6b7280;
+}
+
+/* =========================================
+   GRID
+========================================= */
+
+.campeonatos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 22px;
+}
+
+/* =========================================
+   CARD
+========================================= */
+
+.card-campeonato {
+    background: white;
+    border-radius: 22px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: .25s ease;
+    border: 1px solid #e5e7eb;
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .card-campeonato:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+    transform: translateY(-5px);
+    box-shadow:
+        0 12px 28px rgba(0, 0, 0, 0.10);
 }
 
-.card-campeonato h3 {
-    margin: 0 0 5px;
-    font-size: 19px;
-    color: #0a2240;
+.card-campeonato::before {
+    content: "";
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    background:
+        linear-gradient(135deg,
+            rgba(5, 40, 69, .08),
+            rgba(56, 189, 248, .08));
+    border-radius: 50%;
+    top: -40px;
+    right: -30px;
 }
 
-.card-campeonato .tipo {
+.card-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 18px;
+    position: relative;
+    z-index: 2;
+}
+
+.card-top h3 {
+    font-size: 24px;
+    color: #052845;
+    line-height: 1.2;
+    font-weight: 800;
+}
+
+.badge-status {
+    background: #eff6ff;
+    color: #052845;
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    border: 1px solid #dbeafe;
+    white-space: nowrap;
+}
+
+.card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 22px;
+    position: relative;
+    z-index: 2;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 12px 14px;
     font-size: 14px;
-    color: #666;
 }
 
-.card-campeonato .times {
-    margin-top: 6px;
-    font-size: 15px;
-    color: #222;
-}
-
-.card-btn {
-    margin-top: 15px;
-    padding: 10px 16px;
-    background: #0a2240;
-    color: #fff;
+.info-item span {
+    color: #6b7280;
     font-weight: 600;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: 0.2s ease;
 }
 
-.card-btn:hover {
-    background: #183b68;
+.info-item strong {
+    color: #052845;
+    font-size: 15px;
+}
+
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+}
+
+.card-footer button {
+    border: none;
+    background:
+        linear-gradient(135deg,
+            #052845,
+            #0a3b63);
+    color: white;
+    height: 46px;
+    padding: 0 18px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .25s ease;
+}
+
+.card-footer button:hover {
+    opacity: .92;
+}
+
+.card-chip {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+/* =========================================
+   EMPTY
+========================================= */
+
+.loading-card,
+.empty-card {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    border: 1px dashed #cbd5e1;
+    color: #64748b;
+    font-size: 16px;
+}
+
+/* =========================================
+   RESPONSIVO
+========================================= */
+
+@media(max-width: 900px) {
+
+    .hero-campeonatos {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 28px;
+    }
+
+    .hero-right {
+        width: 100%;
+    }
+
+    .hero-left h1 {
+        font-size: 34px;
+    }
+
+}
+
+@media(max-width: 640px) {
+
+    .content {
+        padding: 18px;
+    }
+
+    .hero-left h1 {
+        font-size: 28px;
+    }
+
+    .section-header h2 {
+        font-size: 22px;
+    }
+
+    .campeonatos-grid {
+        grid-template-columns: 1fr;
+    }
+
 }
