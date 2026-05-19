@@ -1,66 +1,197 @@
-/* CONTAINER GERAL */
+/* =========================================
+   CREATE CAMPEONATO
+========================================= */
+
 .create-wrapper {
+
     width: 100%;
-    max-width: 600px;
+    max-width: 900px;
+
     margin: 0 auto;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    padding: 40px 20px 80px;
 }
 
-/* Título */
+/* TÍTULO */
+
 .titulo-pagina {
-    text-align: center;
-    font-size: 28px;
-    font-weight: 600;
-    color: #0a2240;
-    margin-bottom: 25px;
-}
 
-/* CARD BRANCO */
-.card-form {
-    background: #fff;
-    padding: 25px;
-    border-radius: 14px;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-}
-
-/* Labels */
-.label {
-    font-size: 14px;
-    font-weight: 600;
-    color: #0a2240;
-    margin-bottom: 6px;
-    display: block;
-}
-
-/* Inputs */
-.input {
     width: 100%;
-    padding: 12px;
-    margin-bottom: 18px;
-    border-radius: 10px;
-    border: 1px solid #d0d4db;
+
+    text-align: center;
+
+    font-size: 42px;
+    font-weight: 900;
+
+    color: #052845;
+
+    margin-bottom: 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+}
+
+/* CARD */
+
+.card-form {
+
+    width: 100%;
+    max-width: 1100px;
+
+    background: #ffffff;
+
+    border-radius: 24px;
+
+    padding: 34px;
+
+    border: 1px solid #e7edf5;
+
+    box-shadow:
+        0 10px 35px rgba(15, 23, 42, 0.06);
+
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* GRID */
+
+.form-grid {
+
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+
+    gap: 22px;
+}
+
+/* FULL WIDTH */
+
+.full-width {
+
+    grid-column: 1 / -1;
+}
+
+/* LABEL */
+
+.label {
+
+    display: block;
+
+    margin-bottom: 8px;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    color: #052845;
+}
+
+/* INPUTS */
+
+.input {
+
+    width: 100%;
+
+    height: 56px;
+
+    padding: 0 16px;
+
+    border-radius: 14px;
+
+    border: 1px solid #d9e2ee;
+
     background: #f8fafc;
+
     font-size: 15px;
+
+    transition: 0.2s ease;
+}
+
+textarea.input {
+
+    height: 130px;
+
+    padding-top: 14px;
+
+    resize: vertical;
 }
 
 .input:focus {
-    border-color: #0a2240;
+
     outline: none;
+
+    border-color: #052845;
+
+    background: #fff;
+
+    box-shadow:
+        0 0 0 4px rgba(5, 40, 69, 0.08);
 }
 
-/* Botão */
+/* BOTÃO */
+
 .btn-salvar {
+
     width: 100%;
-    padding: 14px;
-    background: #0a2240;
-    border-radius: 10px;
+
+    height: 58px;
+
     border: none;
-    font-size: 16px;
-    font-weight: 600;
+
+    border-radius: 16px;
+
+    background: linear-gradient(135deg,
+            #052845,
+            #0a3d68);
+
     color: #fff;
+
+    font-size: 16px;
+    font-weight: 800;
+
     cursor: pointer;
-    transition: 0.25s;
+
+    transition: 0.25s ease;
+
+    margin-top: 10px;
 }
 
 .btn-salvar:hover {
-    background: #183b68;
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 12px 30px rgba(5, 40, 69, 0.20);
+}
+
+/* MOBILE */
+
+@media (max-width: 900px) {
+
+    .create-wrapper {
+
+        padding: 24px 16px 60px;
+    }
+
+    .titulo-pagina {
+
+        font-size: 30px;
+    }
+
+    .card-form {
+
+        padding: 22px;
+        border-radius: 18px;
+    }
+
+    .form-grid {
+
+        grid-template-columns: 1fr;
+    }
 }
