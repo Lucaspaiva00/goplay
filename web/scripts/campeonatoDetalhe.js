@@ -188,67 +188,67 @@ async function carregarDetalhes(force = false) {
    INFO
 ===================================================== */
 
-function renderCampeonatoInfo(c) {
-    const el = document.getElementById("campeonatoInfo");
-    if (!el) return;
+// function renderCampeonatoInfo(c) {
+//     const el = document.getElementById("campeonatoInfo");
+//     if (!el) return;
 
-    const totalTimes = c.times?.length || 0;
-    const totalJogos = c.jogos?.length || 0;
-    const jogosFinalizados = (c.jogos || []).filter(j => j.finalizado).length;
-    const jogosPendentes = totalJogos - jogosFinalizados;
+//     const totalTimes = c.times?.length || 0;
+//     const totalJogos = c.jogos?.length || 0;
+//     const jogosFinalizados = (c.jogos || []).filter(j => j.finalizado).length;
+//     const jogosPendentes = totalJogos - jogosFinalizados;
 
-    el.innerHTML = `
-        <div class="item">
-            <strong>Nome:</strong>
-            ${escapeHTML(c.nome || "—")}
-        </div>
+//     el.innerHTML = `
+//         <div class="item">
+//             <strong>Nome:</strong>
+//             ${escapeHTML(c.nome || "—")}
+//         </div>
 
-        <div class="item">
-            <strong>Formato:</strong>
-            Liga Ida e Volta
-        </div>
+//         <div class="item">
+//             <strong>Formato:</strong>
+//             Liga Ida e Volta
+//         </div>
 
-        <div class="item">
-            <strong>Times:</strong>
-            ${totalTimes}/${c.maxTimes}
-        </div>
+//         <div class="item">
+//             <strong>Times:</strong>
+//             ${totalTimes}/${c.maxTimes}
+//         </div>
 
-        <div class="item">
-            <strong>Jogos:</strong>
-            ${totalJogos}/${(c.maxTimes / 4) * 12}
-        </div>
+//         <div class="item">
+//             <strong>Jogos:</strong>
+//             ${totalJogos}/${(c.maxTimes / 4) * 12}
+//         </div>
 
-        <div class="item">
-            <strong>Finalizados:</strong>
-            ${jogosFinalizados}
-        </div>
+//         <div class="item">
+//             <strong>Finalizados:</strong>
+//             ${jogosFinalizados}
+//         </div>
 
-        <div class="item">
-            <strong>Pendentes:</strong>
-            ${jogosPendentes}
-        </div>
+//         <div class="item">
+//             <strong>Pendentes:</strong>
+//             ${jogosPendentes}
+//         </div>
 
-        <div class="item">
-            <strong>Status:</strong>
-            ${escapeHTML(getStatusLabel(c.status))}
-        </div>
+//         <div class="item">
+//             <strong>Status:</strong>
+//             ${escapeHTML(getStatusLabel(c.status))}
+//         </div>
 
-        <div class="item">
-            <strong>Fase atual:</strong>
-            ${escapeHTML(c.faseAtual || "LIGA")}
-        </div>
+//         <div class="item">
+//             <strong>Fase atual:</strong>
+//             ${escapeHTML(c.faseAtual || "LIGA")}
+//         </div>
 
-        <div class="item">
-            <strong>Início:</strong>
-            ${escapeHTML(formatDate(c.dataInicio))}
-        </div>
+//         <div class="item">
+//             <strong>Início:</strong>
+//             ${escapeHTML(formatDate(c.dataInicio))}
+//         </div>
 
-        <div class="item">
-            <strong>Fim:</strong>
-            ${escapeHTML(formatDate(c.dataFim))}
-        </div>
-    `;
-}
+//         <div class="item">
+//             <strong>Fim:</strong>
+//             ${escapeHTML(formatDate(c.dataFim))}
+//         </div>
+//     `;
+// }
 
 /* =====================================================
    AÇÕES
