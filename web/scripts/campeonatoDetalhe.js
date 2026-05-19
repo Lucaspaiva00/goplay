@@ -552,7 +552,7 @@ async function gerarLiga() {
     setBtnLoading(btn, true);
 
     try {
-        await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/generate`, {
+        await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/generate-league`, {
             method: "POST",
         });
 

@@ -349,79 +349,76 @@ router.get(
    "/pagamentos/:id",
    pagamentoController.readOne
 );
+/* ======================================================
+   CAMPEONATO
+====================================================== */
 
-/* =====================================================
-   CAMPEONATOS
-===================================================== */
+routes.post("/campeonato", campeonato.create);
 
-router.post(
-   "/campeonato",
-   campeonatoController.create
-);
+routes.get("/campeonato", campeonato.listAll);
 
-router.get(
-   "/campeonato",
-   campeonatoController.listAll
-);
-
-router.get(
+routes.get(
    "/campeonato/society/:societyId",
-   campeonatoController.listBySociety
+   campeonato.listBySociety
 );
 
-router.get(
+routes.get(
    "/campeonato/:id",
-   campeonatoController.readOne
+   campeonato.readOne
 );
 
-router.post(
+routes.post(
    "/campeonato/:id/add-time",
-   campeonatoController.addTime
+   campeonato.addTime
 );
 
-router.post(
-   "/campeonato/:id/generate",
-   campeonatoController.generateLeague
-);
-
-router.post(
-   "/campeonato/:id/generate-league",
-   campeonatoController.generateLeague
-);
-
-router.get(
-   "/campeonato/:id/ranking",
-   campeonatoController.ranking
-);
-
-router.get(
-   "/campeonato/:id/bracket",
-   campeonatoController.getBracket
-);
-
-router.get(
-   "/campeonato/:id/ranking-grupos",
-   campeonatoController.rankingPorGrupos
-);
-
-router.post(
+routes.post(
    "/campeonato/:id/generate-groups",
-   campeonatoController.generateGroups
+   campeonato.generateGroups
 );
 
-router.post(
-   "/campeonato/:id/generate-group-matches",
-   campeonatoController.generateGroupMatches
+routes.post(
+   "/campeonato/:id/generate-league",
+   campeonato.generateLeague
 );
 
-router.post(
-   "/campeonato/:id/generate-mata-mata",
-   campeonatoController.generateMataMata
+routes.get(
+   "/campeonato/:id/ranking",
+   campeonato.ranking
 );
 
-router.put(
-   "/campeonato/:id",
-   campeonatoController.updateInfo
+routes.get(
+   "/campeonato/:id/ranking-grupos",
+   campeonato.rankingPorGrupos
+);
+
+routes.post(
+   "/campeonato/jogo/:id/finalizar",
+   campeonato.finalizarJogo
+);
+
+/* ======================================================
+   JOGOS
+====================================================== */
+
+routes.get(
+   "/jogo/:id",
+   jogo.readOne
+);
+
+routes.put(
+   "/jogo/:id/stats",
+   jogo.updateStats
+);
+
+routes.post(
+   "/jogo/:id/escalacao",
+   jogo.addLineup
+);
+
+routes.post(
+   "/jogo/:id/evento",
+   jogo.addEvento
 );
 /* =====================================================
    JOGOS
