@@ -1,574 +1,374 @@
 const { PrismaClient } = require("@prisma/client");
+
 const prisma = new PrismaClient();
 
-/* =====================================================
+/* ======================================================
    HELPERS
-===================================================== */
+====================================================== */
+
 const toId = (value) => {
     const n = Number(value);
     return Number.isFinite(n) ? n : null;
 };
 
-const parseDateOrNull = (value) => {
-    if (!value) return null;
-    const d = new Date(value);
-    return Number.isNaN(d.getTime()) ? "INVALID_DATE" : d;
-};
-
 function buildRoundRobinRounds(teamIds) {
-    const ids = [...teamIds].map(Number);
 
-    if (ids.length < 2) return [];
+    const ids = [...teamIds];
 
-    if (ids.length % 2 !== 0) ids.push(null);
+    if (ids.length % 2 !== 0) {
+        ids.push(null);
+    }
 
-    const n = ids.length;
-    const rounds = n - 1;
+    const total = ids.length;
+    const rounds = total - 1;
 
-    let arr = [...ids];
+    const arr = [...ids];
+
     const result = [];
 
     for (let r = 0; r < rounds; r++) {
+
         const pairs = [];
 
-        for (let i = 0; i < n / 2; i++) {
+        for (let i = 0; i < total / 2; i++) {
+
             const a = arr[i];
-            const b = arr[n - 1 - i];
-            if (a !== null && b !== null) pairs.push([a, b]);
+            const b = arr[total - 1 - i];
+
+            if (a !== null && b !== null) {
+                pairs.push([a, b]);
+            }
         }
 
         result.push(pairs);
 
-        const fixed = arr[0];
-        const rest = arr.slice(1);
-        rest.unshift(rest.pop());
-        arr = [fixed, ...rest];
+        const fixed = arr.shift();
+
+        arr.unshift(fixed);
+
+        arr.splice(1, 0, arr.pop());
     }
 
     return result;
 }
 
-async function createGameWithStats(
-    db,
-    {
-        campeonatoId,
-        grupoId,
-        rodada,
-        tipoJogo = "IDA",
-        timeAId,
-        timeBId
-    }
-) {
+async function ensureTabela(campeonatoId, timeId) {
 
-    const jogo = await db.jogo.create({
-        data: {
-            campeonatoId: Number(campeonatoId),
+    const exists =
+        await prisma.tabelaCampeonato.findUnique({
 
-            grupoId:
-                grupoId === undefined
-                    ? null
-                    : grupoId,
-
-            rodada: Number(rodada),
-
-            tipoJogo,
-
-            timeAId: Number(timeAId),
-            timeBId: Number(timeBId),
-        },
-    });
-
-    await db.jogoEstatisticaTime.createMany({
-        data: [
-            {
-                jogoId: jogo.id,
-                timeId: jogo.timeAId,
-            },
-            {
-                jogoId: jogo.id,
-                timeId: jogo.timeBId,
-            },
-        ],
-        skipDuplicates: true,
-    });
-
-    return jogo;
-}
-
-
-async function ensureTabelaRow(db, campeonatoId, timeId) {
-    const row = await db.tabelaCampeonato.findUnique({
-        where: { campeonatoId_timeId: { campeonatoId, timeId } },
-    });
-
-    if (row) return row;
-
-    return db.tabelaCampeonato.create({
-        data: { campeonatoId, timeId },
-    });
-}
-
-async function atualizarTabelaGeral(db, jogo) {
-    const { campeonatoId, timeAId, timeBId, grupoId } = jogo;
-
-    const golsA = Number.isFinite(jogo.golsA) ? jogo.golsA : null;
-    const golsB = Number.isFinite(jogo.golsB) ? jogo.golsB : null;
-    if (golsA === null || golsB === null) return;
-
-    const camp = await db.campeonato.findUnique({
-        where: { id: campeonatoId },
-        select: { tipo: true },
-    });
-    if (!camp) return;
-
-    const tipo = camp.tipo;
-
-    const isGrupoGame = grupoId !== null && grupoId !== undefined;
-    const isLigaGame =
-        (grupoId === null || grupoId === undefined) &&
-        (tipo === "PONTOS_CORRIDOS" || tipo === "LIGA_IDA_VOLTA");
-
-    if (!isGrupoGame && !isLigaGame) return;
-
-    const rowA = await ensureTabelaRow(db, campeonatoId, timeAId);
-    const rowB = await ensureTabelaRow(db, campeonatoId, timeBId);
-
-    let ptsA = 0, ptsB = 0;
-    let vitA = 0, vitB = 0;
-    let empA = 0, empB = 0;
-    let derA = 0, derB = 0;
-
-    if (golsA > golsB) {
-        ptsA = 3;
-        vitA = 1;
-        derB = 1;
-    } else if (golsB > golsA) {
-        ptsB = 3;
-        vitB = 1;
-        derA = 1;
-    } else {
-        ptsA = 1;
-        ptsB = 1;
-        empA = 1;
-        empB = 1;
-    }
-
-    await db.tabelaCampeonato.update({
-        where: { id: rowA.id },
-        data: {
-            golsPro: { increment: golsA },
-            golsContra: { increment: golsB },
-            saldoGols: { increment: golsA - golsB },
-            pontos: { increment: ptsA },
-            vitorias: { increment: vitA },
-            empates: { increment: empA },
-            derrotas: { increment: derA },
-        },
-    });
-
-    await db.tabelaCampeonato.update({
-        where: { id: rowB.id },
-        data: {
-            golsPro: { increment: golsB },
-            golsContra: { increment: golsA },
-            saldoGols: { increment: golsB - golsA },
-            pontos: { increment: ptsB },
-            vitorias: { increment: vitB },
-            empates: { increment: empB },
-            derrotas: { increment: derB },
-        },
-    });
-}
-
-async function atualizarClassificacaoGrupos(db, jogo) {
-    const grupoId = jogo.grupoId;
-    if (!grupoId) return;
-
-    const { golsA, golsB } = jogo;
-    if (!Number.isFinite(golsA) || !Number.isFinite(golsB)) return;
-
-    const timeA = await db.timeGrupo.findFirst({
-        where: { grupoId, timeId: jogo.timeAId },
-    });
-    const timeB = await db.timeGrupo.findFirst({
-        where: { grupoId, timeId: jogo.timeBId },
-    });
-
-    if (!timeA || !timeB) return;
-
-    const inc = async (tgId, gp, gc, pts) => {
-        await db.timeGrupo.update({
-            where: { id: tgId },
-            data: {
-                golsPro: { increment: gp },
-                golsContra: { increment: gc },
-                saldoGols: { increment: gp - gc },
-                pontos: { increment: pts },
-                vitorias: { increment: pts === 3 ? 1 : 0 },
-                empates: { increment: pts === 1 ? 1 : 0 },
-                derrotas: { increment: pts === 0 && gp !== gc ? 1 : 0 },
-            },
+            where: {
+                campeonatoId_timeId: {
+                    campeonatoId,
+                    timeId
+                }
+            }
         });
-    };
 
-    if (golsA > golsB) {
-        await inc(timeA.id, golsA, golsB, 3);
-        await inc(timeB.id, golsB, golsA, 0);
-    } else if (golsB > golsA) {
-        await inc(timeB.id, golsB, golsA, 3);
-        await inc(timeA.id, golsA, golsB, 0);
-    } else {
-        await inc(timeA.id, golsA, golsB, 1);
-        await inc(timeB.id, golsB, golsA, 1);
-    }
+    if (exists) return;
+
+    await prisma.tabelaCampeonato.create({
+        data: {
+            campeonatoId,
+            timeId,
+        }
+    });
 }
 
-/* ============================
-   CRIAR CAMPEONATO
-============================ */
+/* ======================================================
+   CREATE
+====================================================== */
+
 const create = async (req, res) => {
+
     try {
-        const societyId = toId(req.body.societyId);
-        const nome = String(req.body.nome || "").trim();
-        const tipo = String(req.body.tipo || "").trim();
-        const maxTimes = Number(req.body.maxTimes);
 
-        const {
-            modalidade,
-            categoria,
-            temporada,
-            dataInicio,
-            dataFim,
-            status,
-            regulamentoTexto,
-            regulamentoUrl,
-        } = req.body;
+        const data = req.body;
 
-        if (!societyId || !nome || !tipo || !Number.isFinite(maxTimes) || maxTimes <= 0) {
+        if (!data.nome) {
             return res.status(400).json({
-                error: "Dados incompletos ou inválidos (societyId, nome, tipo, maxTimes).",
+                error: "Nome obrigatório."
             });
         }
 
-        const society = await prisma.society.findUnique({
-            where: { id: societyId },
-        });
+        const campeonato =
+            await prisma.campeonato.create({
 
-        if (!society) {
-            return res.status(404).json({ error: "Society não encontrado." });
-        }
+                data: {
+                    societyId: Number(data.societyId),
 
-        const di = parseDateOrNull(dataInicio);
-        const df = parseDateOrNull(dataFim);
+                    nome: data.nome,
 
-        if (di === "INVALID_DATE") {
-            return res.status(400).json({ error: "dataInicio inválida." });
-        }
-        if (df === "INVALID_DATE") {
-            return res.status(400).json({ error: "dataFim inválida." });
-        }
-        if (di && df && df < di) {
-            return res.status(400).json({ error: "dataFim não pode ser menor que dataInicio." });
-        }
+                    tipo: "LIGA_IDA_VOLTA",
 
-        const novo = await prisma.campeonato.create({
-            data: {
-                societyId,
-                nome,
-                tipo,
-                maxTimes,
-                faseAtual: "GRUPOS",
-                roundAtual: 1,
-                modalidade: modalidade || "SOCIETY",
-                categoria: categoria || "ADULTO",
-                temporada: temporada ? String(temporada).trim() : null,
-                dataInicio: di,
-                dataFim: df,
-                status: status || "EM_CRIACAO",
-                regulamentoTexto: regulamentoTexto ? String(regulamentoTexto) : null,
-                regulamentoUrl: regulamentoUrl ? String(regulamentoUrl).trim() : null,
-            },
-        });
+                    maxTimes: Number(data.maxTimes),
 
-        return res.status(201).json(novo);
+                    modalidade:
+                        data.modalidade || "SOCIETY",
+
+                    categoria:
+                        data.categoria || "ADULTO",
+
+                    temporada:
+                        data.temporada || null,
+
+                    dataInicio:
+                        data.dataInicio
+                            ? new Date(data.dataInicio)
+                            : null,
+
+                    dataFim:
+                        data.dataFim
+                            ? new Date(data.dataFim)
+                            : null,
+
+                    status: "EM_CRIACAO",
+
+                    faseAtual: "LIGA",
+
+                    roundAtual: 1,
+
+                    regulamentoTexto:
+                        data.regulamentoTexto || null,
+
+                    regulamentoUrl:
+                        data.regulamentoUrl || null,
+                }
+            });
+
+        return res.status(201).json(campeonato);
+
     } catch (err) {
+
         console.error(err);
-        return res.status(500).json({ error: "Erro ao criar campeonato." });
+
+        return res.status(500).json({
+            error: "Erro ao criar campeonato."
+        });
     }
 };
 
-/* ============================
-   BUSCAR CAMPEONATO
-============================ */
-const readOne = async (req, res) => {
-    try {
-        const campeonatoId = toId(req.params.id);
+/* ======================================================
+   LIST ALL
+====================================================== */
 
-        if (!campeonatoId) {
-            return res.status(400).json({ error: "ID inválido." });
-        }
-
-        const campeonato = await prisma.campeonato.findUnique({
-            where: { id: campeonatoId },
-            include: {
-                campeao: true,
-                viceCampeao: true,
-                times: { include: { time: true } },
-                tabela: {
-                    include: { time: true },
-                    orderBy: [
-                        { pontos: "desc" },
-                        { saldoGols: "desc" },
-                        { golsPro: "desc" },
-                        { vitorias: "desc" },
-                    ],
-                },
-                grupos: {
-                    include: {
-                        timesGrupo: { include: { time: true } },
-                        jogos: {
-                            include: {
-                                timeA: true,
-                                timeB: true,
-                            },
-                            orderBy: [{ rodada: "asc" }, { id: "asc" }],
-                        },
-                    },
-                },
-                jogos: {
-                    include: { timeA: true, timeB: true },
-                    orderBy: [{ rodada: "asc" }, { id: "asc" }],
-                },
-            },
-        });
-
-        if (!campeonato) {
-            return res.status(404).json({ error: "Campeonato não encontrado." });
-        }
-
-        return res.json(campeonato);
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Erro ao buscar campeonato." });
-    }
-};
-
-/* ============================
-   LISTAR POR SOCIETY
-============================ */
-const listBySociety = async (req, res) => {
-    try {
-        const societyId = toId(req.params.societyId);
-
-        if (!societyId) {
-            return res.status(400).json({ error: "societyId inválido." });
-        }
-
-        const lista = await prisma.campeonato.findMany({
-            where: { societyId },
-            include: {
-                campeao: true,
-                viceCampeao: true,
-                times: { include: { time: true } },
-            },
-            orderBy: [{ status: "asc" }, { id: "desc" }],
-        });
-
-        return res.json(lista);
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Erro ao listar campeonatos." });
-    }
-};
-
-/* ============================
-   LISTAR TODOS OS CAMPEONATOS (GLOBAL)
-   🔥 NOVO - PARA PLAYER E DONO_TIME
-============================ */
 const listAll = async (req, res) => {
-    try {
-        const lista = await prisma.campeonato.findMany({
-            include: {
-                society: true, // 👈 necessário pro front mostrar o nome
-                campeao: true,
-                viceCampeao: true,
-                times: { include: { time: true } },
-            },
-            orderBy: [
-                { status: "asc" },
-                { id: "desc" }
-            ],
-        });
 
-        return res.json(lista);
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Erro ao listar todos os campeonatos." });
-    }
-};
-
-/* ============================
-   ADICIONAR TIME
-============================ */
-const addTime = async (req, res) => {
-    try {
-        const campeonatoId = toId(req.params.id);
-        const timeId = toId(req.body.timeId);
-
-        if (!campeonatoId || !timeId) {
-            return res.status(400).json({ error: "Informe um campeonato válido e timeId." });
-        }
-
-        const campeonato = await prisma.campeonato.findUnique({
-            where: { id: campeonatoId },
-            include: { times: true },
-        });
-
-        if (!campeonato) {
-            return res.status(404).json({ error: "Campeonato não encontrado." });
-        }
-
-        const time = await prisma.time.findUnique({
-            where: { id: timeId },
-        });
-
-        if (!time) {
-            return res.status(404).json({ error: "Time não encontrado." });
-        }
-
-        if (time.societyId !== campeonato.societyId) {
-            return res.status(400).json({ error: "O time não pertence a este society." });
-        }
-
-        if ((campeonato.times?.length || 0) >= campeonato.maxTimes) {
-            return res.status(400).json({ error: "Limite de times atingido para este campeonato." });
-        }
-
-        const exists = await prisma.timeCampeonato.findFirst({
-            where: { campeonatoId, timeId },
-        });
-
-        if (exists) {
-            return res.status(400).json({ error: "Time já inscrito." });
-        }
-
-        const novo = await prisma.timeCampeonato.create({
-            data: {
-                campeonatoId,
-                timeId,
-            },
-        });
-
-        await ensureTabelaRow(prisma, campeonatoId, timeId);
-
-        return res.json(novo);
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Erro ao adicionar time." });
-    }
-};
-
-/* ============================
-   GERAR GRUPOS
-============================ */
-const generateGroups = async (req, res) => {
     try {
 
-        const campeonatoId = toId(req.params.id);
+        const campeonatos =
+            await prisma.campeonato.findMany({
 
-        if (!campeonatoId) {
-            return res.status(400).json({
-                error: "ID inválido."
+                include: {
+                    society: true
+                },
+
+                orderBy: {
+                    id: "desc"
+                }
             });
-        }
 
-        const campeonato = await prisma.campeonato.findUnique({
-            where: { id: campeonatoId },
+        return res.json(campeonatos);
 
-            include: {
-                times: true,
-                grupos: true,
-            },
+    } catch (err) {
+
+        console.error(err);
+
+        return res.status(500).json({
+            error: "Erro ao listar."
         });
+    }
+};
+
+/* ======================================================
+   LIST BY SOCIETY
+====================================================== */
+
+const listBySociety = async (req, res) => {
+
+    try {
+
+        const societyId =
+            Number(req.params.societyId);
+
+        const campeonatos =
+            await prisma.campeonato.findMany({
+
+                where: {
+                    societyId
+                },
+
+                include: {
+                    society: true
+                },
+
+                orderBy: {
+                    id: "desc"
+                }
+            });
+
+        return res.json(campeonatos);
+
+    } catch (err) {
+
+        console.error(err);
+
+        return res.status(500).json({
+            error: "Erro ao listar."
+        });
+    }
+};
+
+/* ======================================================
+   READ ONE
+====================================================== */
+
+const readOne = async (req, res) => {
+
+    try {
+
+        const campeonatoId =
+            Number(req.params.id);
+
+        const campeonato =
+            await prisma.campeonato.findUnique({
+
+                where: {
+                    id: campeonatoId
+                },
+
+                include: {
+
+                    society: true,
+
+                    times: {
+                        include: {
+                            time: true
+                        }
+                    },
+
+                    tabela: {
+
+                        include: {
+                            time: true
+                        },
+
+                        orderBy: [
+                            { pontos: "desc" },
+                            { saldoGols: "desc" },
+                            { golsPro: "desc" },
+                            { vitorias: "desc" },
+                        ]
+                    },
+
+                    jogos: {
+
+                        include: {
+                            timeA: true,
+                            timeB: true,
+                        },
+
+                        orderBy: [
+                            { rodada: "asc" },
+                            { id: "asc" }
+                        ]
+                    }
+                }
+            });
 
         if (!campeonato) {
+
             return res.status(404).json({
                 error: "Campeonato não encontrado."
             });
         }
 
-        if ((campeonato.grupos?.length || 0) > 0) {
-            return res.status(400).json({
-                error: "Grupos já foram gerados."
-            });
-        }
+        return res.json(campeonato);
 
-        const totalTimes = campeonato.times.length;
+    } catch (err) {
 
-        if (totalTimes < 4) {
-            return res.status(400).json({
-                error: "Mínimo 4 times."
-            });
-        }
+        console.error(err);
 
-        if (totalTimes % 4 !== 0) {
-            return res.status(400).json({
-                error: "A quantidade de times deve ser múltipla de 4."
-            });
-        }
+        return res.status(500).json({
+            error: "Erro ao buscar campeonato."
+        });
+    }
+};
 
-        const numGrupos = totalTimes / 4;
+/* ======================================================
+   ADD TIME
+====================================================== */
 
-        const gruposCriados = await prisma.$transaction(async (tx) => {
+const addTime = async (req, res) => {
 
-            const grupos = [];
+    try {
 
-            for (let i = 0; i < numGrupos; i++) {
+        const campeonatoId =
+            Number(req.params.id);
 
-                const grupo = await tx.grupo.create({
-                    data: {
-                        nome: `Grupo ${String.fromCharCode(65 + i)}`,
-                        campeonatoId,
-                    },
-                });
+        const timeId =
+            Number(req.body.timeId);
 
-                grupos.push(grupo);
-            }
+        const campeonato =
+            await prisma.campeonato.findUnique({
 
-            let idx = 0;
-
-            const shuffle = campeonato.times
-                .map((t) => t.timeId)
-                .sort(() => Math.random() - 0.5);
-
-            for (const tid of shuffle) {
-
-                await tx.timeGrupo.create({
-                    data: {
-                        grupoId: grupos[idx].id,
-                        timeId: tid,
-                    },
-                });
-
-                idx = (idx + 1) % grupos.length;
-            }
-
-            await tx.campeonato.update({
-                where: { id: campeonatoId },
-
-                data: {
-                    faseAtual: "GRUPOS",
-                    roundAtual: 1,
-                    status: "EM_ANDAMENTO"
+                where: {
+                    id: campeonatoId
                 },
+
+                include: {
+                    times: true
+                }
             });
 
-            return grupos;
+        if (!campeonato) {
+
+            return res.status(404).json({
+                error: "Campeonato não encontrado."
+            });
+        }
+
+        if (
+            campeonato.times.length >=
+            campeonato.maxTimes
+        ) {
+
+            return res.status(400).json({
+                error: "Limite de times atingido."
+            });
+        }
+
+        const exists =
+            await prisma.timeCampeonato.findFirst({
+
+                where: {
+                    campeonatoId,
+                    timeId
+                }
+            });
+
+        if (exists) {
+
+            return res.status(400).json({
+                error: "Time já adicionado."
+            });
+        }
+
+        await prisma.timeCampeonato.create({
+
+            data: {
+                campeonatoId,
+                timeId
+            }
         });
 
+        await ensureTabela(
+            campeonatoId,
+            timeId
+        );
+
         return res.json({
-            ok: true,
-            grupos: gruposCriados.length
+            ok: true
         });
 
     } catch (err) {
@@ -576,247 +376,131 @@ const generateGroups = async (req, res) => {
         console.error(err);
 
         return res.status(500).json({
-            error: "Erro ao criar grupos."
+            error: "Erro ao adicionar time."
         });
     }
 };
 
+/* ======================================================
+   GERAR LIGA
+====================================================== */
 
-/* ============================
-   GERAR JOGOS DE GRUPOS / LIGA
-   ✅ ida e volta nos grupos habilitado por padrão
-============================ */
-const generateGroupMatches = async (req, res) => {
+const generateLeague = async (req, res) => {
+
     try {
 
-        const campeonatoId = toId(req.params.id);
+        const campeonatoId =
+            Number(req.params.id);
 
-        if (!campeonatoId) {
-            return res.status(400).json({
-                error: "ID inválido."
-            });
-        }
+        const campeonato =
+            await prisma.campeonato.findUnique({
 
-        const campeonato = await prisma.campeonato.findUnique({
-            where: { id: campeonatoId },
-
-            include: {
-                times: true,
-                grupos: {
-                    include: {
-                        timesGrupo: true
-                    }
+                where: {
+                    id: campeonatoId
                 },
-            },
-        });
+
+                include: {
+                    times: true,
+                    jogos: true,
+                }
+            });
 
         if (!campeonato) {
+
             return res.status(404).json({
                 error: "Campeonato não encontrado."
             });
         }
 
-        const tipo = campeonato.tipo;
+        if (campeonato.jogos.length > 0) {
 
-        const idaVoltaLiga =
-            tipo === "LIGA_IDA_VOLTA";
-
-        const idaVoltaNosGrupos = true;
-
-        const jaTemJogos = await prisma.jogo.findFirst({
-            where: {
-                campeonatoId
-            },
-        });
-
-        if (jaTemJogos) {
             return res.status(400).json({
-                error: "Jogos já foram gerados para este campeonato."
+                error: "Jogos já gerados."
             });
         }
 
-        /* =====================================================
-           GRUPOS
-        ===================================================== */
-        if (
-            tipo === "GRUPOS" ||
-            tipo === "GRUPOS_MATA_MATA" ||
-            tipo === "COPA"
-        ) {
+        const teamIds =
+            campeonato.times.map(
+                (t) => t.timeId
+            );
 
-            const grupos = campeonato.grupos || [];
+        if (teamIds.length !== 4) {
 
-            if (!grupos.length) {
-                return res.status(400).json({
-                    error: "Gere os grupos primeiro."
-                });
-            }
-
-            for (const g of grupos) {
-
-                const teamIds =
-                    (g.timesGrupo || []).map((x) => x.timeId);
-
-                if (teamIds.length !== 4) {
-                    return res.status(400).json({
-                        error: `O grupo ${g.nome} precisa ter exatamente 4 times.`
-                    });
-                }
-
-                const rounds =
-                    buildRoundRobinRounds(teamIds);
-
-                const totalRodadas =
-                    rounds.length;
-
-                /* =========================
-                   IDA
-                ========================= */
-                for (let r = 0; r < rounds.length; r++) {
-
-                    for (const [a, b] of rounds[r]) {
-
-                        await createGameWithStats(prisma, {
-                            campeonatoId,
-                            grupoId: g.id,
-
-                            rodada: r + 1,
-                            tipoJogo: "IDA",
-
-                            timeAId: a,
-                            timeBId: b,
-                        });
-                    }
-                }
-
-                /* =========================
-                   VOLTA
-                ========================= */
-                if (idaVoltaNosGrupos) {
-
-                    for (let r = 0; r < rounds.length; r++) {
-
-                        for (const [a, b] of rounds[r]) {
-
-                            await createGameWithStats(prisma, {
-                                campeonatoId,
-                                grupoId: g.id,
-
-                                rodada: totalRodadas + (r + 1),
-
-                                tipoJogo: "VOLTA",
-
-                                timeAId: b,
-                                timeBId: a,
-                            });
-                        }
-                    }
-                }
-            }
-
-            await prisma.campeonato.update({
-                where: { id: campeonatoId },
-
-                data: {
-                    faseAtual: "GRUPOS",
-                    roundAtual: 1,
-                    status: "EM_ANDAMENTO"
-                },
-            });
-
-            return res.json({
-                ok: true,
-                tipo,
-                idaVoltaNosGrupos,
+            return res.status(400).json({
+                error: "A liga precisa ter exatamente 4 times."
             });
         }
 
-        /* =====================================================
-           LIGA
-        ===================================================== */
-        if (
-            tipo === "PONTOS_CORRIDOS" ||
-            tipo === "LIGA_IDA_VOLTA"
-        ) {
+        const rounds =
+            buildRoundRobinRounds(teamIds);
 
-            const teamIds =
-                (campeonato.times || []).map((t) => t.timeId);
+        const totalRounds =
+            rounds.length;
 
-            if (teamIds.length < 2) {
-                return res.status(400).json({
-                    error: "É preciso ao menos 2 times."
-                });
-            }
+        /* ==========================
+           IDA
+        ========================== */
 
-            const rounds =
-                buildRoundRobinRounds(teamIds);
+        for (let r = 0; r < rounds.length; r++) {
 
-            const totalRodadas =
-                rounds.length;
+            for (const [a, b] of rounds[r]) {
 
-            /* =========================
-               IDA
-            ========================= */
-            for (let r = 0; r < rounds.length; r++) {
+                await prisma.jogo.create({
 
-                for (const [a, b] of rounds[r]) {
+                    data: {
 
-                    await createGameWithStats(prisma, {
                         campeonatoId,
-                        grupoId: null,
 
                         rodada: r + 1,
+
                         tipoJogo: "IDA",
 
                         timeAId: a,
                         timeBId: b,
-                    });
-                }
-            }
-
-            /* =========================
-               VOLTA
-            ========================= */
-            if (idaVoltaLiga) {
-
-                for (let r = 0; r < rounds.length; r++) {
-
-                    for (const [a, b] of rounds[r]) {
-
-                        await createGameWithStats(prisma, {
-                            campeonatoId,
-                            grupoId: null,
-
-                            rodada: totalRodadas + (r + 1),
-
-                            tipoJogo: "VOLTA",
-
-                            timeAId: b,
-                            timeBId: a,
-                        });
                     }
-                }
+                });
             }
-
-            await prisma.campeonato.update({
-                where: { id: campeonatoId },
-
-                data: {
-                    faseAtual: "LIGA",
-                    roundAtual: 1,
-                    status: "EM_ANDAMENTO"
-                },
-            });
-
-            return res.json({
-                ok: true,
-                tipo,
-                idaVolta: idaVoltaLiga,
-            });
         }
 
-        return res.status(400).json({
-            error: "Este endpoint é para grupos/liga."
+        /* ==========================
+           VOLTA
+        ========================== */
+
+        for (let r = 0; r < rounds.length; r++) {
+
+            for (const [a, b] of rounds[r]) {
+
+                await prisma.jogo.create({
+
+                    data: {
+
+                        campeonatoId,
+
+                        rodada:
+                            totalRounds + (r + 1),
+
+                        tipoJogo: "VOLTA",
+
+                        timeAId: b,
+                        timeBId: a,
+                    }
+                });
+            }
+        }
+
+        await prisma.campeonato.update({
+
+            where: {
+                id: campeonatoId
+            },
+
+            data: {
+                status: "EM_ANDAMENTO"
+            }
+        });
+
+        return res.json({
+            ok: true
         });
 
     } catch (err) {
@@ -824,565 +508,268 @@ const generateGroupMatches = async (req, res) => {
         console.error(err);
 
         return res.status(500).json({
-            error: "Erro ao gerar jogos."
+            error: "Erro ao gerar liga."
         });
     }
 };
 
-/* ============================
-   GERAR MATA-MATA
-============================ */
-const generateMataMata = async (req, res) => {
-    try {
-        const campeonatoId = toId(req.params.id);
-
-        if (!campeonatoId) {
-            return res.status(400).json({ error: "ID inválido." });
-        }
-
-        const campeonato = await prisma.campeonato.findUnique({
-            where: { id: campeonatoId },
-            include: {
-                times: true,
-                grupos: { include: { timesGrupo: true } },
-            },
-        });
-
-        if (!campeonato) {
-            return res.status(404).json({ error: "Campeonato não encontrado." });
-        }
-
-        const jaTemMataMata = await prisma.jogo.findFirst({
-            where: { campeonatoId, grupoId: null },
-        });
-
-        if (jaTemMataMata) {
-            return res.status(400).json({ error: "Mata-mata já foi gerado." });
-        }
-
-        if (campeonato.tipo === "GRUPOS_MATA_MATA") {
-            const jogosDeGrupo = await prisma.jogo.findMany({
-                where: { campeonatoId, grupoId: { not: null } },
-                select: { id: true, finalizado: true },
-            });
-
-            const temJogos = jogosDeGrupo.length > 0;
-            const todosFinalizados = jogosDeGrupo.every((j) => j.finalizado);
-
-            if (!temJogos) {
-                return res.status(400).json({
-                    error: "Gere e finalize os jogos da fase de grupos antes do mata-mata.",
-                });
-            }
-
-            if (!todosFinalizados) {
-                return res.status(400).json({
-                    error: "Finalize TODOS os jogos da fase de grupos antes de gerar o mata-mata.",
-                });
-            }
-        }
-
-        let participantes = [];
-
-        if (campeonato.tipo === "MATA_MATA" || campeonato.tipo === "MATA-MATA") {
-            participantes = campeonato.times.map((t) => t.timeId);
-        } else {
-            const grupos = campeonato.grupos || [];
-            if (!grupos.length) {
-                return res.status(400).json({ error: "Gere os grupos primeiro." });
-            }
-
-            for (const g of grupos) {
-                const ordenados = [...g.timesGrupo].sort((a, b) => {
-                    if (b.pontos !== a.pontos) return b.pontos - a.pontos;
-                    if (b.saldoGols !== a.saldoGols) return b.saldoGols - a.saldoGols;
-                    if (b.golsPro !== a.golsPro) return b.golsPro - a.golsPro;
-                    return b.vitorias - a.vitorias;
-                });
-
-                for (let i = 0; i < Math.min(2, ordenados.length); i++) {
-                    participantes.push(ordenados[i].timeId);
-                }
-            }
-        }
-
-        participantes = Array.from(new Set(participantes));
-
-        if (participantes.length < 2) {
-            return res.status(400).json({ error: "Não há times suficientes para mata-mata." });
-        }
-
-        const potencias = [16, 8, 4, 2];
-        const n = potencias.find((p) => participantes.length >= p) || 2;
-        participantes = participantes.slice(0, n);
-
-        let pares = [];
-
-        if (
-            (campeonato.tipo === "GRUPOS" || campeonato.tipo === "GRUPOS_MATA_MATA") &&
-            (campeonato.grupos?.length || 0) === 2 &&
-            participantes.length === 4
-        ) {
-            const [gA, gB] = campeonato.grupos;
-
-            const rank = (g) =>
-                [...g.timesGrupo].sort((a, b) => {
-                    if (b.pontos !== a.pontos) return b.pontos - a.pontos;
-                    if (b.saldoGols !== a.saldoGols) return b.saldoGols - a.saldoGols;
-                    if (b.golsPro !== a.golsPro) return b.golsPro - a.golsPro;
-                    return b.vitorias - a.vitorias;
-                });
-
-            const a = rank(gA);
-            const b = rank(gB);
-
-            if (a.length >= 2 && b.length >= 2) {
-                pares = [
-                    [a[0].timeId, b[1].timeId],
-                    [b[0].timeId, a[1].timeId],
-                ];
-            }
-        }
-
-        if (!pares.length) {
-            participantes.sort(() => Math.random() - 0.5);
-            for (let i = 0; i < participantes.length / 2; i++) {
-                pares.push([participantes[i], participantes[participantes.length - 1 - i]]);
-            }
-        }
-
-        for (const [timeAId, timeBId] of pares) {
-            await createGameWithStats(prisma, {
-                campeonatoId,
-                grupoId: null,
-                rodada: 1,
-                tipoJogo: "MATA_MATA",
-                timeAId,
-                timeBId,
-            });
-        }
-
-        await prisma.campeonato.update({
-            where: { id: campeonatoId },
-            data: { faseAtual: "MATA_MATA", roundAtual: 1, status: "EM_ANDAMENTO" },
-        });
-
-        return res.json({ ok: true });
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Erro ao gerar mata-mata." });
-    }
-};
-
-/* ============================
+/* ======================================================
    FINALIZAR JOGO
-============================ */
+====================================================== */
+
 const finalizarJogo = async (req, res) => {
+
     try {
-        const jogoId = toId(req.params.id);
-        const golsA = Number(req.body.golsA);
-        const golsB = Number(req.body.golsB);
 
-        const vencedorIdBody = req.body.vencedorId ? Number(req.body.vencedorId) : null;
-        const desempateTipo = req.body.desempateTipo || null;
-        const penaltisA = Number.isFinite(Number(req.body.penaltisA)) ? Number(req.body.penaltisA) : null;
-        const penaltisB = Number.isFinite(Number(req.body.penaltisB)) ? Number(req.body.penaltisB) : null;
-        const observacao = req.body.observacao ? String(req.body.observacao) : null;
+        const jogoId =
+            Number(req.params.id);
 
-        if (!jogoId || !Number.isFinite(golsA) || !Number.isFinite(golsB)) {
-            return res.status(400).json({ error: "Informe jogoId, golsA e golsB corretamente." });
-        }
+        const golsA =
+            Number(req.body.golsA);
 
-        const result = await prisma.$transaction(async (tx) => {
-            const jogoAtual = await tx.jogo.findUnique({
-                where: { id: jogoId },
-                include: { campeonato: true },
-            });
+        const golsB =
+            Number(req.body.golsB);
 
-            if (!jogoAtual) {
-                return { status: 404, body: { error: "Jogo não encontrado." } };
-            }
+        const jogo =
+            await prisma.jogo.findUnique({
 
-            if (jogoAtual.finalizado) {
-                return {
-                    status: 409,
-                    body: { error: "Este jogo já foi finalizado." },
-                };
-            }
-
-            const isMataMata = jogoAtual.grupoId === null;
-
-            let vencedorId = null;
-            let perdedorId = null;
-
-            if (!isMataMata) {
-                if (golsA > golsB) vencedorId = jogoAtual.timeAId;
-                else if (golsB > golsA) vencedorId = jogoAtual.timeBId;
-                else vencedorId = null;
-            } else {
-                if (golsA > golsB) vencedorId = jogoAtual.timeAId;
-                else if (golsB > golsA) vencedorId = jogoAtual.timeBId;
-                else {
-                    if (!vencedorIdBody || !desempateTipo) {
-                        return {
-                            status: 400,
-                            body: {
-                                error: "Empate no mata-mata exige vencedorId e desempateTipo.",
-                            },
-                        };
-                    }
-
-                    if (![jogoAtual.timeAId, jogoAtual.timeBId].includes(vencedorIdBody)) {
-                        return {
-                            status: 400,
-                            body: { error: "vencedorId inválido para este jogo." },
-                        };
-                    }
-
-                    vencedorId = vencedorIdBody;
-                }
-
-                perdedorId = vencedorId === jogoAtual.timeAId ? jogoAtual.timeBId : jogoAtual.timeAId;
-            }
-
-            const jogo = await tx.jogo.update({
-                where: { id: jogoId },
-                data: {
-                    golsA,
-                    golsB,
-                    vencedorId,
-                    finalizado: true,
-                    desempateTipo: isMataMata && golsA === golsB ? desempateTipo : null,
-                    penaltisA: isMataMata && golsA === golsB ? penaltisA : null,
-                    penaltisB: isMataMata && golsA === golsB ? penaltisB : null,
-                    observacao,
-                },
-            });
-
-            await atualizarClassificacaoGrupos(tx, jogo);
-            await atualizarTabelaGeral(tx, jogo);
-
-            if (!isMataMata) {
-                return { status: 200, body: { ok: true } };
-            }
-
-            const campeonatoId = jogo.campeonatoId;
-            const rodadaAtual = jogo.rodada;
-
-            const jogosDoRound = await tx.jogo.findMany({
                 where: {
-                    campeonatoId,
-                    grupoId: null,
-                    rodada: rodadaAtual
-                },
-                orderBy: { id: "asc" },
+                    id: jogoId
+                }
             });
 
-            const todosFinalizados = jogosDoRound.every((j) => j.finalizado);
+        if (!jogo) {
 
-            if (!todosFinalizados) {
-                return {
-                    status: 200,
-                    body: { ok: true, mensagem: "Jogo finalizado. Aguardando os demais jogos do round." },
-                };
-            }
-
-            const vencedores = jogosDoRound.map((j) => j.vencedorId).filter(Boolean);
-
-            if (jogosDoRound.length === 1) {
-                const finalGame = jogosDoRound[0];
-                const campeaoId = finalGame.vencedorId;
-                const viceId = campeaoId === finalGame.timeAId ? finalGame.timeBId : finalGame.timeAId;
-
-                await tx.campeonato.update({
-                    where: { id: campeonatoId },
-                    data: {
-                        faseAtual: "FINALIZADO",
-                        campeaoId,
-                        viceCampeaoId: viceId,
-                        status: "FINALIZADO",
-                    },
-                });
-
-                return {
-                    status: 200,
-                    body: {
-                        ok: true,
-                        mensagem: "Campeonato finalizado!",
-                        campeaoId,
-                        viceCampeaoId: viceId,
-                    },
-                };
-            }
-
-            const proximaRodada = rodadaAtual + 1;
-
-            if (vencedores.length % 2 !== 0) {
-                return {
-                    status: 400,
-                    body: { error: "Quantidade de vencedores ímpar. Verifique jogos do round." },
-                };
-            }
-
-            for (let i = 0; i < vencedores.length; i += 2) {
-                await createGameWithStats(tx, {
-                    campeonatoId,
-                    grupoId: null,
-                    rodada: proximaRodada,
-                    tipoJogo: "MATA_MATA",
-                    timeAId: vencedores[i],
-                    timeBId: vencedores[i + 1],
-                });
-            }
-
-            await tx.campeonato.update({
-                where: { id: campeonatoId },
-                data: { faseAtual: "MATA_MATA", roundAtual: proximaRodada, status: "EM_ANDAMENTO" },
+            return res.status(404).json({
+                error: "Jogo não encontrado."
             });
-
-            return {
-                status: 200,
-                body: { ok: true, mensagem: `Round ${roundAtual} concluído. Próximo round criado.` },
-            };
-        });
-
-        return res.status(result.status).json(result.body);
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Erro ao finalizar jogo." });
-    }
-};
-
-/* ============================
-   BRACKET
-============================ */
-const getBracket = async (req, res) => {
-    try {
-        const campeonatoId = toId(req.params.id);
-
-        if (!campeonatoId) {
-            return res.status(400).json({ error: "ID inválido." });
         }
 
-        const jogos = await prisma.jogo.findMany({
-            where: { campeonatoId, grupoId: null },
-            include: { timeA: true, timeB: true },
-            orderBy: [{ rodada: "asc" }, { id: "asc" }],
-        });
+        if (jogo.finalizado) {
 
-        return res.json(jogos);
-    } catch (error) {
-        console.error("Erro ao carregar chaveamento:", error);
-        return res.status(500).json({ error: "Erro ao carregar chaveamento." });
-    }
-};
-
-/* ============================
-   RANKING GERAL
-============================ */
-const ranking = async (req, res) => {
-    try {
-        const campeonatoId = toId(req.params.id);
-
-        if (!campeonatoId) {
-            return res.status(400).json({ error: "ID inválido." });
+            return res.status(400).json({
+                error: "Jogo já finalizado."
+            });
         }
 
-        const tabela = await prisma.tabelaCampeonato.findMany({
-            where: { campeonatoId },
-            include: { time: true },
-            orderBy: [
-                { pontos: "desc" },
-                { saldoGols: "desc" },
-                { golsPro: "desc" },
-                { vitorias: "desc" },
-            ],
-        });
+        let vencedorId = null;
 
-        const resp = tabela.map((r) => ({
-            timeId: r.timeId,
-            nome: r.time?.nome || "Time",
-            pontos: r.pontos,
-            jogos: r.vitorias + r.empates + r.derrotas,
-            vitorias: r.vitorias,
-            empates: r.empates,
-            derrotas: r.derrotas,
-            golsPro: r.golsPro,
-            golsContra: r.golsContra,
-            saldo: r.saldoGols,
-        }));
-
-        return res.json(resp);
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Erro ao gerar ranking." });
-    }
-};
-
-/* ============================
-   ATUALIZAR INFO CAMPEONATO
-============================ */
-const updateInfo = async (req, res) => {
-    try {
-        const campeonatoId = toId(req.params.id);
-
-        if (!campeonatoId) {
-            return res.status(400).json({ error: "ID inválido." });
+        if (golsA > golsB) {
+            vencedorId = jogo.timeAId;
         }
 
-        const existente = await prisma.campeonato.findUnique({
-            where: { id: campeonatoId },
-        });
-
-        if (!existente) {
-            return res.status(404).json({ error: "Campeonato não encontrado." });
+        if (golsB > golsA) {
+            vencedorId = jogo.timeBId;
         }
 
-        const jogosExistentes = await prisma.jogo.findFirst({
-            where: { campeonatoId },
-        });
+        await prisma.jogo.update({
 
-        const {
-            nome,
-            tipo,
-            maxTimes,
-            modalidade,
-            categoria,
-            temporada,
-            dataInicio,
-            dataFim,
-            status,
-            regulamentoTexto,
-            regulamentoUrl,
-        } = req.body;
+            where: {
+                id: jogoId
+            },
 
-        const di = dataInicio !== undefined ? parseDateOrNull(dataInicio) : undefined;
-        const df = dataFim !== undefined ? parseDateOrNull(dataFim) : undefined;
-
-        if (di === "INVALID_DATE") {
-            return res.status(400).json({ error: "dataInicio inválida." });
-        }
-        if (df === "INVALID_DATE") {
-            return res.status(400).json({ error: "dataFim inválida." });
-        }
-        if (di && df && df < di) {
-            return res.status(400).json({ error: "dataFim não pode ser menor que dataInicio." });
-        }
-
-        // segurança: se já existem jogos, evita trocar estrutura crítica
-        if (jogosExistentes) {
-            if (tipo !== undefined && tipo !== existente.tipo) {
-                return res.status(400).json({
-                    error: "Não é permitido alterar o tipo do campeonato após a geração de jogos.",
-                });
-            }
-
-            if (maxTimes !== undefined && Number(maxTimes) !== Number(existente.maxTimes)) {
-                return res.status(400).json({
-                    error: "Não é permitido alterar maxTimes após a geração de jogos.",
-                });
-            }
-        }
-
-        const upd = await prisma.campeonato.update({
-            where: { id: campeonatoId },
             data: {
-                nome: nome !== undefined ? String(nome).trim() : undefined,
-                tipo: tipo !== undefined ? tipo : undefined,
-                maxTimes:
-                    maxTimes !== undefined && Number.isFinite(Number(maxTimes))
-                        ? Number(maxTimes)
-                        : undefined,
-                modalidade: modalidade !== undefined ? modalidade : undefined,
-                categoria: categoria !== undefined ? categoria : undefined,
-                temporada:
-                    temporada !== undefined
-                        ? (temporada ? String(temporada).trim() : null)
-                        : undefined,
-                dataInicio: dataInicio !== undefined ? di : undefined,
-                dataFim: dataFim !== undefined ? df : undefined,
-                status: status !== undefined ? status : undefined,
-                regulamentoTexto:
-                    regulamentoTexto !== undefined
-                        ? (regulamentoTexto ? String(regulamentoTexto) : null)
-                        : undefined,
-                regulamentoUrl:
-                    regulamentoUrl !== undefined
-                        ? (regulamentoUrl ? String(regulamentoUrl).trim() : null)
-                        : undefined,
-            },
+                golsA,
+                golsB,
+                vencedorId,
+                finalizado: true,
+            }
         });
 
-        return res.json(upd);
+        const tabelaA =
+            await prisma.tabelaCampeonato.findUnique({
+
+                where: {
+                    campeonatoId_timeId: {
+                        campeonatoId: jogo.campeonatoId,
+                        timeId: jogo.timeAId,
+                    }
+                }
+            });
+
+        const tabelaB =
+            await prisma.tabelaCampeonato.findUnique({
+
+                where: {
+                    campeonatoId_timeId: {
+                        campeonatoId: jogo.campeonatoId,
+                        timeId: jogo.timeBId,
+                    }
+                }
+            });
+
+        let pontosA = 0;
+        let pontosB = 0;
+
+        let vitoriasA = 0;
+        let vitoriasB = 0;
+
+        let empatesA = 0;
+        let empatesB = 0;
+
+        let derrotasA = 0;
+        let derrotasB = 0;
+
+        if (golsA > golsB) {
+
+            pontosA = 3;
+            vitoriasA = 1;
+            derrotasB = 1;
+
+        } else if (golsB > golsA) {
+
+            pontosB = 3;
+            vitoriasB = 1;
+            derrotasA = 1;
+
+        } else {
+
+            pontosA = 1;
+            pontosB = 1;
+
+            empatesA = 1;
+            empatesB = 1;
+        }
+
+        await prisma.tabelaCampeonato.update({
+
+            where: {
+                id: tabelaA.id
+            },
+
+            data: {
+
+                pontos: {
+                    increment: pontosA
+                },
+
+                vitorias: {
+                    increment: vitoriasA
+                },
+
+                empates: {
+                    increment: empatesA
+                },
+
+                derrotas: {
+                    increment: derrotasA
+                },
+
+                golsPro: {
+                    increment: golsA
+                },
+
+                golsContra: {
+                    increment: golsB
+                },
+
+                saldoGols: {
+                    increment: golsA - golsB
+                },
+            }
+        });
+
+        await prisma.tabelaCampeonato.update({
+
+            where: {
+                id: tabelaB.id
+            },
+
+            data: {
+
+                pontos: {
+                    increment: pontosB
+                },
+
+                vitorias: {
+                    increment: vitoriasB
+                },
+
+                empates: {
+                    increment: empatesB
+                },
+
+                derrotas: {
+                    increment: derrotasB
+                },
+
+                golsPro: {
+                    increment: golsB
+                },
+
+                golsContra: {
+                    increment: golsA
+                },
+
+                saldoGols: {
+                    increment: golsB - golsA
+                },
+            }
+        });
+
+        return res.json({
+            ok: true
+        });
+
     } catch (err) {
+
         console.error(err);
-        return res.status(500).json({ error: "Erro ao atualizar campeonato." });
+
+        return res.status(500).json({
+            error: "Erro ao finalizar jogo."
+        });
     }
 };
 
-/* ============================
-   RANKING POR GRUPOS
-============================ */
-const rankingPorGrupos = async (req, res) => {
+/* ======================================================
+   RANKING
+====================================================== */
+
+const ranking = async (req, res) => {
+
     try {
-        const campeonatoId = toId(req.params.id);
 
-        if (!campeonatoId) {
-            return res.status(400).json({ error: "ID inválido." });
-        }
+        const campeonatoId =
+            Number(req.params.id);
 
-        const grupos = await prisma.grupo.findMany({
-            where: { campeonatoId },
-            include: {
-                timesGrupo: {
-                    include: { time: true },
-                    orderBy: [
-                        { pontos: "desc" },
-                        { saldoGols: "desc" },
-                        { golsPro: "desc" },
-                        { vitorias: "desc" },
-                    ],
+        const tabela =
+            await prisma.tabelaCampeonato.findMany({
+
+                where: {
+                    campeonatoId
                 },
-            },
-            orderBy: { id: "asc" },
-        });
 
-        const resp = (grupos || []).map((g) => ({
-            grupoId: g.id,
-            nome: g.nome,
-            tabela: (g.timesGrupo || []).map((tg) => ({
-                timeId: tg.timeId,
-                nome: tg.time?.nome || "Time",
-                pontos: tg.pontos || 0,
-                jogos: (tg.vitorias || 0) + (tg.empates || 0) + (tg.derrotas || 0),
-                vitorias: tg.vitorias || 0,
-                empates: tg.empates || 0,
-                derrotas: tg.derrotas || 0,
-                golsPro: tg.golsPro || 0,
-                golsContra: tg.golsContra || 0,
-                saldo: tg.saldoGols || 0,
-            })),
-        }));
+                include: {
+                    time: true
+                },
 
-        return res.json(resp);
+                orderBy: [
+                    { pontos: "desc" },
+                    { saldoGols: "desc" },
+                    { golsPro: "desc" },
+                    { vitorias: "desc" },
+                ]
+            });
+
+        return res.json(tabela);
+
     } catch (err) {
+
         console.error(err);
-        return res.status(500).json({ error: "Erro ao gerar ranking por grupos." });
+
+        return res.status(500).json({
+            error: "Erro ao carregar ranking."
+        });
     }
 };
 
 module.exports = {
     create,
     readOne,
-    listBySociety,
     listAll,
+    listBySociety,
     addTime,
-    generateGroups,
-    generateGroupMatches,
-    generateMataMata,
+    generateLeague,
     finalizarJogo,
-    getBracket,
     ranking,
-    updateInfo,
-    rankingPorGrupos,
 };

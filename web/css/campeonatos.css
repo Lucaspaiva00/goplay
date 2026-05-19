@@ -2,11 +2,11 @@
    CAMPEONATOS – LISTAGEM PREMIUM
 ============================================ */
 
-.campeonatos-wrapper {
+/* .campeonatos-wrapper {
     width: 100%;
     max-width: 900px;
     margin: 0 auto;
-}
+} */
 
 .titulo-pagina {
     text-align: center;
@@ -42,7 +42,7 @@
     border-radius: 14px;
     margin: 0 auto 25px auto;
     width: 100%;
-    max-width: 420px;
+    max-width: 100px;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
     transition: 0.25s ease;
 }

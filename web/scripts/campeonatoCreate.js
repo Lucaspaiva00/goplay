@@ -4,33 +4,23 @@ function salvarCampeonato() {
     const societyId = localStorage.getItem("societyId");
 
     const data = {
-        societyId,
-        nome: nome.value.trim(),
-        tipo: tipo.value,
-        maxTimes: Number(maxTimes.value),
-
-        // ✅ novos campos
+        societyId: Number(societyId),
+        nome: document.getElementById("nome").value.trim(),
+        tipo: "LIGA_IDA_VOLTA",
+        maxTimes: Number(document.getElementById("maxTimes").value),
         modalidade: document.getElementById("modalidade").value,
         categoria: document.getElementById("categoria").value,
         temporada: document.getElementById("temporada").value.trim() || null,
         dataInicio: document.getElementById("dataInicio").value || null,
         dataFim: document.getElementById("dataFim").value || null,
-        status: document.getElementById("status").value,
+        status: "EM_CRIACAO",
         regulamentoUrl: document.getElementById("regulamentoUrl").value.trim() || null,
         regulamentoTexto: document.getElementById("regulamentoTexto").value.trim() || null,
     };
 
+    if (!data.societyId) return alert("Society não encontrado.");
     if (!data.nome) return alert("Informe o nome do campeonato.");
-    if (!data.tipo) return alert("Selecione o tipo.");
-    if (!data.maxTimes || data.maxTimes < 2) return alert("Informe o número máximo de times (mínimo 2).");
-
-    if (Number(data.maxTimes) % 4 !== 0) {
-        return alert(
-            "O campeonato deve possuir quantidade de times múltipla de 4."
-        );
-    }
-
-
+    if (data.maxTimes !== 4) return alert("A Liga Ida e Volta precisa ter exatamente 4 times.");
 
     fetch(`${BASE_URL}/campeonato`, {
         method: "POST",

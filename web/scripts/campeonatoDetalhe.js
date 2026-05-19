@@ -3,46 +3,32 @@ const BASE_URL = "https://goplay-dzlr.onrender.com";
 let campeonatoId = null;
 let campeonatoAtual = null;
 
-// trava de ações para evitar clique duplo
 const busy = {
     carregar: false,
     addTime: false,
     criarTime: false,
-    gerarGrupos: false,
-    gerarJogos: false,
-    gerarMataMata: false,
+    gerarLiga: false,
     finalizarJogo: new Set(),
 };
 
-// ============================
-// Bootstrap
-// ============================
 document.addEventListener("DOMContentLoaded", () => {
     campeonatoId = new URLSearchParams(location.search).get("campeonatoId");
+
     if (!campeonatoId) {
         alert("Campeonato inválido");
         return;
     }
 
-    // navegação
     document.querySelectorAll(".nav-pill").forEach((btn) => {
         btn.addEventListener("click", () => abrirSecao(btn.dataset.target));
     });
 
-    // botões topo
     const btnVoltar = document.getElementById("btnVoltar");
-    if (btnVoltar) btnVoltar.addEventListener("click", () => (location.href = "campeonatos.html"));
+    if (btnVoltar) btnVoltar.addEventListener("click", () => location.href = "campeonatos.html");
 
     const btnAtualizar = document.getElementById("btnAtualizar");
     if (btnAtualizar) btnAtualizar.addEventListener("click", () => carregarDetalhes(true));
 
-    const btnVerChaveamento = document.getElementById("btnVerChaveamento");
-    if (btnVerChaveamento) btnVerChaveamento.addEventListener("click", abrirBracket);
-
-    const btnAbrirBracket = document.getElementById("btnAbrirBracket");
-    if (btnAbrirBracket) btnAbrirBracket.addEventListener("click", abrirBracket);
-
-    // ações de time
     const btnAddTime = document.getElementById("btnAddTime");
     if (btnAddTime) btnAddTime.addEventListener("click", addTime);
 
@@ -56,22 +42,24 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ações de fluxo
-    const btnGerarGrupos = document.getElementById("btnGerarGrupos");
-    if (btnGerarGrupos) btnGerarGrupos.addEventListener("click", gerarGrupos);
-
     const btnGerarJogosGrupos = document.getElementById("btnGerarJogosGrupos");
-    if (btnGerarJogosGrupos) btnGerarJogosGrupos.addEventListener("click", gerarJogosGrupos);
+    if (btnGerarJogosGrupos) btnGerarJogosGrupos.addEventListener("click", gerarLiga);
+
+    const btnGerarGrupos = document.getElementById("btnGerarGrupos");
+    if (btnGerarGrupos) btnGerarGrupos.style.display = "none";
 
     const btnGerarMataMata = document.getElementById("btnGerarMataMata");
-    if (btnGerarMataMata) btnGerarMataMata.addEventListener("click", gerarMataMata);
+    if (btnGerarMataMata) btnGerarMataMata.style.display = "none";
+
+    const btnVerChaveamento = document.getElementById("btnVerChaveamento");
+    if (btnVerChaveamento) btnVerChaveamento.style.display = "none";
+
+    const btnAbrirBracket = document.getElementById("btnAbrirBracket");
+    if (btnAbrirBracket) btnAbrirBracket.style.display = "none";
 
     carregarDetalhes();
 });
 
-// ============================
-// Utils (UI / safety)
-// ============================
 function abrirSecao(idSecao) {
     document.querySelectorAll(".nav-pill").forEach((b) => b.classList.remove("active"));
     document.querySelectorAll(".section").forEach((s) => s.classList.remove("active"));
@@ -85,20 +73,6 @@ function abrirSecao(idSecao) {
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function setLoading(loading) {
-    const titulo = document.getElementById("titulo");
-    const subtitulo = document.getElementById("subtitulo");
-    if (!titulo || !subtitulo) return;
-
-    if (loading) {
-        subtitulo.textContent = "Carregando informações...";
-        titulo.style.opacity = "0.9";
-    } else {
-        subtitulo.textContent = "Detalhes e gerenciamento";
-        titulo.style.opacity = "1";
-    }
-}
-
 function escapeHTML(str) {
     return String(str ?? "")
         .replaceAll("&", "&amp;")
@@ -108,21 +82,24 @@ function escapeHTML(str) {
         .replaceAll("'", "&#039;");
 }
 
-function setBtnLoading(btn, loading, labelWhenIdle) {
+function setBtnLoading(btn, loading) {
     if (!btn) return;
+
     btn.disabled = !!loading;
+
     if (loading) {
-        btn.dataset._oldHTML = btn.innerHTML;
+        btn.dataset.oldHTML = btn.innerHTML;
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Aguarde...`;
     } else {
-        btn.innerHTML = btn.dataset._oldHTML || labelWhenIdle || btn.innerHTML;
-        delete btn.dataset._oldHTML;
+        btn.innerHTML = btn.dataset.oldHTML || btn.innerHTML;
+        delete btn.dataset.oldHTML;
     }
 }
 
 async function safeFetchJSON(url, options = {}) {
     const res = await fetch(url, options);
     const text = await res.text().catch(() => "");
+
     let data = null;
 
     try {
@@ -132,22 +109,10 @@ async function safeFetchJSON(url, options = {}) {
     }
 
     if (!res.ok) {
-        const msg = data?.error || data?.message || text || `Erro HTTP ${res.status}`;
-        throw new Error(msg);
+        throw new Error(data?.error || data?.message || text || `Erro HTTP ${res.status}`);
     }
 
     return data;
-}
-
-function badgeTipo(tipo) {
-    const t = String(tipo || "").toUpperCase();
-    if (t === "GRUPOS") return "Fase de grupos";
-    if (t === "GRUPOS_MATA_MATA") return "Grupos + mata-mata";
-    if (t === "COPA") return "Copa (grupos)";
-    if (t === "PONTOS_CORRIDOS") return "Pontos corridos";
-    if (t === "LIGA_IDA_VOLTA") return "Liga (ida e volta)";
-    if (t === "MATA_MATA" || t === "MATA-MATA") return "Mata-mata";
-    return t || "—";
 }
 
 function renderCampeonatoInfo(c) {
@@ -161,304 +126,150 @@ function renderCampeonatoInfo(c) {
         return dt.toLocaleDateString("pt-BR");
     };
 
-    const tipo = badgeTipo(c.tipo);
-    const max = c.maxTimes ?? "—";
-    const fase = c.faseAtual ?? "—";
-    const status = c.status ?? "—";
-
     el.innerHTML = `
-    <div class="item"><strong>Nome:</strong> ${escapeHTML(c.nome || "—")}</div>
-    <div class="item"><strong>Tipo:</strong> ${escapeHTML(tipo)}</div>
-    <div class="item"><strong>Times:</strong> ${(c.times?.length || 0)} / ${escapeHTML(max)}</div>
-    <div class="item"><strong>Status:</strong> ${escapeHTML(status)}</div>
-    <div class="item"><strong>Fase atual:</strong> ${escapeHTML(fase)}</div>
-    <div class="item"><strong>Início:</strong> ${escapeHTML(fmtData(c.dataInicio))}</div>
-    <div class="item"><strong>Fim:</strong> ${escapeHTML(fmtData(c.dataFim))}</div>
-  `;
+        <div class="item"><strong>Nome:</strong> ${escapeHTML(c.nome || "—")}</div>
+        <div class="item"><strong>Tipo:</strong> Liga ida e volta</div>
+        <div class="item"><strong>Times:</strong> ${(c.times?.length || 0)} / ${escapeHTML(c.maxTimes || 4)}</div>
+        <div class="item"><strong>Jogos:</strong> ${(c.jogos?.length || 0)} / 12</div>
+        <div class="item"><strong>Status:</strong> ${escapeHTML(c.status || "—")}</div>
+        <div class="item"><strong>Fase atual:</strong> ${escapeHTML(c.faseAtual || "LIGA")}</div>
+        <div class="item"><strong>Início:</strong> ${escapeHTML(fmtData(c.dataInicio))}</div>
+        <div class="item"><strong>Fim:</strong> ${escapeHTML(fmtData(c.dataFim))}</div>
+    `;
 }
 
-// ============================
-// CTA "Próximo passo" (injetado na aba TIMES)
-// ============================
-function ensureNextStepContainer() {
-    const secTimes = document.getElementById("sec-times");
-    if (!secTimes) return null;
-
-    let wrap = document.getElementById("nextStepWrap");
-    if (wrap) return wrap;
-
-    wrap = document.createElement("div");
-    wrap.id = "nextStepWrap";
-    wrap.style.marginTop = "14px";
-
-    wrap.innerHTML = `
-    <div style="
-      border:1px solid #e6edf6;
-      background:#fff;
-      border-radius:14px;
-      padding:14px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
-    ">
-      <div>
-        <div style="font-weight:800; display:flex; align-items:center; gap:8px;">
-          <i class="fa-solid fa-circle-play"></i>
-          Próximo passo
-        </div>
-        <div class="muted" id="nextStepDesc" style="margin-top:4px;">
-          —
-        </div>
-      </div>
-
-      <button class="btn btn-primary" id="nextStepBtn" style="display:none;">
-        <i class="fa-solid fa-wand-magic-sparkles"></i> —
-      </button>
-    </div>
-  `;
-
-    secTimes.appendChild(wrap);
-    return wrap;
-}
-
-function setNextStepCTA({ show, label, desc, onClick }) {
-    const wrap = ensureNextStepContainer();
-    if (!wrap) return;
-
-    const btn = document.getElementById("nextStepBtn");
-    const d = document.getElementById("nextStepDesc");
-
-    if (d) d.textContent = desc || "—";
-    if (!btn) return;
-
-    btn.onclick = null;
-
-    if (!show) {
-        btn.style.display = "none";
-        btn.disabled = true;
-        btn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Tudo certo`;
-        return;
-    }
-
-    btn.style.display = "inline-flex";
-    btn.disabled = false;
-    btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> ${escapeHTML(label || "Continuar")}`;
-    btn.onclick = onClick;
-}
-
-// ============================
-// Carregamento geral
-// ============================
 async function carregarDetalhes(force = false) {
     if (busy.carregar && !force) return;
+
     busy.carregar = true;
 
     const btnAtualizar = document.getElementById("btnAtualizar");
     setBtnLoading(btnAtualizar, true);
 
     try {
-        setLoading(true);
-
         const c = await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}`);
         campeonatoAtual = c;
-
-        renderCampeonatoInfo(c);
 
         const titulo = document.getElementById("titulo");
         if (titulo) titulo.textContent = c.nome || "Campeonato";
 
+        renderCampeonatoInfo(c);
         await carregarSelectTimes();
-
         renderTimes(c);
-        renderGrupos(c);
         renderJogos(c);
+        await renderRanking(c);
+        ajustarAcoes(c);
 
-        await renderRanking();
-        await renderFinal(c);
+        const listaGrupos = document.getElementById("listaGrupos");
+        if (listaGrupos) {
+            listaGrupos.innerHTML = `<div class="empty">Este campeonato é Liga Ida e Volta. Não usa grupos.</div>`;
+        }
 
-        ajustarAcoesPorTipo(c);
+        const chipGrupos = document.getElementById("chipGrupos");
+        if (chipGrupos) chipGrupos.textContent = "Não usa grupos";
+
+        const finalInfo = document.getElementById("finalInfo");
+        if (finalInfo) {
+            finalInfo.innerHTML = `<div class="empty">Este campeonato não possui chaveamento. A classificação é por pontos.</div>`;
+        }
+
     } catch (err) {
         console.error(err);
         alert(err?.message || "Erro ao carregar campeonato");
     } finally {
-        setLoading(false);
         setBtnLoading(btnAtualizar, false);
         busy.carregar = false;
     }
 }
 
-// ============================
-// Regras de ações por tipo (botões + Próximo passo)
-// ============================
-function ajustarAcoesPorTipo(c) {
-    const btnGerarGrupos = document.getElementById("btnGerarGrupos");
-    const btnGerarJogosGrupos = document.getElementById("btnGerarJogosGrupos");
-    const btnGerarMataMata = document.getElementById("btnGerarMataMata");
-
-    if (btnGerarGrupos) btnGerarGrupos.style.display = "none";
-    if (btnGerarJogosGrupos) btnGerarJogosGrupos.style.display = "none";
-    if (btnGerarMataMata) btnGerarMataMata.style.display = "none";
-
-    if (c.faseAtual === "FINALIZADO" || c.status === "FINALIZADO") {
-        setNextStepCTA({ show: false, desc: "Campeonato finalizado." });
-        return;
-    }
-
-    const tipo = String(c.tipo || "").toUpperCase();
+function ajustarAcoes(c) {
     const totalTimes = c.times?.length || 0;
-    const totalGrupos = c.grupos?.length || 0;
     const totalJogos = c.jogos?.length || 0;
 
-    const max = Number(c.maxTimes || 0);
-    const lotado = max > 0 && totalTimes >= max;
+    const btnGerarJogosGrupos = document.getElementById("btnGerarJogosGrupos");
 
-    const minLiga = 2;
-    const minGrupos = 4;
-
-    const notReadyDesc = lotado
-        ? "Times completos, mas ainda não há uma ação disponível no fluxo."
-        : `Adicione times para liberar a próxima etapa. (${totalTimes}/${max || "∞"})`;
-
-    // GRUPOS / GRUPOS_MATA_MATA / COPA
-    if (tipo === "GRUPOS" || tipo === "GRUPOS_MATA_MATA" || tipo === "COPA") {
-        if (totalTimes >= minGrupos && totalGrupos === 0) {
-            if (btnGerarGrupos) btnGerarGrupos.style.display = "inline-flex";
-
-            setNextStepCTA({
-                show: true,
-                label: "Gerar grupos",
-                desc: lotado
-                    ? "Times completos. Clique para gerar os grupos automaticamente."
-                    : `Mínimo ${minGrupos} times. Clique para gerar os grupos.`,
-                onClick: () => gerarGrupos(),
-            });
-            return;
+    if (btnGerarJogosGrupos) {
+        if (totalTimes === 4 && totalJogos === 0) {
+            btnGerarJogosGrupos.style.display = "inline-flex";
+            btnGerarJogosGrupos.innerHTML = `<i class="fa-solid fa-futbol"></i> Gerar Liga Ida e Volta`;
+        } else {
+            btnGerarJogosGrupos.style.display = "none";
         }
-
-        if (totalGrupos > 0 && totalJogos === 0) {
-            if (btnGerarJogosGrupos) btnGerarJogosGrupos.style.display = "inline-flex";
-
-            // ⚠️ AVISO DO TEU CASO (4 times em 2 grupos => só 2 jogos)
-            if ((c.times?.length || 0) === 4 && (c.grupos?.length || 0) === 2) {
-                setNextStepCTA({
-                    show: true,
-                    label: "Gerar jogos (grupos)",
-                    desc:
-                        "ATENÇÃO: com 4 times e 2 grupos, cada grupo fica com 2 times, então o round-robin gera 1 jogo por grupo (2 jogos no total). " +
-                        "Se você quer mais jogos, o backend precisa colocar 1 grupo com 4 times ou habilitar ida/volta.",
-                    onClick: () => gerarJogosGrupos(),
-                });
-            } else {
-                setNextStepCTA({
-                    show: true,
-                    label: "Gerar jogos (grupos)",
-                    desc: "Grupos prontos. Clique para gerar os jogos da fase de grupos.",
-                    onClick: () => gerarJogosGrupos(),
-                });
-            }
-            return;
-        }
-
-        // Só habilita gerar mata-mata se for GRUPOS_MATA_MATA
-        if (tipo === "GRUPOS_MATA_MATA") {
-            // Se já tem jogos, pode gerar mata-mata (o backend decide se já pode ou não)
-            if (totalJogos > 0) {
-                if (btnGerarMataMata) btnGerarMataMata.style.display = "inline-flex";
-                setNextStepCTA({
-                    show: true,
-                    label: "Gerar mata-mata",
-                    desc: "Após a fase de grupos, gere o mata-mata (chaveamento).",
-                    onClick: () => gerarMataMata(),
-                });
-                return;
-            }
-        }
-
-        setNextStepCTA({ show: false, desc: notReadyDesc });
-        return;
     }
 
-    // LIGA / PONTOS CORRIDOS / IDA-VOLTA
-    if (tipo === "PONTOS_CORRIDOS" || tipo === "LIGA_IDA_VOLTA") {
-        if (totalTimes >= minLiga && totalJogos === 0) {
-            if (btnGerarJogosGrupos) btnGerarJogosGrupos.style.display = "inline-flex";
-
-            setNextStepCTA({
-                show: true,
-                label: tipo === "LIGA_IDA_VOLTA" ? "Gerar jogos (ida e volta)" : "Gerar jogos (liga)",
-                desc: lotado
-                    ? "Times completos. Clique para gerar os confrontos."
-                    : `Mínimo ${minLiga} times. Clique para gerar os confrontos.`,
-                onClick: () => gerarJogosGrupos(),
-            });
-            return;
-        }
-
-        setNextStepCTA({ show: false, desc: notReadyDesc });
-        return;
-    }
-
-    // MATA-MATA puro
-    if (tipo === "MATA_MATA" || tipo === "MATA-MATA") {
-        const podeGerar = totalTimes >= minLiga && totalJogos === 0;
-
-        if (podeGerar) {
-            if (btnGerarMataMata) btnGerarMataMata.style.display = "inline-flex";
-
-            setNextStepCTA({
-                show: true,
-                label: "Gerar mata-mata",
-                desc: lotado
-                    ? "Times completos. Clique para gerar os jogos do round 1."
-                    : `Mínimo ${minLiga} times. Clique para gerar o mata-mata.`,
-                onClick: () => gerarMataMata(),
-            });
-            return;
-        }
-
-        if (totalJogos > 0) {
-            setNextStepCTA({
-                show: false,
-                desc: "Mata-mata gerado. Agora finalize os jogos para avançar os rounds.",
-            });
-            return;
-        }
-
-        setNextStepCTA({ show: false, desc: notReadyDesc });
-        return;
-    }
-
-    setNextStepCTA({ show: false, desc: notReadyDesc });
+    ensureNextStepCTA(c);
 }
 
-// ============================
-// TIMES
-// ============================
+function ensureNextStepCTA(c) {
+    const secTimes = document.getElementById("sec-times");
+    if (!secTimes) return;
+
+    let wrap = document.getElementById("nextStepWrap");
+
+    if (!wrap) {
+        wrap = document.createElement("div");
+        wrap.id = "nextStepWrap";
+        wrap.style.marginTop = "14px";
+        secTimes.appendChild(wrap);
+    }
+
+    const totalTimes = c.times?.length || 0;
+    const totalJogos = c.jogos?.length || 0;
+
+    if (totalJogos > 0) {
+        wrap.innerHTML = `
+            <div class="empty">
+                Liga gerada com sucesso. Agora finalize os jogos para atualizar a classificação.
+            </div>
+        `;
+        return;
+    }
+
+    if (totalTimes < 4) {
+        wrap.innerHTML = `
+            <div class="empty">
+                Adicione exatamente 4 times para liberar a geração da Liga Ida e Volta. (${totalTimes}/4)
+            </div>
+        `;
+        return;
+    }
+
+    wrap.innerHTML = `
+        <div style="border:1px solid #e6edf6;background:#fff;border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div>
+                <div style="font-weight:800;">
+                    <i class="fa-solid fa-circle-play"></i> Próximo passo
+                </div>
+                <div class="muted" style="margin-top:4px;">
+                    Times completos. Gere os 12 jogos da Liga Ida e Volta.
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="gerarLiga()">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Gerar Liga
+            </button>
+        </div>
+    `;
+}
+
 function renderTimes(c) {
     const div = document.getElementById("listaTimes");
     const total = c.times?.length || 0;
 
     const chip = document.getElementById("chipTimes");
-    if (chip) chip.textContent = `${total} time(s)`;
+    if (chip) chip.textContent = `${total}/4 time(s)`;
 
-    const max = Number(c.maxTimes || 0);
     const btnAdd = document.getElementById("btnAddTime");
     const btnCriar = document.getElementById("btnCriarEAddTime");
     const select = document.getElementById("timeId");
     const inputNovo = document.getElementById("novoTimeNome");
 
-    const lotado = max > 0 && total >= max;
+    const lotado = total >= 4 || (c.jogos?.length || 0) > 0;
 
     if (btnAdd) btnAdd.disabled = lotado;
     if (btnCriar) btnCriar.disabled = lotado;
     if (select) select.disabled = lotado;
     if (inputNovo) inputNovo.disabled = lotado;
-
-    if (lotado && select) {
-        select.innerHTML = `<option value="">Limite de times atingido (${total}/${max})</option>`;
-    }
 
     if (!div) return;
 
@@ -467,20 +278,15 @@ function renderTimes(c) {
         return;
     }
 
-    div.innerHTML = (c.times || [])
-        .map((t) => {
-            const nome = t?.time?.nome ?? "Time";
-            return `
+    div.innerHTML = (c.times || []).map((t) => `
         <div class="item">
-          <div>
-            <strong>${escapeHTML(nome)}</strong>
-            <div class="muted" style="font-size:12px;">Inscrito</div>
-          </div>
-          <span class="chip">OK</span>
+            <div>
+                <strong>${escapeHTML(t?.time?.nome ?? "Time")}</strong>
+                <div class="muted" style="font-size:12px;">Inscrito</div>
+            </div>
+            <span class="chip">OK</span>
         </div>
-      `;
-        })
-        .join("");
+    `).join("");
 }
 
 async function carregarSelectTimes() {
@@ -489,15 +295,14 @@ async function carregarSelectTimes() {
 
     try {
         const societyId = campeonatoAtual?.societyId;
-        if (!societyId) throw new Error("societyId não encontrado no campeonato.");
+        if (!societyId) throw new Error("societyId não encontrado.");
 
         const times = await safeFetchJSON(`${BASE_URL}/time/society/${societyId}`);
 
         const inscritos = new Set(
             (campeonatoAtual?.times || [])
-                .map((t) => t?.time?.id ?? t?.timeId)
-                .filter((x) => x !== null && x !== undefined)
-                .map((x) => Number(x))
+                .map((t) => Number(t?.time?.id ?? t?.timeId))
+                .filter(Boolean)
         );
 
         select.innerHTML = `<option value="">Selecione...</option>`;
@@ -509,8 +314,9 @@ async function carregarSelectTimes() {
             });
 
         if (select.options.length === 1) {
-            select.innerHTML = `<option value="">Nenhum time disponível (todos já inscritos)</option>`;
+            select.innerHTML = `<option value="">Nenhum time disponível</option>`;
         }
+
     } catch (err) {
         console.error(err);
         select.innerHTML = `<option value="">Erro ao carregar times</option>`;
@@ -519,14 +325,14 @@ async function carregarSelectTimes() {
 
 async function addTime() {
     if (busy.addTime) return;
+
     busy.addTime = true;
 
-    const btnAddTime = document.getElementById("btnAddTime");
-    setBtnLoading(btnAddTime, true);
+    const btn = document.getElementById("btnAddTime");
+    setBtnLoading(btn, true);
 
     try {
-        const select = document.getElementById("timeId");
-        const timeId = select?.value;
+        const timeId = document.getElementById("timeId")?.value;
 
         if (!timeId) {
             alert("Selecione um time");
@@ -540,51 +346,41 @@ async function addTime() {
         });
 
         await carregarDetalhes(true);
+
     } catch (err) {
         console.error(err);
         alert(err?.message || "Não foi possível adicionar o time.");
     } finally {
-        setBtnLoading(btnAddTime, false);
+        setBtnLoading(btn, false);
         busy.addTime = false;
     }
 }
 
 async function criarEAdicionarTime() {
     if (busy.criarTime) return;
+
     busy.criarTime = true;
 
-    const btnCriar = document.getElementById("btnCriarEAddTime");
-    setBtnLoading(btnCriar, true);
+    const btn = document.getElementById("btnCriarEAddTime");
+    setBtnLoading(btn, true);
 
     try {
         const input = document.getElementById("novoTimeNome");
         const nome = (input?.value || "").trim();
+
         if (!nome) {
             alert("Digite o nome do time.");
             return;
         }
 
         const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado") || "null");
+
         if (!usuarioLogado?.id) {
-            alert("Sessão expirada. Faça login novamente.");
-            return;
-        }
-
-        const jaExisteNoCampeonato = (campeonatoAtual?.times || []).some((t) => {
-            const n = String(t?.time?.nome || "").trim().toLowerCase();
-            return n === nome.toLowerCase();
-        });
-
-        if (jaExisteNoCampeonato) {
-            input.value = "";
-            alert("Esse time já está inscrito no campeonato.");
+            alert("Sessão expirada.");
             return;
         }
 
         const societyId = campeonatoAtual?.societyId;
-        if (!societyId) throw new Error("Não encontrei societyId do campeonato.");
-
-        const donoId = Number(usuarioLogado.id);
 
         const novoTime = await safeFetchJSON(`${BASE_URL}/time`, {
             method: "POST",
@@ -592,276 +388,131 @@ async function criarEAdicionarTime() {
             body: JSON.stringify({
                 nome,
                 societyId: Number(societyId),
-                donoId,
+                donoId: Number(usuarioLogado.id),
             }),
         });
-
-        const timeId = novoTime?.id;
-        if (!timeId) throw new Error("Time criado, mas não retornou ID.");
 
         await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/add-time`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ timeId: Number(timeId) }),
+            body: JSON.stringify({ timeId: Number(novoTime.id) }),
         });
 
         input.value = "";
         await carregarDetalhes(true);
-        abrirSecao("sec-times");
+
     } catch (err) {
         console.error(err);
         alert(err?.message || "Erro ao criar e adicionar time.");
     } finally {
-        setBtnLoading(btnCriar, false);
+        setBtnLoading(btn, false);
         busy.criarTime = false;
     }
 }
 
-// ============================
-// GRUPOS
-// ============================
-function renderGrupos(c) {
-    const div = document.getElementById("listaGrupos");
-    const total = c.grupos?.length || 0;
+async function gerarLiga() {
+    if (busy.gerarLiga) return;
 
-    const chip = document.getElementById("chipGrupos");
-    if (chip) chip.textContent = `${total} grupo(s)`;
-
-    if (!div) return;
-
-    if (!total) {
-        div.innerHTML = `<div class="empty">Nenhum grupo disponível no momento.</div>`;
-        return;
-    }
-
-    div.innerHTML = (c.grupos || [])
-        .map((g) => {
-            const times = g.timesGrupo || [];
-            return `
-        <div class="item" style="align-items:flex-start;">
-          <div style="width:100%;">
-            <strong>${escapeHTML(g.nome || "Grupo")}</strong>
-            <div class="muted" style="font-size:12px; margin-top:4px;">Times</div>
-
-            <div style="margin-top:8px; display:flex; flex-direction:column; gap:6px;">
-              ${times
-                    .map(
-                        (tg) => `
-                    <div style="padding:10px; border:1px solid #eef2f6; border-radius:12px;">
-                      ${escapeHTML(tg?.time?.nome ?? "Time")}
-                    </div>
-                  `
-                    )
-                    .join("")}
-            </div>
-          </div>
-          <span class="chip">${times.length} time(s)</span>
-        </div>
-      `;
-        })
-        .join("");
-}
-
-async function gerarGrupos() {
-    if (busy.gerarGrupos) return;
-    busy.gerarGrupos = true;
-
-    const btn = document.getElementById("btnGerarGrupos");
-    setBtnLoading(btn, true);
-
-    try {
-        await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/gerar-grupos`, { method: "POST" });
-        await carregarDetalhes(true);
-        abrirSecao("sec-grupos");
-    } catch (err) {
-        console.error(err);
-        alert(err?.message || "Não foi possível gerar os grupos.");
-    } finally {
-        setBtnLoading(btn, false);
-        busy.gerarGrupos = false;
-    }
-}
-
-async function gerarJogosGrupos() {
-    if (busy.gerarJogos) return;
-    busy.gerarJogos = true;
+    busy.gerarLiga = true;
 
     const btn = document.getElementById("btnGerarJogosGrupos");
     setBtnLoading(btn, true);
 
     try {
-        await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/gerar-jogos-grupos`, { method: "POST" });
+        await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/generate`, {
+            method: "POST",
+        });
+
         await carregarDetalhes(true);
         abrirSecao("sec-jogos");
+
     } catch (err) {
         console.error(err);
-        alert(err?.message || "Não foi possível gerar os jogos.");
+        alert(err?.message || "Não foi possível gerar a liga.");
     } finally {
         setBtnLoading(btn, false);
-        busy.gerarJogos = false;
+        busy.gerarLiga = false;
     }
 }
 
-// ============================
-// JOGOS
-// ============================
 function renderJogos(c) {
-
     const jogosDiv = document.getElementById("listaJogos");
+    const chip = document.getElementById("chipJogos");
 
     const jogos = [...(c.jogos || [])].sort((a, b) => {
-        return (a.rodada || 0) - (b.rodada || 0);
+        if ((a.rodada || 0) !== (b.rodada || 0)) return (a.rodada || 0) - (b.rodada || 0);
+        return (a.id || 0) - (b.id || 0);
     });
 
+    if (chip) chip.textContent = `${jogos.length}/12 jogo(s)`;
+
+    if (!jogosDiv) return;
+
     if (!jogos.length) {
-
-        jogosDiv.innerHTML = `
-    < div class="empty-state" >
-        Nenhum jogo gerado ainda.
-            </div >
-    `;
-
+        jogosDiv.innerHTML = `<div class="empty">Nenhum jogo gerado ainda.</div>`;
         return;
     }
 
     const agrupados = {};
 
-    jogos.forEach(j => {
-
+    jogos.forEach((j) => {
         const rodada = j.rodada || 1;
-
-        if (!agrupados[rodada]) {
-            agrupados[rodada] = [];
-        }
-
+        if (!agrupados[rodada]) agrupados[rodada] = [];
         agrupados[rodada].push(j);
     });
 
     jogosDiv.innerHTML = Object.keys(agrupados)
         .sort((a, b) => Number(a) - Number(b))
-        .map(rodada => {
+        .map((rodada) => `
+            <div style="margin-bottom:16px;">
+                <div style="font-weight:900;margin-bottom:10px;">
+                    Rodada ${rodada}
+                </div>
 
-            const jogosRodada = agrupados[rodada];
+                ${agrupados[rodada].map((j) => {
+            const badge = j.tipoJogo === "VOLTA" ? "🔁 Volta" : "➡️ Ida";
 
             return `
-    < div class="rodada-bloco" >
-
-                    <div class="rodada-header">
-                        Rodada ${rodada}
-                    </div>
-
-                    <div class="rodada-jogos">
-
-                        ${jogosRodada.map(j => {
-
-                const badge =
-                    j.tipoJogo === "VOLTA"
-                        ? "🔁 Volta"
-                        : j.tipoJogo === "IDA"
-                            ? "➡️ Ida"
-                            : "🏆 Mata-mata";
-
-                return `
-                                <div class="jogo-card">
-
-                                    <div class="jogo-top">
-
-                                        <span class="badge-jogo">
-                                            ${badge}
-                                        </span>
-
-                                        ${j.grupo?.nome
-                        ? `
-                                                <span class="grupo-jogo">
-                                                    ${j.grupo.nome}
-                                                </span>
-                                              `
-                        : ""
-                    }
-
-                                    </div>
-
-                                    <div class="jogo-times">
-
-                                        <div class="time">
-                                            ${j.timeA?.nome || "Time A"}
-                                        </div>
-
-                                        <div class="placar">
-
-                                            <input
-                                                type="number"
-                                                id="gA${j.id}"
-                                                value="${j.golsA ?? ""}"
-                                                min="0"
-                                                class="input-gol"
-                                                ${j.finalizado ? "disabled" : ""}
-                                            >
-
-                                            <span>x</span>
-
-                                            <input
-                                                type="number"
-                                                id="gB${j.id}"
-                                                value="${j.golsB ?? ""}"
-                                                min="0"
-                                                class="input-gol"
-                                                ${j.finalizado ? "disabled" : ""}
-                                            >
-
-                                        </div>
-
-                                        <div class="time">
-                                            ${j.timeB?.nome || "Time B"}
-                                        </div>
-
-                                    </div>
-
-                                    <div class="jogo-footer">
-
-                                        <div class="muted">
-                                            ${j.finalizado
-                        ? "✅ Finalizado"
-                        : "⏳ Pendente"}
-                                        </div>
-
-                                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-
-                                            <button
-                                                class="btn btn-secondary"
-                                                onclick="abrirDetalhesJogo(${j.id})"
-                                            >
-                                                Detalhes
-                                            </button>
-
-                                            ${!j.finalizado
-                        ? `
-                                                    <button
-                                                        class="btn btn-primary"
-                                                        id="btnFinalizar${j.id}"
-                                                        onclick="finalizarJogo(${j.id})"
-                                                    >
-                                                        Finalizar
-                                                    </button>
-                                                  `
-                        : ""
-                    }
-
-                                        </div>
-
-                                    </div>
-
+                        <div class="match">
+                            <div class="match-main">
+                                <div class="match-title">
+                                    ${escapeHTML(j.timeA?.nome || "Time A")}
+                                    x
+                                    ${escapeHTML(j.timeB?.nome || "Time B")}
                                 </div>
-                            `;
-            }).join("")}
+                                <div class="match-sub">
+                                    ${badge} • Jogo #${Number(j.id)}
+                                </div>
+                            </div>
 
-                    </div>
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                                <span class="chip">
+                                    ${j.finalizado ? "Finalizado" : "Em aberto"}
+                                </span>
 
-                </div >
-    `;
-        }).join("");
+                                <button class="btn btn-light" onclick="abrirDetalhesJogo(${Number(j.id)})">
+                                    <i class="fa-solid fa-eye"></i> Detalhes
+                                </button>
+
+                                ${j.finalizado ? `
+                                    <strong>${j.golsA ?? 0} x ${j.golsB ?? 0}</strong>
+                                ` : `
+                                    <div class="score-inputs" style="flex-wrap:wrap;">
+                                        <input id="gA${Number(j.id)}" type="number" min="0" placeholder="Gols A" />
+                                        <input id="gB${Number(j.id)}" type="number" min="0" placeholder="Gols B" />
+
+                                        <button class="btn btn-primary" onclick="finalizarJogo(${Number(j.id)})" id="btnFinalizar${Number(j.id)}">
+                                            <i class="fa-solid fa-check"></i> Finalizar
+                                        </button>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    `;
+        }).join("")}
+            </div>
+        `).join("");
 }
-
 
 async function finalizarJogo(id) {
     const jogoId = Number(id);
@@ -878,48 +529,18 @@ async function finalizarJogo(id) {
         const golsB = Number(document.getElementById(`gB${jogoId}`)?.value);
 
         if (!Number.isFinite(golsA) || !Number.isFinite(golsB) || golsA < 0 || golsB < 0) {
-            alert("Informe os gols corretamente (0 ou mais).");
+            alert("Informe os gols corretamente.");
             return;
         }
 
-        const jogo = (campeonatoAtual?.jogos || []).find((x) => Number(x.id) === jogoId);
-        const isMataMata = jogo ? jogo.grupoId === null : false;
-
-        const payload = { golsA, golsB };
-
-        if (isMataMata && golsA === golsB) {
-            const box = document.getElementById(`desempateBox${jogoId}`);
-            if (box) box.style.display = "block";
-
-            const vencedorId = Number(document.getElementById(`vencedorId${jogoId}`)?.value || 0) || null;
-            const desempateTipo = document.getElementById(`desempateTipo${jogoId}`)?.value || null;
-
-            const penaltisAraw = document.getElementById(`penaltisA${jogoId}`)?.value;
-            const penaltisBraw = document.getElementById(`penaltisB${jogoId}`)?.value;
-            const observacao = (document.getElementById(`observacao${jogoId}`)?.value || "").trim() || null;
-
-            const penaltisA = penaltisAraw !== "" ? Number(penaltisAraw) : null;
-            const penaltisB = penaltisBraw !== "" ? Number(penaltisBraw) : null;
-
-            if (!vencedorId || !desempateTipo) {
-                alert("Empate no mata-mata: selecione o vencedor e o tipo de desempate.");
-                return;
-            }
-
-            payload.vencedorId = vencedorId;
-            payload.desempateTipo = desempateTipo;
-            payload.penaltisA = Number.isFinite(penaltisA) ? penaltisA : null;
-            payload.penaltisB = Number.isFinite(penaltisB) ? penaltisB : null;
-            payload.observacao = observacao;
-        }
-
-        await safeFetchJSON(`${BASE_URL}/campeonato/jogo/${jogoId}/finalizar`, {
+        await safeFetchJSON(`${BASE_URL}/jogo/${jogoId}/finalizar`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({ golsA, golsB }),
         });
 
         await carregarDetalhes(true);
+
     } catch (err) {
         console.error(err);
         alert(err?.message || "Não foi possível finalizar o jogo.");
@@ -929,164 +550,56 @@ async function finalizarJogo(id) {
     }
 }
 
-async function gerarMataMata() {
-    if (busy.gerarMataMata) return;
-    busy.gerarMataMata = true;
-
-    const btn = document.getElementById("btnGerarMataMata");
-    setBtnLoading(btn, true);
-
-    try {
-        await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/gerar-mata-mata`, { method: "POST" });
-        await carregarDetalhes(true);
-        abrirSecao("sec-jogos");
-    } catch (err) {
-        console.error(err);
-        alert(err?.message || "Não foi possível gerar o mata-mata.");
-    } finally {
-        setBtnLoading(btn, false);
-        busy.gerarMataMata = false;
-    }
-}
-
-// ============================
-// RANKING
-// ============================
-async function renderRanking() {
+async function renderRanking(c) {
     const wrap = document.getElementById("rankingWrap");
     const chip = document.getElementById("chipRanking");
+
     if (!wrap || !chip) return;
 
-    const tipo = String(campeonatoAtual?.tipo || "").toUpperCase();
-
-    // Mata-mata não tem ranking por pontos
-    if (tipo === "MATA_MATA" || tipo === "MATA-MATA") {
-        chip.textContent = "—";
-        wrap.innerHTML = `
-      <div class="empty">
-        No mata-mata, não existe ranking por pontos. Use a aba <strong>Chaveamento</strong> para acompanhar o campeonato.
-      </div>
-    `;
-        return;
-    }
-
-    // Ranking por grupos
-    if (tipo === "GRUPOS" || tipo === "GRUPOS_MATA_MATA" || tipo === "COPA") {
-        try {
-            // ✅ rota correta (e seu routes.js precisa estar corrigido)
-            const grupos = await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/ranking-grupos`);
-
-            const totalTimes = (grupos || []).reduce((acc, g) => acc + (g.tabela?.length || 0), 0);
-            chip.textContent = `${totalTimes} time(s)`;
-
-            if (!grupos?.length) {
-                wrap.innerHTML = `<div class="empty">Sem grupos ainda. Gere os grupos para ver a classificação.</div>`;
-                return;
-            }
-
-            wrap.innerHTML = grupos
-                .map((g) => {
-                    const rows = g.tabela || [];
-                    if (!rows.length) {
-                        return `
-              <div style="margin-bottom:14px;">
-                <div style="font-weight:800; margin:10px 0;">${escapeHTML(g.nome)}</div>
-                <div class="empty">Nenhum time no grupo.</div>
-              </div>
-            `;
-                    }
-
-                    return `
-            <div style="margin-bottom:14px;">
-              <div style="font-weight:800; margin:10px 0;">${escapeHTML(g.nome)}</div>
-
-              <div class="item" style="font-weight:700; background:#f7f9fc;">
-                <div style="width:34px;">#</div>
-                <div style="flex:1;">Time</div>
-                <div style="width:50px; text-align:center;">PTS</div>
-                <div style="width:40px; text-align:center;">J</div>
-                <div style="width:40px; text-align:center;">V</div>
-                <div style="width:40px; text-align:center;">E</div>
-                <div style="width:40px; text-align:center;">D</div>
-                <div style="width:55px; text-align:center;">GP</div>
-                <div style="width:55px; text-align:center;">GC</div>
-                <div style="width:55px; text-align:center;">SG</div>
-              </div>
-
-              ${rows
-                            .map(
-                                (r, i) => `
-                  <div class="item">
-                    <div style="width:34px;">${i + 1}</div>
-                    <div style="flex:1;"><strong>${escapeHTML(r.nome)}</strong></div>
-                    <div style="width:50px; text-align:center;"><strong>${Number(r.pontos ?? 0)}</strong></div>
-                    <div style="width:40px; text-align:center;">${Number(r.jogos ?? 0)}</div>
-                    <div style="width:40px; text-align:center;">${Number(r.vitorias ?? 0)}</div>
-                    <div style="width:40px; text-align:center;">${Number(r.empates ?? 0)}</div>
-                    <div style="width:40px; text-align:center;">${Number(r.derrotas ?? 0)}</div>
-                    <div style="width:55px; text-align:center;">${Number(r.golsPro ?? 0)}</div>
-                    <div style="width:55px; text-align:center;">${Number(r.golsContra ?? 0)}</div>
-                    <div style="width:55px; text-align:center;">${Number(r.saldo ?? 0)}</div>
-                  </div>
-                `
-                            )
-                            .join("")}
-            </div>
-          `;
-                })
-                .join("");
-
-            return;
-        } catch (err) {
-            console.error(err);
-            wrap.innerHTML = `<div class="empty">Erro ao carregar ranking por grupos.</div>`;
-            chip.textContent = "—";
-            return;
-        }
-    }
-
-    // Liga / pontos corridos = ranking geral
     try {
         const ranking = await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/ranking`);
-        chip.textContent = `${(ranking || []).length} time(s)`;
 
-        if (!ranking?.length) {
+        chip.textContent = `${ranking.length} time(s)`;
+
+        if (!ranking.length) {
             wrap.innerHTML = `<div class="empty">Sem dados no ranking ainda.</div>`;
             return;
         }
 
         wrap.innerHTML = `
-      <div class="item" style="font-weight:700; background:#f7f9fc;">
-        <div style="width:34px;">#</div>
-        <div style="flex:1;">Time</div>
-        <div style="width:50px; text-align:center;">PTS</div>
-        <div style="width:40px; text-align:center;">J</div>
-        <div style="width:40px; text-align:center;">V</div>
-        <div style="width:40px; text-align:center;">E</div>
-        <div style="width:40px; text-align:center;">D</div>
-        <div style="width:55px; text-align:center;">GP</div>
-        <div style="width:55px; text-align:center;">GC</div>
-        <div style="width:55px; text-align:center;">SG</div>
-      </div>
-      ${(ranking || [])
-                .map(
-                    (r, i) => `
-          <div class="item">
-            <div style="width:34px;">${i + 1}</div>
-            <div style="flex:1;"><strong>${escapeHTML(r.nome)}</strong></div>
-            <div style="width:50px; text-align:center;"><strong>${Number(r.pontos ?? 0)}</strong></div>
-            <div style="width:40px; text-align:center;">${Number(r.jogos ?? 0)}</div>
-            <div style="width:40px; text-align:center;">${Number(r.vitorias ?? 0)}</div>
-            <div style="width:40px; text-align:center;">${Number(r.empates ?? 0)}</div>
-            <div style="width:40px; text-align:center;">${Number(r.derrotas ?? 0)}</div>
-            <div style="width:55px; text-align:center;">${Number(r.golsPro ?? 0)}</div>
-            <div style="width:55px; text-align:center;">${Number(r.golsContra ?? 0)}</div>
-            <div style="width:55px; text-align:center;">${Number(r.saldo ?? 0)}</div>
-          </div>
-        `
-                )
-                .join("")}
-    `;
+            <div class="item" style="font-weight:700;background:#f7f9fc;">
+                <div style="width:34px;">#</div>
+                <div style="flex:1;">Time</div>
+                <div style="width:50px;text-align:center;">PTS</div>
+                <div style="width:40px;text-align:center;">J</div>
+                <div style="width:40px;text-align:center;">V</div>
+                <div style="width:40px;text-align:center;">E</div>
+                <div style="width:40px;text-align:center;">D</div>
+                <div style="width:55px;text-align:center;">GP</div>
+                <div style="width:55px;text-align:center;">GC</div>
+                <div style="width:55px;text-align:center;">SG</div>
+            </div>
+
+            ${ranking.map((r, i) => {
+            const time = r.time?.nome || r.nome || "Time";
+            const jogos = (r.vitorias || 0) + (r.empates || 0) + (r.derrotas || 0);
+
+            return `
+                    <div class="item">
+                        <div style="width:34px;">${i + 1}</div>
+                        <div style="flex:1;"><strong>${escapeHTML(time)}</strong></div>
+                        <div style="width:50px;text-align:center;"><strong>${Number(r.pontos || 0)}</strong></div>
+                        <div style="width:40px;text-align:center;">${jogos}</div>
+                        <div style="width:40px;text-align:center;">${Number(r.vitorias || 0)}</div>
+                        <div style="width:40px;text-align:center;">${Number(r.empates || 0)}</div>
+                        <div style="width:40px;text-align:center;">${Number(r.derrotas || 0)}</div>
+                        <div style="width:55px;text-align:center;">${Number(r.golsPro || 0)}</div>
+                        <div style="width:55px;text-align:center;">${Number(r.golsContra || 0)}</div>
+                        <div style="width:55px;text-align:center;">${Number(r.saldoGols || 0)}</div>
+                    </div>
+                `;
+        }).join("")}
+        `;
     } catch (err) {
         console.error(err);
         wrap.innerHTML = `<div class="empty">Erro ao carregar ranking.</div>`;
@@ -1094,68 +607,10 @@ async function renderRanking() {
     }
 }
 
-// ============================
-// FINAL / CHAVEAMENTO
-// ============================
-async function renderFinal(c) {
-    const finalInfo = document.getElementById("finalInfo");
-    const btnVerChaveamento = document.getElementById("btnVerChaveamento");
-    if (!finalInfo || !btnVerChaveamento) return;
-
-    if (c.faseAtual === "FINALIZADO") {
-        const campeao = c?.campeao?.nome || "—";
-        const vice = c?.viceCampeao?.nome || "—";
-
-        finalInfo.innerHTML = `
-      <div style="border:1px solid #cfead5;background:#f2fff5;border-radius:14px;padding:14px;">
-        <div style="font-weight:800;font-size:14px;margin-bottom:6px;">🏆 Campeonato finalizado</div>
-        <div style="margin:6px 0;"><strong>Campeão:</strong> ${escapeHTML(campeao)}</div>
-        <div style="margin:6px 0;"><strong>Vice:</strong> ${escapeHTML(vice)}</div>
-      </div>
-    `;
-        btnVerChaveamento.style.display = "inline-flex";
-        return;
-    }
-
-    try {
-        const jogos = await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/bracket`);
-        const temBracket = Array.isArray(jogos) && jogos.length > 0;
-
-        if (!temBracket) {
-            finalInfo.innerHTML = `<div class="empty">Chaveamento ainda não gerado. Gere o mata-mata para visualizar.</div>`;
-            btnVerChaveamento.style.display = "none";
-            return;
-        }
-
-        finalInfo.innerHTML = `<div class="empty">Chaveamento disponível. Você já pode abrir a tela do chaveamento.</div>`;
-        btnVerChaveamento.style.display = "inline-flex";
-    } catch (err) {
-        console.error(err);
-        finalInfo.innerHTML = `<div class="empty">Não consegui verificar o chaveamento agora. Clique em Atualizar.</div>`;
-        btnVerChaveamento.style.display = "inline-flex";
-    }
-}
-
-// ============================
-// Navegação entre páginas
-// ============================
-function abrirBracket() {
-    location.href = `campeonato-bracket.html?campeonatoId=${campeonatoId}`;
-}
-
 function abrirDetalhesJogo(jogoId) {
     location.href = `jogo-detalhe.html?jogoId=${Number(jogoId)}`;
 }
 
-function toggleDesempate(jogoId) {
-    const id = Number(jogoId);
-    const box = document.getElementById(`desempateBox${id}`);
-    if (!box) return;
-    box.style.display = box.style.display === "none" ? "block" : "none";
-}
-
-// ✅ deixa as funções acessíveis pros onclick do HTML
-window.abrirDetalhesJogo = abrirDetalhesJogo;
-window.toggleDesempate = toggleDesempate;
 window.finalizarJogo = finalizarJogo;
-window.abrirBracket = abrirBracket;
+window.abrirDetalhesJogo = abrirDetalhesJogo;
+window.gerarLiga = gerarLiga;
