@@ -16,7 +16,23 @@ const busy = {
 ===================================================== */
 
 document.addEventListener("DOMContentLoaded", () => {
+
     campeonatoId = new URLSearchParams(location.search).get("campeonatoId");
+
+    document
+        .getElementById("btnAbrirManual")
+        ?.addEventListener("click", () => {
+
+            const wrap =
+                document.getElementById(
+                    "manualGroupsWrap"
+                );
+
+            wrap.style.display =
+                wrap.style.display === "none"
+                    ? "block"
+                    : "none";
+        });
 
     if (!campeonatoId) {
         alert("Campeonato inválido");
@@ -147,6 +163,174 @@ function getStatusLabel(status) {
     return status || "—";
 }
 
+function renderManualGroupBuilder(campeonato) {
+
+    const wrap =
+        document.getElementById(
+            "manualGroupsWrap"
+        );
+
+    if (!wrap) return;
+
+    const totalGrupos =
+        Math.ceil(
+            (campeonato.times?.length || 0) / 4
+        );
+
+    const letras =
+        ["A", "B", "C", "D", "E", "F"];
+
+    const times =
+        campeonato.times || [];
+
+    wrap.innerHTML = `
+
+        <div class="manual-builder">
+
+            ${Array.from({
+        length: totalGrupos
+    }).map((_, index) => {
+
+        const letra =
+            letras[index];
+
+        return `
+
+                    <div class="manual-group-card">
+
+                        <h3>
+                            Grupo ${letra}
+                        </h3>
+
+                        ${Array.from({
+            length: 4
+        }).map(() => `
+
+                            <select
+                                class="manual-select"
+                                data-grupo="${letra}">
+
+                                <option value="">
+                                    Escolha um time
+                                </option>
+
+                                ${times.map(t => `
+
+                                    <option value="${t.timeId}">
+                                        ${t.time.nome}
+                                    </option>
+
+                                `).join("")}
+
+                            </select>
+
+                        `).join("")}
+
+                    </div>
+
+                `;
+
+    }).join("")}
+
+            <button
+                class="btn btn-primary"
+                id="btnSalvarManual">
+
+                💾 Salvar grupos
+            </button>
+
+        </div>
+    `;
+
+    document
+        .getElementById("btnSalvarManual")
+        .onclick = () =>
+            salvarGruposManual(campeonato);
+}
+
+async function salvarGruposManual(campeonato) {
+
+    try {
+
+        const selects =
+            document.querySelectorAll(
+                ".manual-select"
+            );
+
+        const grupos = {};
+
+        selects.forEach(select => {
+
+            const grupo =
+                select.dataset.grupo;
+
+            if (!grupos[grupo]) {
+                grupos[grupo] = [];
+            }
+
+            if (select.value) {
+
+                grupos[grupo].push(
+                    Number(select.value)
+                );
+            }
+        });
+
+        const payload = {
+
+            groups:
+                Object.entries(grupos)
+                    .map(([letra, times]) => ({
+
+                        nome:
+                            `Grupo ${letra}`,
+
+                        times,
+                    }))
+        };
+
+        const res = await fetch(
+
+            `${BASE_URL}/campeonato/${campeonato.id}/groups-manual`,
+
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body:
+                    JSON.stringify(payload),
+            }
+        );
+
+        const json =
+            await res.json();
+
+        if (!res.ok) {
+
+            throw new Error(
+                json.error || "Erro"
+            );
+        }
+
+        alert("Grupos salvos!");
+
+        carregarDetalhes(true);
+
+    } catch (err) {
+
+        console.error(err);
+
+        alert(
+            err.message ||
+            "Erro ao salvar grupos."
+        );
+    }
+}
+
 /* =====================================================
    CARREGAMENTO
 ===================================================== */
@@ -170,9 +354,10 @@ async function carregarDetalhes(force = false) {
         await carregarSelectTimes();
         renderTimes(c);
         renderJogos(c);
-        await renderRanking(c);
+        renderRanking(c);
         renderAreaFinal(c);
         renderAreaGrupos(c);
+        renderManualGroupBuilder(c);
         ajustarAcoes(c);
 
     } catch (err) {
@@ -228,7 +413,7 @@ function ajustarAcoes(c) {
     const btnGerarJogosGrupos = document.getElementById("btnGerarJogosGrupos");
 
     if (btnGerarJogosGrupos) {
-        if (totalTimes === c.maxTimes && totalJogos === 0) {
+        if (totalTimes === c.maxTimes && totalJogos === 0 && (c.grupos?.length || 0) > 0) {
             btnGerarJogosGrupos.style.display = "inline-flex";
             btnGerarJogosGrupos.innerHTML = `
                 <i class="fa-solid fa-wand-magic-sparkles"></i>

@@ -1204,6 +1204,156 @@ const updateInfo = async (req, res) => {
     });
 };
 
+/* =====================================================
+   GERAR GRUPOS MANUALMENTE
+===================================================== */
+
+const salvarGruposManual = async (req, res) => {
+
+    try {
+
+        const campeonatoId = toId(req.params.id);
+
+        if (!campeonatoId) {
+            return res.status(400).json({
+                error: "ID inválido.",
+            });
+        }
+
+        const groups = req.body.groups || [];
+
+        if (!Array.isArray(groups) || !groups.length) {
+            return res.status(400).json({
+                error: "Envie os grupos.",
+            });
+        }
+
+        const campeonato = await prisma.campeonato.findUnique({
+
+            where: {
+                id: campeonatoId,
+            },
+
+            include: {
+                times: true,
+                grupos: true,
+                jogos: true,
+            },
+        });
+
+        if (!campeonato) {
+            return res.status(404).json({
+                error: "Campeonato não encontrado.",
+            });
+        }
+
+        if (campeonato.jogos.length > 0) {
+            return res.status(400).json({
+                error: "Os jogos já foram gerados.",
+            });
+        }
+
+        const inscritos =
+            campeonato.times.map(t => Number(t.timeId));
+
+        const usados = [];
+
+        for (const grupo of groups) {
+
+            if (!grupo.times || grupo.times.length !== 4) {
+
+                return res.status(400).json({
+                    error: `O grupo ${grupo.nome} precisa ter exatamente 4 times.`,
+                });
+            }
+
+            for (const timeId of grupo.times) {
+
+                const id = Number(timeId);
+
+                if (!inscritos.includes(id)) {
+
+                    return res.status(400).json({
+                        error: `O time ${id} não pertence ao campeonato.`,
+                    });
+                }
+
+                if (usados.includes(id)) {
+
+                    return res.status(400).json({
+                        error: "Existem times repetidos nos grupos.",
+                    });
+                }
+
+                usados.push(id);
+            }
+        }
+
+        if (usados.length !== inscritos.length) {
+
+            return res.status(400).json({
+                error: "Nem todos os times foram distribuídos nos grupos.",
+            });
+        }
+
+        await prisma.$transaction(async (tx) => {
+
+            await tx.timeGrupo.deleteMany({
+                where: {
+                    grupo: {
+                        campeonatoId,
+                    },
+                },
+            });
+
+            await tx.grupo.deleteMany({
+                where: {
+                    campeonatoId,
+                    },
+            });
+
+            for (const grupoData of groups) {
+
+                const grupo = await tx.grupo.create({
+
+                    data: {
+                        nome: grupoData.nome,
+                        campeonatoId,
+                    },
+                });
+
+                for (const timeId of grupoData.times) {
+
+                    await ensureTimeGrupoRow(
+                        tx,
+                        grupo.id,
+                        Number(timeId)
+                    );
+
+                    await ensureTabelaRow(
+                        tx,
+                        campeonatoId,
+                        Number(timeId)
+                    );
+                }
+            }
+        });
+
+        return res.json({
+            ok: true,
+            message: "Grupos manuais salvos com sucesso.",
+        });
+
+    } catch (err) {
+
+        console.error("ERRO salvarGruposManual:", err);
+
+        return res.status(500).json({
+            error: err.message || "Erro ao salvar grupos.",
+        });
+    }
+};
+
 module.exports = {
     create,
     listAll,
@@ -1223,4 +1373,5 @@ module.exports = {
     getBracket,
 
     updateInfo,
+    salvarGruposManual
 };

@@ -138,12 +138,36 @@
                 </section>
 
                 <!-- GRUPOS -->
+                <!-- GRUPOS -->
                 <section id="sec-grupos" class="section card">
+
                     <div class="card-head">
                         <h2 class="card-title">
                             <i class="fa-solid fa-layer-group"></i> Grupos
                         </h2>
-                        <span class="chip" id="chipGrupos">0 grupo(s)</span>
+
+                        <span class="chip" id="chipGrupos">
+                            0 grupo(s)
+                        </span>
+                    </div>
+
+                    <div class="actions-row" style="margin-bottom:20px;">
+
+                        <button class="btn btn-primary" id="btnGerarGrupos">
+
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            Gerar automático
+                        </button>
+
+                        <button class="btn btn-outline" id="btnAbrirManual">
+
+                            <i class="fa-solid fa-pen"></i>
+                            Montar manualmente
+                        </button>
+
+                    </div>
+
+                    <div id="manualGroupsWrap" style="display:none;">
                     </div>
 
                     <div id="listaGrupos" class="list"></div>
@@ -151,10 +175,15 @@
                     <div class="divider"></div>
 
                     <div class="actions-row">
+
                         <button class="btn btn-primary" id="btnGerarJogosGrupos" style="display:none;">
-                            <i class="fa-solid fa-futbol"></i> Gerar jogos (grupos)
+
+                            <i class="fa-solid fa-futbol"></i>
+                            Gerar jogos
                         </button>
+
                     </div>
+
                 </section>
 
                 <!-- JOGOS -->

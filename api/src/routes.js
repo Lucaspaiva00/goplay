@@ -147,6 +147,8 @@ router.get("/campeonato/:id/ranking-grupos", campeonatoController.rankingPorGrup
 router.get("/campeonato/:id/bracket", campeonatoController.getBracket);
 
 router.put("/campeonato/:id", campeonatoController.updateInfo);
+router.post("/campeonato/:id/groups-manual", campeonatoController.salvarGruposManual
+);
 
 /* =====================================================
    JOGOS
