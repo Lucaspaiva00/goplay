@@ -82,6 +82,9 @@ if (!window.menuLoaded) {
       <li onclick="location.href='societies.html'">
         <i class="fa fa-eye"></i> Ver Societies
       </li>
+      <li onclick="location.href='campeonatos-view.html'">
+        <i class="fa fa-trophy"></i> Campeonatos
+      </li>
       <li onclick="location.href='comanda.html'">
         <i class="fa fa-eye"></i> Comandas
       </li>
@@ -100,9 +103,7 @@ if (!window.menuLoaded) {
       <li onclick="location.href='meus-pagamentos.html'">
         <i class="fa fa-money-bill"></i> Meus Pagamentos
       </li>
-      <li onclick="location.href='campeonatos-view.html'">
-        <i class="fa fa-trophy"></i> Campeonatos
-      </li>
+
     `;
   }
 
