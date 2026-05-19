@@ -859,7 +859,7 @@ async function finalizarJogo(id) {
 function renderRanking(campeonato) {
 
     const container =
-        document.getElementById("tab-ranking");
+        document.getElementById("rankingWrap");
 
     const grupos =
         campeonato.grupos || [];
