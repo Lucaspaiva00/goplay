@@ -384,11 +384,45 @@ router.post(
    campeonatoController.generateLeague
 );
 
+router.post(
+   "/campeonato/:id/generate-league",
+   campeonatoController.generateLeague
+);
+
 router.get(
    "/campeonato/:id/ranking",
    campeonatoController.ranking
 );
 
+router.get(
+   "/campeonato/:id/bracket",
+   campeonatoController.getBracket
+);
+
+router.get(
+   "/campeonato/:id/ranking-grupos",
+   campeonatoController.rankingPorGrupos
+);
+
+router.post(
+   "/campeonato/:id/generate-groups",
+   campeonatoController.generateGroups
+);
+
+router.post(
+   "/campeonato/:id/generate-group-matches",
+   campeonatoController.generateGroupMatches
+);
+
+router.post(
+   "/campeonato/:id/generate-mata-mata",
+   campeonatoController.generateMataMata
+);
+
+router.put(
+   "/campeonato/:id",
+   campeonatoController.updateInfo
+);
 /* =====================================================
    JOGOS
 ===================================================== */

@@ -2,28 +2,88 @@ const BASE_URL = "https://goplay-dzlr.onrender.com";
 
 document.addEventListener("DOMContentLoaded", () => {
     const societyId = localStorage.getItem("societyId");
+
+    if (!societyId) {
+        alert("Society não encontrada.");
+        return;
+    }
+
     carregarCampeonatos(societyId);
 });
 
-function carregarCampeonatos(societyId) {
-    fetch(`${BASE_URL}/campeonato/society/${societyId}`)
-        .then(res => res.json())
-        .then(lista => {
-            const div = document.getElementById("listaCampeonatos");
+async function carregarCampeonatos(societyId) {
 
-            if (!lista.length) {
-                div.innerHTML = "<p>Nenhum campeonato criado ainda.</p>";
-                return;
-            }
+    try {
 
-            div.innerHTML = lista.map(c => `
-                <div class="card-campeonato" onclick="abrirDetalhe(${c.id})">
-                    <h3>${c.nome}</h3>
-                    <p>${c.tipo} - ${c.times.length} time(s)</p>
+        const res = await fetch(`${BASE_URL}/campeonato/society/${societyId}`);
+
+        if (!res.ok) {
+            throw new Error("Erro ao buscar campeonatos.");
+        }
+
+        const lista = await res.json();
+
+        const div = document.getElementById("listaCampeonatos");
+
+        if (!lista.length) {
+
+            div.innerHTML = `
+                <div class="empty">
+                    Nenhum campeonato criado ainda.
                 </div>
-            `).join("");
-        })
-        .catch(() => alert("Erro ao carregar campeonatos"));
+            `;
+
+            return;
+        }
+
+        div.innerHTML = lista.map(c => {
+
+            const jogos = c.jogos?.length || 0;
+            const times = c.times?.length || 0;
+
+            return `
+                <div class="card-campeonato" onclick="abrirDetalhe(${c.id})">
+
+                    <div class="card-top">
+                        <h3>${c.nome}</h3>
+
+                        <span class="badge-status">
+                            ${c.status || "EM_CRIACAO"}
+                        </span>
+                    </div>
+
+                    <div class="card-info">
+
+                        <div>
+                            <strong>Formato:</strong>
+                            Liga Ida e Volta
+                        </div>
+
+                        <div>
+                            <strong>Times:</strong>
+                            ${times}/4
+                        </div>
+
+                        <div>
+                            <strong>Jogos:</strong>
+                            ${jogos}/12
+                        </div>
+
+                    </div>
+
+                </div>
+            `;
+        }).join("");
+
+    } catch (err) {
+
+        console.error(err);
+
+        alert(
+            err?.message ||
+            "Erro ao carregar campeonatos"
+        );
+    }
 }
 
 function abrirDetalhe(id) {
