@@ -1,3 +1,5 @@
+const BASE_URL = "https://goplay-dzlr.onrender.com";
+
 let campeonatoId = null;
 let campeonatoAtual = null;
 
