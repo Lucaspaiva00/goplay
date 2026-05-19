@@ -915,7 +915,6 @@ function renderRanking(campeonato) {
                         <div>#</div>
                         <div>Time</div>
                         <div>PTS</div>
-                        <div>J</div>
                         <div>V</div>
                         <div>E</div>
                         <div>D</div>
@@ -935,7 +934,6 @@ function renderRanking(campeonato) {
                             </div>
 
                             <div>${item.pontos}</div>
-                            <div>${item.jogos}</div>
                             <div>${item.vitorias}</div>
                             <div>${item.empates}</div>
                             <div>${item.derrotas}</div>
