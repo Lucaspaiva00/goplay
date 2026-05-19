@@ -190,13 +190,19 @@ const listAll = async (req, res) => {
 /* ======================================================
    LIST BY SOCIETY
 ====================================================== */
-
 const listBySociety = async (req, res) => {
 
     try {
 
         const societyId =
             Number(req.params.societyId);
+
+        if (!Number.isFinite(societyId)) {
+
+            return res.status(400).json({
+                error: "societyId inválido."
+            });
+        }
 
         const campeonatos =
             await prisma.campeonato.findMany({
@@ -207,15 +213,13 @@ const listBySociety = async (req, res) => {
 
                 include: {
 
-                    society: true,
-
                     times: {
                         include: {
                             time: true
                         }
                     },
 
-                    jogos: true
+                    jogos: true,
                 },
 
                 orderBy: {
@@ -227,6 +231,7 @@ const listBySociety = async (req, res) => {
 
     } catch (err) {
 
+        console.error("ERRO LIST BY SOCIETY:");
         console.error(err);
 
         return res.status(500).json({
