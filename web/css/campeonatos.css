@@ -10,10 +10,13 @@
             #0a3b63 100%);
     border-radius: 24px;
     padding: 42px;
-    display: flex;
-    justify-content: space-between;
-    gap: 30px;
+
+    display: grid;
+    grid-template-columns: 1fr 320px;
+
+    gap: 40px;
     align-items: center;
+
     color: white;
     margin-bottom: 32px;
     overflow: hidden;
@@ -32,7 +35,8 @@
 }
 
 .hero-left {
-    flex: 1;
+    width: 100%;
+    min-width: 0;
     position: relative;
     z-index: 2;
 }
@@ -41,20 +45,27 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
+
     background: rgba(255, 255, 255, 0.10);
     border: 1px solid rgba(255, 255, 255, 0.12);
+
     padding: 8px 14px;
     border-radius: 999px;
+
     font-size: 13px;
     font-weight: 700;
+
     margin-bottom: 18px;
 }
 
 .hero-left h1 {
-    font-size: 44px;
-    line-height: 1.1;
-    margin-bottom: 16px;
+    font-size: clamp(38px, 5vw, 64px);
+    line-height: 1;
+
+    margin-bottom: 18px;
     font-weight: 900;
+
+    max-width: 700px;
 }
 
 .hero-left h1 span {
@@ -70,17 +81,24 @@
 
 .btn-criar {
     margin-top: 28px;
+
     background: white;
     color: #052845;
+
     border: none;
     border-radius: 14px;
+
     padding: 16px 22px;
+
     font-size: 15px;
     font-weight: 800;
+
     cursor: pointer;
+
     display: inline-flex;
     align-items: center;
     gap: 10px;
+
     transition: .25s ease;
 }
 
@@ -89,26 +107,35 @@
 }
 
 .hero-right {
-    width: 300px;
+    width: 100%;
+    max-width: 320px;
+
     display: flex;
     flex-direction: column;
     gap: 16px;
+
     position: relative;
     z-index: 2;
 }
 
 .hero-stat {
     background: rgba(255, 255, 255, 0.08);
+
     border: 1px solid rgba(255, 255, 255, 0.10);
+
     border-radius: 18px;
+
     padding: 22px;
+
     backdrop-filter: blur(10px);
 }
 
 .hero-stat strong {
     display: block;
+
     font-size: 34px;
     font-weight: 900;
+
     margin-bottom: 6px;
 }
 
@@ -129,6 +156,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+
     margin-bottom: 26px;
 }
 
@@ -148,7 +176,7 @@
 
 .campeonatos-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
     gap: 22px;
 }
 
@@ -158,33 +186,45 @@
 
 .card-campeonato {
     background: white;
+
     border-radius: 22px;
     padding: 24px;
+
     position: relative;
     overflow: hidden;
+
     cursor: pointer;
+
     transition: .25s ease;
+
     border: 1px solid #e5e7eb;
+
     box-shadow:
         0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .card-campeonato:hover {
     transform: translateY(-5px);
+
     box-shadow:
         0 12px 28px rgba(0, 0, 0, 0.10);
 }
 
 .card-campeonato::before {
     content: "";
+
     position: absolute;
+
     width: 120px;
     height: 120px;
+
     background:
         linear-gradient(135deg,
             rgba(5, 40, 69, .08),
             rgba(56, 189, 248, .08));
+
     border-radius: 50%;
+
     top: -40px;
     right: -30px;
 }
@@ -193,8 +233,11 @@
     display: flex;
     justify-content: space-between;
     gap: 14px;
+
     align-items: flex-start;
+
     margin-bottom: 18px;
+
     position: relative;
     z-index: 2;
 }
@@ -202,6 +245,7 @@
 .card-top h3 {
     font-size: 24px;
     color: #052845;
+
     line-height: 1.2;
     font-weight: 800;
 }
@@ -209,11 +253,16 @@
 .badge-status {
     background: #eff6ff;
     color: #052845;
+
     border-radius: 999px;
+
     padding: 8px 12px;
+
     font-size: 12px;
     font-weight: 800;
+
     border: 1px solid #dbeafe;
+
     white-space: nowrap;
 }
 
@@ -221,7 +270,9 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+
     margin-bottom: 22px;
+
     position: relative;
     z-index: 2;
 }
@@ -230,9 +281,13 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+
     background: #f8fafc;
+
     border-radius: 12px;
+
     padding: 12px 14px;
+
     font-size: 14px;
 }
 
@@ -250,22 +305,30 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+
     position: relative;
     z-index: 2;
 }
 
 .card-footer button {
     border: none;
+
     background:
         linear-gradient(135deg,
             #052845,
             #0a3b63);
+
     color: white;
+
     height: 46px;
     padding: 0 18px;
+
     border-radius: 12px;
+
     font-weight: 700;
+
     cursor: pointer;
+
     transition: .25s ease;
 }
 
@@ -286,11 +349,17 @@
 .loading-card,
 .empty-card {
     background: white;
+
     border-radius: 20px;
+
     padding: 40px;
+
     text-align: center;
+
     border: 1px dashed #cbd5e1;
+
     color: #64748b;
+
     font-size: 16px;
 }
 
@@ -298,32 +367,30 @@
    RESPONSIVO
 ========================================= */
 
-@media(max-width: 900px) {
+@media(max-width: 1000px) {
 
     .hero-campeonatos {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 28px;
+        grid-template-columns: 1fr;
+        padding: 32px;
     }
 
     .hero-right {
+        max-width: 100%;
         width: 100%;
-    }
-
-    .hero-left h1 {
-        font-size: 34px;
     }
 
 }
 
 @media(max-width: 640px) {
 
-    .content {
-        padding: 18px;
+    .hero-left h1 {
+        font-size: 34px;
     }
 
-    .hero-left h1 {
-        font-size: 28px;
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
     }
 
     .section-header h2 {
@@ -332,6 +399,10 @@
 
     .campeonatos-grid {
         grid-template-columns: 1fr;
+    }
+
+    .hero-campeonatos {
+        padding: 24px;
     }
 
 }
