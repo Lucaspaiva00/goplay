@@ -707,7 +707,7 @@ async function gerarJogosGrupos() {
 // ============================
 function renderJogos(c) {
 
-    const jogosDiv = document.getElementById("jogos");
+    const jogosDiv = document.getElementById("listaJogos");
 
     const jogos = [...(c.jogos || [])].sort((a, b) => {
         return (a.rodada || 0) - (b.rodada || 0);
