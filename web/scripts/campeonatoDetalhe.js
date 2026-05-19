@@ -497,19 +497,112 @@ async function criarEAdicionarTime() {
    GRUPOS / FINAL
 ===================================================== */
 
-function renderAreaGrupos() {
+function renderAreaGrupos(c) {
+
     const listaGrupos = document.getElementById("listaGrupos");
-    if (listaGrupos) {
-        listaGrupos.innerHTML = `
-            <div class="empty">
-                Este campeonato é no formato <strong>Liga Ida e Volta</strong>.
-                Não utiliza grupos.
-            </div>
-        `;
+    const chipGrupos = document.getElementById("chipGrupos");
+
+    if (!listaGrupos) return;
+
+    const grupos = c.grupos || [];
+
+    if (chipGrupos) {
+        chipGrupos.textContent = `${grupos.length} grupo(s)`;
     }
 
-    const chipGrupos = document.getElementById("chipGrupos");
-    if (chipGrupos) chipGrupos.textContent = "Não usa grupos";
+    if (!grupos.length) {
+
+        listaGrupos.innerHTML = `
+            <div class="empty">
+                Nenhum grupo gerado ainda.
+            </div>
+        `;
+
+        return;
+    }
+
+    listaGrupos.innerHTML = grupos.map((grupo, index) => {
+
+        const times = grupo.timesGrupo || [];
+
+        return `
+            <div style="
+                background:#fff;
+                border:1px solid #e5e7eb;
+                border-radius:18px;
+                padding:18px;
+                margin-bottom:18px;
+            ">
+
+                <div style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    margin-bottom:14px;
+                ">
+
+                    <h3 style="
+                        margin:0;
+                        font-size:18px;
+                        font-weight:900;
+                        color:#052845;
+                    ">
+                        Grupo ${grupo.nome || String.fromCharCode(65 + index)}
+                    </h3>
+
+                    <span class="chip">
+                        ${times.length} times
+                    </span>
+
+                </div>
+
+                <div style="
+                    display:flex;
+                    flex-direction:column;
+                    gap:10px;
+                ">
+
+                    ${times.map((t, idx) => `
+
+                        <div style="
+                            display:flex;
+                            justify-content:space-between;
+                            align-items:center;
+                            background:#f8fafc;
+                            border-radius:12px;
+                            padding:12px;
+                        ">
+
+                            <div>
+                                <strong>
+                                    ${idx + 1}. ${t.time?.nome || "Time"}
+                                </strong>
+                            </div>
+
+                            <span class="chip">
+                                Liga
+                            </span>
+
+                        </div>
+
+                    `).join("")}
+
+                </div>
+
+                <div style="
+                    margin-top:14px;
+                    padding-top:14px;
+                    border-top:1px solid #eef2f7;
+                    font-size:14px;
+                    color:#64748b;
+                ">
+                    Este grupo gera automaticamente 12 jogos ida e volta.
+                </div>
+
+            </div>
+        `;
+
+    }).join("");
 }
 
 function renderAreaFinal(c) {
