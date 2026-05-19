@@ -1,55 +1,100 @@
 /* =========================================
+   CAMPEONATOS PAGE
+========================================= */
+
+.content {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 32px;
+    box-sizing: border-box;
+}
+
+.main-wrapper {
+    width: 100%;
+}
+
+.lista-section,
+.hero-campeonatos,
+.campeonatos-grid {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* =========================================
    HERO
 ========================================= */
 
 .hero-campeonatos {
-    width: 100%;
+
     background:
         linear-gradient(135deg,
             #052845 0%,
             #0a3b63 100%);
+
     border-radius: 24px;
+
     padding: 42px;
 
     display: grid;
+
     grid-template-columns: 1fr 320px;
 
     gap: 40px;
+
     align-items: center;
 
     color: white;
+
     margin-bottom: 32px;
+
     overflow: hidden;
+
     position: relative;
 }
 
 .hero-campeonatos::before {
+
     content: "";
+
     position: absolute;
+
     width: 320px;
     height: 320px;
+
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.05);
+
+    background:
+        rgba(255, 255, 255, 0.05);
+
     top: -120px;
     right: -100px;
 }
 
 .hero-left {
+
     width: 100%;
     min-width: 0;
+
     position: relative;
     z-index: 2;
 }
 
 .hero-chip {
+
     display: inline-flex;
     align-items: center;
     gap: 8px;
 
-    background: rgba(255, 255, 255, 0.10);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background:
+        rgba(255, 255, 255, 0.10);
+
+    border:
+        1px solid rgba(255, 255, 255, 0.12);
 
     padding: 8px 14px;
+
     border-radius: 999px;
 
     font-size: 13px;
@@ -59,13 +104,14 @@
 }
 
 .hero-left h1 {
+
     font-size: clamp(38px, 5vw, 64px);
+
     line-height: 1;
 
     margin-bottom: 18px;
-    font-weight: 900;
 
-    max-width: 700px;
+    font-weight: 900;
 }
 
 .hero-left h1 span {
@@ -73,19 +119,25 @@
 }
 
 .hero-left p {
+
     font-size: 16px;
+
     line-height: 1.7;
+
     max-width: 620px;
-    opacity: 0.92;
+
+    opacity: .92;
 }
 
 .btn-criar {
+
     margin-top: 28px;
 
     background: white;
     color: #052845;
 
     border: none;
+
     border-radius: 14px;
 
     padding: 16px 22px;
@@ -96,7 +148,9 @@
     cursor: pointer;
 
     display: inline-flex;
+
     align-items: center;
+
     gap: 10px;
 
     transition: .25s ease;
@@ -107,11 +161,14 @@
 }
 
 .hero-right {
+
     width: 100%;
     max-width: 320px;
 
     display: flex;
+
     flex-direction: column;
+
     gap: 16px;
 
     position: relative;
@@ -119,9 +176,12 @@
 }
 
 .hero-stat {
-    background: rgba(255, 255, 255, 0.08);
 
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    background:
+        rgba(255, 255, 255, 0.08);
+
+    border:
+        1px solid rgba(255, 255, 255, 0.10);
 
     border-radius: 18px;
 
@@ -131,6 +191,7 @@
 }
 
 .hero-stat strong {
+
     display: block;
 
     font-size: 34px;
@@ -140,7 +201,9 @@
 }
 
 .hero-stat span {
+
     font-size: 14px;
+
     opacity: .9;
 }
 
@@ -153,16 +216,22 @@
 }
 
 .section-header {
+
     display: flex;
+
     justify-content: space-between;
+
     align-items: center;
 
     margin-bottom: 26px;
 }
 
 .section-header h2 {
+
     font-size: 28px;
+
     color: #052845;
+
     margin-bottom: 6px;
 }
 
@@ -175,8 +244,12 @@
 ========================================= */
 
 .campeonatos-grid {
+
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(340px, 1fr));
+
     gap: 22px;
 }
 
@@ -185,12 +258,15 @@
 ========================================= */
 
 .card-campeonato {
+
     background: white;
 
     border-radius: 22px;
+
     padding: 24px;
 
     position: relative;
+
     overflow: hidden;
 
     cursor: pointer;
@@ -204,6 +280,7 @@
 }
 
 .card-campeonato:hover {
+
     transform: translateY(-5px);
 
     box-shadow:
@@ -211,6 +288,7 @@
 }
 
 .card-campeonato::before {
+
     content: "";
 
     position: absolute;
@@ -230,8 +308,11 @@
 }
 
 .card-top {
+
     display: flex;
+
     justify-content: space-between;
+
     gap: 14px;
 
     align-items: flex-start;
@@ -243,15 +324,20 @@
 }
 
 .card-top h3 {
+
     font-size: 24px;
+
     color: #052845;
 
     line-height: 1.2;
+
     font-weight: 800;
 }
 
 .badge-status {
+
     background: #eff6ff;
+
     color: #052845;
 
     border-radius: 999px;
@@ -267,8 +353,11 @@
 }
 
 .card-info {
+
     display: flex;
+
     flex-direction: column;
+
     gap: 10px;
 
     margin-bottom: 22px;
@@ -278,8 +367,11 @@
 }
 
 .info-item {
+
     display: flex;
+
     align-items: center;
+
     justify-content: space-between;
 
     background: #f8fafc;
@@ -292,18 +384,25 @@
 }
 
 .info-item span {
+
     color: #6b7280;
+
     font-weight: 600;
 }
 
 .info-item strong {
+
     color: #052845;
+
     font-size: 15px;
 }
 
 .card-footer {
+
     display: flex;
+
     justify-content: space-between;
+
     align-items: center;
 
     position: relative;
@@ -311,6 +410,7 @@
 }
 
 .card-footer button {
+
     border: none;
 
     background:
@@ -321,6 +421,7 @@
     color: white;
 
     height: 46px;
+
     padding: 0 18px;
 
     border-radius: 12px;
@@ -337,8 +438,11 @@
 }
 
 .card-chip {
+
     font-size: 13px;
+
     font-weight: 700;
+
     color: #0f172a;
 }
 
@@ -348,6 +452,7 @@
 
 .loading-card,
 .empty-card {
+
     background: white;
 
     border-radius: 20px;
@@ -370,26 +475,36 @@
 @media(max-width: 1000px) {
 
     .hero-campeonatos {
+
         grid-template-columns: 1fr;
+
         padding: 32px;
     }
 
     .hero-right {
+
         max-width: 100%;
+
         width: 100%;
     }
-
 }
 
 @media(max-width: 640px) {
+
+    .content {
+        padding: 20px;
+    }
 
     .hero-left h1 {
         font-size: 34px;
     }
 
     .section-header {
+
         flex-direction: column;
+
         align-items: flex-start;
+
         gap: 10px;
     }
 
@@ -404,5 +519,4 @@
     .hero-campeonatos {
         padding: 24px;
     }
-
 }
