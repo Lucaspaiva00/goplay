@@ -118,6 +118,12 @@ enum StatusVinculoTime {
   INATIVO
 }
 
+enum TipoJogo {
+  IDA
+  VOLTA
+  MATA_MATA
+}
+
 model Usuario {
   id           Int       @id @default(autoincrement())
   nome         String
@@ -485,7 +491,10 @@ model Jogo {
   campeonatoId Int
   campeonato   Campeonato @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
 
-  round   Int
+  rodada Int
+
+  tipoJogo TipoJogo @default(IDA)
+
   grupoId Int?
   grupo   Grupo? @relation(fields: [grupoId], references: [id], onDelete: SetNull)
 
