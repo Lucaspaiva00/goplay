@@ -320,7 +320,7 @@ function ensureNextStepCTA(c) {
                     <i class="fa-solid fa-circle-play"></i> Próximo passo
                 </div>
                 <div class="muted" style="margin-top:4px;">
-                    Times completos. Gere os 12 jogos da Liga Ida e Volta.
+                    Times completos. Gere os jogos da Liga Ida e Volta.
                 </div>
             </div>
 
