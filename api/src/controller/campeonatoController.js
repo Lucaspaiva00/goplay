@@ -637,8 +637,13 @@ const generateLeague = async (req, res) => {
 
                 jogos: true,
 
-                grupos: {
+                times: {
+                    include: {
+                        time: true,
+                    },
+                },
 
+                grupos: {
                     include: {
                         timesGrupo: true,
                     },
@@ -658,24 +663,101 @@ const generateLeague = async (req, res) => {
             });
         }
 
-        if (!campeonato.grupos.length) {
+        const totalTimes = campeonato.times.length;
+
+        if (
+            totalTimes < 4 ||
+            totalTimes % 4 !== 0
+        ) {
             return res.status(400).json({
-                error: "Gere os grupos antes.",
+                error: "A Liga Ida e Volta precisa de grupos com 4 times.",
             });
         }
 
         await prisma.$transaction(async (tx) => {
 
-            for (const grupo of campeonato.grupos) {
+            /* =========================================
+               REMOVE GRUPOS ANTIGOS
+            ========================================= */
 
-                const teamIds =
-                    grupo.timesGrupo.map(t =>
-                        Number(t.timeId)
+            await tx.grupoTime.deleteMany({
+                where: {
+                    grupo: {
+                        campeonatoId,
+                    },
+                },
+            });
+
+            await tx.grupo.deleteMany({
+                where: {
+                    campeonatoId,
+                },
+            });
+
+            /* =========================================
+               CRIA NOVOS GRUPOS AUTOMATICAMENTE
+            ========================================= */
+
+            const gruposCriados = [];
+
+            const timesOrdenados =
+                [...campeonato.times];
+
+            for (
+                let i = 0;
+                i < timesOrdenados.length;
+                i += 4
+            ) {
+
+                const bloco =
+                    timesOrdenados.slice(i, i + 4);
+
+                const letra =
+                    String.fromCharCode(
+                        65 + gruposCriados.length
                     );
 
-                if (teamIds.length !== 4) {
-                    continue;
+                const grupo =
+                    await tx.grupo.create({
+
+                        data: {
+                            nome: `Grupo ${letra}`,
+                            campeonatoId,
+                        },
+                    });
+
+                gruposCriados.push(grupo);
+
+                for (const item of bloco) {
+
+                    await tx.grupoTime.create({
+
+                        data: {
+                            grupoId: grupo.id,
+                            timeId: item.timeId,
+                        },
+                    });
                 }
+            }
+
+            /* =========================================
+               GERA JOGOS DE CADA GRUPO
+            ========================================= */
+
+            for (const grupo of gruposCriados) {
+
+                const timesGrupo =
+                    await tx.grupoTime.findMany({
+
+                        where: {
+                            grupoId: grupo.id,
+                        },
+                    });
+
+                const teamIds =
+                    timesGrupo.map(t =>
+                        Number(t.timeId)
+                    );
 
                 const rounds =
                     buildRoundRobinRounds(teamIds);
@@ -741,12 +823,15 @@ const generateLeague = async (req, res) => {
 
         return res.json({
             ok: true,
-            message: "Jogos dos grupos gerados com sucesso.",
+            message: "Liga gerada com sucesso.",
         });
 
     } catch (err) {
 
-        console.error("ERRO generateLeague campeonato:", err);
+        console.error(
+            "ERRO generateLeague campeonato:",
+            err
+        );
 
         return res.status(500).json({
             error: err.message || "Erro ao gerar liga.",
