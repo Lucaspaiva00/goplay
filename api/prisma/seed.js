@@ -1,9 +1,12 @@
 const { PrismaClient } = require("@prisma/client");
+const bcrypt = require("bcryptjs");
+
+
 
 const prisma = new PrismaClient();
 
 async function main() {
-
+    const senhaHash = await bcrypt.hash("123456", 10);
     console.log("🔥 Limpando banco...");
 
     await prisma.comandaItem.deleteMany();
@@ -51,7 +54,7 @@ async function main() {
         data: {
             nome: "Lucas Society",
             email: "society@goplay.com",
-            senha: "123456",
+            senha: senhaHash,
             tipo: "DONO_SOCIETY"
         }
     });
