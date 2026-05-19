@@ -195,3 +195,39 @@ textarea.input {
         grid-template-columns: 1fr;
     }
 }
+
+/* =========================================
+   AJUSTE EXCLUSIVO CREATE PAGE
+========================================= */
+
+.main-wrapper {
+
+    width: 100%;
+
+    display: flex;
+    justify-content: center;
+}
+
+.content {
+
+    margin-left: 0 !important;
+
+    width: 100% !important;
+
+    max-width: 100% !important;
+
+    padding: 40px !important;
+
+    display: flex;
+    justify-content: center;
+}
+
+/* CENTRALIZA A TELA */
+
+.create-wrapper {
+
+    width: 100%;
+    max-width: 1100px;
+
+    margin: 0 auto;
+}
