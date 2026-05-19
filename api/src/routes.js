@@ -353,46 +353,46 @@ router.get(
    CAMPEONATO
 ====================================================== */
 
-routes.post("/campeonato", campeonato.create);
+router.post("/campeonato", campeonato.create);
 
-routes.get("/campeonato", campeonato.listAll);
+router.get("/campeonato", campeonato.listAll);
 
-routes.get(
+router.get(
    "/campeonato/society/:societyId",
    campeonato.listBySociety
 );
 
-routes.get(
+router.get(
    "/campeonato/:id",
    campeonato.readOne
 );
 
-routes.post(
+router.post(
    "/campeonato/:id/add-time",
    campeonato.addTime
 );
 
-routes.post(
+router.post(
    "/campeonato/:id/generate-groups",
    campeonato.generateGroups
 );
 
-routes.post(
+router.post(
    "/campeonato/:id/generate-league",
    campeonato.generateLeague
 );
 
-routes.get(
+router.get(
    "/campeonato/:id/ranking",
    campeonato.ranking
 );
 
-routes.get(
+router.get(
    "/campeonato/:id/ranking-grupos",
    campeonato.rankingPorGrupos
 );
 
-routes.post(
+router.post(
    "/campeonato/jogo/:id/finalizar",
    campeonato.finalizarJogo
 );
@@ -401,22 +401,22 @@ routes.post(
    JOGOS
 ====================================================== */
 
-routes.get(
+router.get(
    "/jogo/:id",
    jogo.readOne
 );
 
-routes.put(
+router.put(
    "/jogo/:id/stats",
    jogo.updateStats
 );
 
-routes.post(
+router.post(
    "/jogo/:id/escalacao",
    jogo.addLineup
 );
 
-routes.post(
+router.post(
    "/jogo/:id/evento",
    jogo.addEvento
 );
