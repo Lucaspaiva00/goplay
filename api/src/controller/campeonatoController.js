@@ -612,13 +612,8 @@ const generateGroups = async (req, res) => {
     }
 };
 
-/* =====================================================
-   GERAR JOGOS DA LIGA IDA E VOLTA
-===================================================== */
 const generateLeague = async (req, res) => {
-
     try {
-
         const campeonatoId = toId(req.params.id);
 
         if (!campeonatoId) {
@@ -628,21 +623,19 @@ const generateLeague = async (req, res) => {
         }
 
         const campeonato = await prisma.campeonato.findUnique({
-
             where: {
                 id: campeonatoId,
             },
-
             include: {
-
                 jogos: true,
-
                 times: {
                     include: {
                         time: true,
                     },
+                    orderBy: {
+                        id: "asc",
+                    },
                 },
-
                 grupos: {
                     include: {
                         timesGrupo: true,
@@ -665,22 +658,20 @@ const generateLeague = async (req, res) => {
 
         const totalTimes = campeonato.times.length;
 
-        if (
-            totalTimes < 4 ||
-            totalTimes % 4 !== 0
-        ) {
+        if (totalTimes !== campeonato.maxTimes) {
             return res.status(400).json({
-                error: "A Liga Ida e Volta precisa de grupos com 4 times.",
+                error: `O campeonato precisa ter ${campeonato.maxTimes} times para gerar a liga.`,
+            });
+        }
+
+        if (totalTimes < 4 || totalTimes % 4 !== 0) {
+            return res.status(400).json({
+                error: "A Liga Ida e Volta precisa ter grupos com 4 times.",
             });
         }
 
         await prisma.$transaction(async (tx) => {
-
-            /* =========================================
-               REMOVE GRUPOS ANTIGOS
-            ========================================= */
-
-            await tx.grupoTime.deleteMany({
+            await tx.timeGrupo.deleteMany({
                 where: {
                     grupo: {
                         campeonatoId,
@@ -694,113 +685,67 @@ const generateLeague = async (req, res) => {
                 },
             });
 
-            /* =========================================
-               CRIA NOVOS GRUPOS AUTOMATICAMENTE
-            ========================================= */
-
             const gruposCriados = [];
+            const timesOrdenados = [...campeonato.times];
 
-            const timesOrdenados =
-                [...campeonato.times];
+            for (let i = 0; i < timesOrdenados.length; i += 4) {
+                const bloco = timesOrdenados.slice(i, i + 4);
+                const letra = String.fromCharCode(65 + gruposCriados.length);
 
-            for (
-                let i = 0;
-                i < timesOrdenados.length;
-                i += 4
-            ) {
-
-                const bloco =
-                    timesOrdenados.slice(i, i + 4);
-
-                const letra =
-                    String.fromCharCode(
-                        65 + gruposCriados.length
-                    );
-
-                const grupo =
-                    await tx.grupo.create({
-
-                        data: {
-                            nome: `Grupo ${letra}`,
-                            campeonatoId,
-                        },
-                    });
+                const grupo = await tx.grupo.create({
+                    data: {
+                        nome: `Grupo ${letra}`,
+                        campeonatoId,
+                    },
+                });
 
                 gruposCriados.push(grupo);
 
                 for (const item of bloco) {
-
-                    await tx.grupoTime.create({
-
-                        data: {
-                            grupoId: grupo.id,
-                            timeId: item.timeId,
-                        },
-                    });
+                    await ensureTimeGrupoRow(tx, grupo.id, item.timeId);
+                    await ensureTabelaRow(tx, campeonatoId, item.timeId);
                 }
             }
 
-            /* =========================================
-               GERA JOGOS DE CADA GRUPO
-            ========================================= */
-
             for (const grupo of gruposCriados) {
+                const timesGrupo = await tx.timeGrupo.findMany({
+                    where: {
+                        grupoId: grupo.id,
+                    },
+                    orderBy: {
+                        id: "asc",
+                    },
+                });
 
-                const timesGrupo =
-                    await tx.grupoTime.findMany({
+                const teamIds = timesGrupo.map(t => Number(t.timeId));
 
-                        where: {
-                            grupoId: grupo.id,
-                        },
-                    });
+                if (teamIds.length !== 4) {
+                    throw new Error(`O ${grupo.nome} precisa ter exatamente 4 times.`);
+                }
 
-                const teamIds =
-                    timesGrupo.map(t =>
-                        Number(t.timeId)
-                    );
+                const rounds = buildRoundRobinRounds(teamIds);
 
-                const rounds =
-                    buildRoundRobinRounds(teamIds);
-
-                // IDA
                 for (let r = 0; r < rounds.length; r++) {
-
                     for (const [a, b] of rounds[r]) {
-
                         await createGameWithStats(tx, {
-
                             campeonatoId,
-
                             grupoId: grupo.id,
-
                             rodada: r + 1,
-
                             tipoJogo: "IDA",
-
                             timeAId: a,
-
                             timeBId: b,
                         });
                     }
                 }
 
-                // VOLTA
                 for (let r = 0; r < rounds.length; r++) {
-
                     for (const [a, b] of rounds[r]) {
-
                         await createGameWithStats(tx, {
-
                             campeonatoId,
-
                             grupoId: grupo.id,
-
                             rodada: rounds.length + r + 1,
-
                             tipoJogo: "VOLTA",
-
                             timeAId: b,
-
                             timeBId: a,
                         });
                     }
@@ -808,11 +753,9 @@ const generateLeague = async (req, res) => {
             }
 
             await tx.campeonato.update({
-
                 where: {
                     id: campeonatoId,
                 },
-
                 data: {
                     status: "EM_ANDAMENTO",
                     faseAtual: "GRUPOS",
@@ -827,18 +770,13 @@ const generateLeague = async (req, res) => {
         });
 
     } catch (err) {
-
-        console.error(
-            "ERRO generateLeague campeonato:",
-            err
-        );
+        console.error("ERRO generateLeague campeonato:", err);
 
         return res.status(500).json({
             error: err.message || "Erro ao gerar liga.",
         });
     }
 };
-
 /* =====================================================
    FINALIZAR JOGO
 ===================================================== */
