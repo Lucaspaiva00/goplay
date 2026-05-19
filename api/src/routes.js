@@ -30,11 +30,8 @@ const campoController =
 const conviteController =
    require("./controller/conviteController");
 
-const campeonatoController =
-   require("./controller/campeonatoController");
-
-const jogoController =
-   require("./controller/jogoController");
+const campeonato = require("./controller/campeonatoController");
+const jogo = require("./controller/jogoController");
 
 const pagamentoController =
    require("./controller/pagamentoController");
