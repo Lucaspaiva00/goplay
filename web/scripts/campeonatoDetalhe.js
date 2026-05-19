@@ -740,7 +740,6 @@ function renderJogoCard(j) {
             <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                     <span class="chip">${badge}</span>
-                    <span class="chip">Jogo #${Number(j.id)}</span>
                     <span class="chip" style="background:${statusBg};color:${statusColor};">
                         ${statusLabel}
                     </span>
