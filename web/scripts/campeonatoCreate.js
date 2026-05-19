@@ -20,7 +20,14 @@ function salvarCampeonato() {
 
     if (!data.societyId) return alert("Society não encontrado.");
     if (!data.nome) return alert("Informe o nome do campeonato.");
-    if (data.maxTimes !== 4) return alert("A Liga Ida e Volta precisa ter exatamente 4 times.");
+    if (
+        data.maxTimes < 4 ||
+        data.maxTimes % 4 !== 0
+    ) {
+        return alert(
+            "A Liga Ida e Volta precisa ter quantidade de times múltipla de 4."
+        );
+    }
 
     fetch(`${BASE_URL}/campeonato`, {
         method: "POST",

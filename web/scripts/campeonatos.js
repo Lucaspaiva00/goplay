@@ -61,12 +61,12 @@ async function carregarCampeonatos(societyId) {
 
                         <div>
                             <strong>Times:</strong>
-                            ${times}/4
+                            ${times}/${c.maxTimes}
                         </div>
 
                         <div>
                             <strong>Jogos:</strong>
-                            ${jogos}/12
+                            ${jogos}/${(c.maxTimes / 4) * 12}
                         </div>
 
                     </div>

@@ -210,12 +210,12 @@ function renderCampeonatoInfo(c) {
 
         <div class="item">
             <strong>Times:</strong>
-            ${totalTimes}/4
+            ${totalTimes}/${c.maxTimes}
         </div>
 
         <div class="item">
             <strong>Jogos:</strong>
-            ${totalJogos}/12
+            ${totalJogos}/${(c.maxTimes / 4) * 12}
         </div>
 
         <div class="item">
@@ -261,7 +261,7 @@ function ajustarAcoes(c) {
     const btnGerarJogosGrupos = document.getElementById("btnGerarJogosGrupos");
 
     if (btnGerarJogosGrupos) {
-        if (totalTimes === 4 && totalJogos === 0) {
+        if (totalTimes === c.maxTimes && totalJogos === 0) {
             btnGerarJogosGrupos.style.display = "inline-flex";
             btnGerarJogosGrupos.innerHTML = `
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
@@ -303,11 +303,11 @@ function ensureNextStepCTA(c) {
         return;
     }
 
-    if (totalTimes < 4) {
+    if (totalTimes < c.maxTimes) {
         wrap.innerHTML = `
             <div class="empty">
                 Adicione exatamente 4 times para liberar a geração da Liga Ida e Volta. 
-                <strong>${totalTimes}/4</strong>
+                <strong>${totalTimes}/${c.maxTimes}</strong>
             </div>
         `;
         return;
@@ -340,14 +340,14 @@ function renderTimes(c) {
     const total = c.times?.length || 0;
 
     const chip = document.getElementById("chipTimes");
-    if (chip) chip.textContent = `${total}/4 time(s)`;
+    if (chip) chip.textContent = `${total}/${c.maxTimes} time(s)`
 
     const btnAdd = document.getElementById("btnAddTime");
     const btnCriar = document.getElementById("btnCriarEAddTime");
     const select = document.getElementById("timeId");
     const inputNovo = document.getElementById("novoTimeNome");
 
-    const lotado = total >= 4 || (c.jogos?.length || 0) > 0;
+    const lotado = total >= c.maxTimes || (c.jogos?.length || 0) > 0;
 
     if (btnAdd) btnAdd.disabled = lotado;
     if (btnCriar) btnCriar.disabled = lotado;
@@ -674,7 +674,8 @@ function renderJogos(c) {
         return (a.id || 0) - (b.id || 0);
     });
 
-    if (chip) chip.textContent = `${jogos.length}/12 jogo(s)`;
+    if (chip) chip.textContent =
+        `${jogos.length}/${(c.maxTimes / 4) * 12} jogo(s)`;
 
     if (!jogosDiv) return;
 
