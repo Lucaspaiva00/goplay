@@ -133,7 +133,7 @@ function renderBracket(bracket) {
         const b = m?.timeB?.nome ?? "Time B";
         const ga = m?.golsA ?? "-";
         const gb = m?.golsB ?? "-";
-        const fase = m?.round ? `Rodada ${m.round}` : "";
+        const fase = m?.rodada ? `Rodada ${m.rodada}` : "";
 
         return `
             <div style="padding:10px 0;border-bottom:1px dashed #e5e7eb;">
@@ -157,7 +157,7 @@ function renderJogos(jogos) {
         const timeB = j?.timeB?.nome || "Time B";
         const golsA = j?.golsA ?? "-";
         const golsB = j?.golsB ?? "-";
-        const rodada = j?.round ? `Rodada ${j.round}` : "";
+        const rodada = j?.rodada ? `Rodada ${j.rodada}` : "";
         const status = j?.finalizado ? "Finalizado" : "Pendente";
         const dataHora = formatDateTime(j?.dataHora);
         const observacao = j?.observacao || "-";

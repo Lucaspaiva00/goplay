@@ -704,105 +704,162 @@ async function gerarJogosGrupos() {
 // JOGOS
 // ============================
 function renderJogos(c) {
-    const div = document.getElementById("listaJogos");
-    const total = c.jogos?.length || 0;
 
-    const chip = document.getElementById("chipJogos");
-    if (chip) chip.textContent = `${total} jogo(s)`;
+    const jogosDiv = document.getElementById("jogos");
 
-    if (!div) return;
+    const jogos = [...(c.jogos || [])].sort((a, b) => {
+        return (a.rodada || 0) - (b.rodada || 0);
+    });
 
-    if (!total) {
-        div.innerHTML = `
-      <div class="empty">
-        Nenhum jogo disponível no momento.<br/>
-        <small class="muted">
-          Se você gerou grupos e apareceu "só 2 jogos" com 4 times, é porque seu backend dividiu em 2 grupos de 2 times.
-        </small>
-      </div>
+    if (!jogos.length) {
+
+        jogosDiv.innerHTML = `
+    < div class="empty-state" >
+        Nenhum jogo gerado ainda.
+            </div >
     `;
+
         return;
     }
 
-    div.innerHTML = (c.jogos || [])
-        .map((j) => {
-            const nomeA = j?.timeA?.nome ?? "Time A";
-            const nomeB = j?.timeB?.nome ?? "Time B";
-            const placarA = j.golsA ?? "";
-            const placarB = j.golsB ?? "";
-            const status = j.finalizado ? `<span class="chip">Finalizado</span>` : `<span class="chip">Em aberto</span>`;
-            const isMataMata = j.grupoId === null;
+    const agrupados = {};
+
+    jogos.forEach(j => {
+
+        const rodada = j.rodada || 1;
+
+        if (!agrupados[rodada]) {
+            agrupados[rodada] = [];
+        }
+
+        agrupados[rodada].push(j);
+    });
+
+    jogosDiv.innerHTML = Object.keys(agrupados)
+        .sort((a, b) => Number(a) - Number(b))
+        .map(rodada => {
+
+            const jogosRodada = agrupados[rodada];
 
             return `
-        <div class="match">
-          <div class="match-main">
-            <div class="match-title">${escapeHTML(nomeA)} ${escapeHTML(placarA)} x ${escapeHTML(placarB)} ${escapeHTML(nomeB)}</div>
-            <div class="match-sub">Jogo #${Number(j.id)}</div>
-            ${isMataMata
-                    ? `<div class="muted" style="font-size:12px; margin-top:6px;">Mata-mata • Round ${Number(j.round || 1)}</div>`
-                    : `<div class="muted" style="font-size:12px; margin-top:6px;">Fase de grupos • Rodada ${Number(j.round || 1)}</div>`
-                }
-          </div>
+    < div class="rodada-bloco" >
 
-          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            ${status}
+                    <div class="rodada-header">
+                        Rodada ${rodada}
+                    </div>
 
-            <button class="btn btn-light" onclick="abrirDetalhesJogo(${Number(j.id)})">
-              <i class="fa-solid fa-eye"></i> Detalhes
-            </button>
+                    <div class="rodada-jogos">
 
-            ${j.finalizado
-                    ? ``
-                    : `
-              <div class="score-inputs" style="flex-wrap:wrap;">
-                <input id="gA${Number(j.id)}" type="number" min="0" placeholder="Gols A" />
-                <input id="gB${Number(j.id)}" type="number" min="0" placeholder="Gols B" />
+                        ${jogosRodada.map(j => {
 
-                <button class="btn btn-light" onclick="toggleDesempate(${Number(j.id)})" title="Usar desempate (se empate no mata-mata)">
-                  <i class="fa-solid fa-scale-balanced"></i> Desempate
-                </button>
+                const badge =
+                    j.tipoJogo === "VOLTA"
+                        ? "🔁 Volta"
+                        : j.tipoJogo === "IDA"
+                            ? "➡️ Ida"
+                            : "🏆 Mata-mata";
 
-                <button class="btn btn-primary" onclick="finalizarJogo(${Number(j.id)})" id="btnFinalizar${Number(j.id)}">
-                  <i class="fa-solid fa-check"></i> Finalizar
-                </button>
+                return `
+                                <div class="jogo-card">
 
-                <div id="desempateBox${Number(j.id)}" style="display:none; width:100%; margin-top:10px; padding:12px; border:1px solid #eef2f6; border-radius:12px; background:#fff;">
-                  <div class="muted" style="font-size:12px; margin-bottom:10px;">
-                    Empate no mata-mata exige vencedor e tipo de desempate.
-                  </div>
+                                    <div class="jogo-top">
 
-                  <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <select id="vencedorId${Number(j.id)}" style="padding:10px; border-radius:10px; border:1px solid #dbe3ef;">
-                      <option value="">Selecione o vencedor...</option>
-                      <option value="${Number(j.timeAId)}">${escapeHTML(j?.timeA?.nome ?? "Time A")}</option>
-                      <option value="${Number(j.timeBId)}">${escapeHTML(j?.timeB?.nome ?? "Time B")}</option>
-                    </select>
+                                        <span class="badge-jogo">
+                                            ${badge}
+                                        </span>
 
-                    <select id="desempateTipo${Number(j.id)}" style="padding:10px; border-radius:10px; border:1px solid #dbe3ef;">
-                      <option value="">Tipo de desempate...</option>
-                      <option value="PENALTIS">Pênaltis</option>
-                      <option value="WO">W.O.</option>
-                      <option value="MELHOR_CAMPANHA">Melhor campanha</option>
-                      <option value="OUTRO">Outro</option>
-                    </select>
+                                        ${j.grupo?.nome
+                        ? `
+                                                <span class="grupo-jogo">
+                                                    ${j.grupo.nome}
+                                                </span>
+                                              `
+                        : ""
+                    }
 
-                    <input id="penaltisA${Number(j.id)}" type="number" min="0" placeholder="Pênaltis A (opcional)"
-                      style="padding:10px; border-radius:10px; border:1px solid #dbe3ef; width:180px;" />
-                    <input id="penaltisB${Number(j.id)}" type="number" min="0" placeholder="Pênaltis B (opcional)"
-                      style="padding:10px; border-radius:10px; border:1px solid #dbe3ef; width:180px;" />
-                    <input id="observacao${Number(j.id)}" type="text" placeholder="Observação (opcional)"
-                      style="padding:10px; border-radius:10px; border:1px solid #dbe3ef; flex:1; min-width:220px;" />
-                  </div>
-                </div>
-              </div>
-            `
-                }
-          </div>
-        </div>
-      `;
-        })
-        .join("");
+                                    </div>
+
+                                    <div class="jogo-times">
+
+                                        <div class="time">
+                                            ${j.timeA?.nome || "Time A"}
+                                        </div>
+
+                                        <div class="placar">
+
+                                            <input
+                                                type="number"
+                                                id="gA${j.id}"
+                                                value="${j.golsA ?? ""}"
+                                                min="0"
+                                                class="input-gol"
+                                                ${j.finalizado ? "disabled" : ""}
+                                            >
+
+                                            <span>x</span>
+
+                                            <input
+                                                type="number"
+                                                id="gB${j.id}"
+                                                value="${j.golsB ?? ""}"
+                                                min="0"
+                                                class="input-gol"
+                                                ${j.finalizado ? "disabled" : ""}
+                                            >
+
+                                        </div>
+
+                                        <div class="time">
+                                            ${j.timeB?.nome || "Time B"}
+                                        </div>
+
+                                    </div>
+
+                                    <div class="jogo-footer">
+
+                                        <div class="muted">
+                                            ${j.finalizado
+                        ? "✅ Finalizado"
+                        : "⏳ Pendente"}
+                                        </div>
+
+                                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+
+                                            <button
+                                                class="btn btn-secondary"
+                                                onclick="abrirDetalhesJogo(${j.id})"
+                                            >
+                                                Detalhes
+                                            </button>
+
+                                            ${!j.finalizado
+                        ? `
+                                                    <button
+                                                        class="btn btn-primary"
+                                                        id="btnFinalizar${j.id}"
+                                                        onclick="finalizarJogo(${j.id})"
+                                                    >
+                                                        Finalizar
+                                                    </button>
+                                                  `
+                        : ""
+                    }
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            `;
+            }).join("")}
+
+                    </div>
+
+                </div >
+    `;
+        }).join("");
 }
+
 
 async function finalizarJogo(id) {
     const jogoId = Number(id);

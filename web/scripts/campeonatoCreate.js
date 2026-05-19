@@ -24,6 +24,14 @@ function salvarCampeonato() {
     if (!data.tipo) return alert("Selecione o tipo.");
     if (!data.maxTimes || data.maxTimes < 2) return alert("Informe o número máximo de times (mínimo 2).");
 
+    if (Number(data.maxTimes) % 4 !== 0) {
+        return alert(
+            "O campeonato deve possuir quantidade de times múltipla de 4."
+        );
+    }
+
+
+
     fetch(`${BASE_URL}/campeonato`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
