@@ -856,63 +856,103 @@ async function finalizarJogo(id) {
 /* =====================================================
    RANKING
 ===================================================== */
+function renderRanking(campeonato) {
 
-async function renderRanking() {
-    const wrap = document.getElementById("rankingWrap");
-    const chip = document.getElementById("chipRanking");
+    const container =
+        document.getElementById("tab-ranking");
 
-    if (!wrap || !chip) return;
+    const grupos =
+        campeonato.grupos || [];
 
-    try {
-        const ranking = await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/ranking`);
+    if (!grupos.length) {
 
-        chip.textContent = `${ranking.length} time(s)`;
-
-        if (!ranking.length) {
-            wrap.innerHTML = `<div class="empty">Sem dados no ranking ainda.</div>`;
-            return;
-        }
-
-        wrap.innerHTML = `
-            <div class="item" style="font-weight:700;background:#f7f9fc;">
-                <div style="width:34px;">#</div>
-                <div style="flex:1;">Time</div>
-                <div style="width:50px;text-align:center;">PTS</div>
-                <div style="width:40px;text-align:center;">J</div>
-                <div style="width:40px;text-align:center;">V</div>
-                <div style="width:40px;text-align:center;">E</div>
-                <div style="width:40px;text-align:center;">D</div>
-                <div style="width:55px;text-align:center;">GP</div>
-                <div style="width:55px;text-align:center;">GC</div>
-                <div style="width:55px;text-align:center;">SG</div>
+        container.innerHTML = `
+            <div class="empty-state">
+                Nenhum grupo gerado ainda.
             </div>
-
-            ${ranking.map((r, i) => {
-            const time = r.time?.nome || r.nome || "Time";
-            const jogos = (r.vitorias || 0) + (r.empates || 0) + (r.derrotas || 0);
-
-            return `
-                    <div class="item">
-                        <div style="width:34px;">${i + 1}</div>
-                        <div style="flex:1;"><strong>${escapeHTML(time)}</strong></div>
-                        <div style="width:50px;text-align:center;"><strong>${Number(r.pontos || 0)}</strong></div>
-                        <div style="width:40px;text-align:center;">${jogos}</div>
-                        <div style="width:40px;text-align:center;">${Number(r.vitorias || 0)}</div>
-                        <div style="width:40px;text-align:center;">${Number(r.empates || 0)}</div>
-                        <div style="width:40px;text-align:center;">${Number(r.derrotas || 0)}</div>
-                        <div style="width:55px;text-align:center;">${Number(r.golsPro || 0)}</div>
-                        <div style="width:55px;text-align:center;">${Number(r.golsContra || 0)}</div>
-                        <div style="width:55px;text-align:center;">${Number(r.saldoGols || 0)}</div>
-                    </div>
-                `;
-        }).join("")}
         `;
 
-    } catch (err) {
-        console.error(err);
-        wrap.innerHTML = `<div class="empty">Erro ao carregar ranking.</div>`;
-        chip.textContent = "—";
+        return;
     }
+
+    container.innerHTML = grupos.map(grupo => {
+
+        const rankingGrupo =
+            (campeonato.tabela || [])
+                .filter(t =>
+                    grupo.timesGrupo.some(
+                        tg => tg.timeId === t.timeId
+                    )
+                )
+                .sort((a, b) => {
+
+                    if (b.pontos !== a.pontos)
+                        return b.pontos - a.pontos;
+
+                    if (b.saldoGols !== a.saldoGols)
+                        return b.saldoGols - a.saldoGols;
+
+                    return b.golsPro - a.golsPro;
+                });
+
+        return `
+            <div class="grupo-ranking-card">
+
+                <div class="grupo-ranking-header">
+
+                    <div>
+                        <h3>${grupo.nome}</h3>
+                        <span>
+                            ${rankingGrupo.length} times
+                        </span>
+                    </div>
+
+                </div>
+
+                <div class="ranking-table">
+
+                    <div class="ranking-head">
+                        <div>#</div>
+                        <div>Time</div>
+                        <div>PTS</div>
+                        <div>J</div>
+                        <div>V</div>
+                        <div>E</div>
+                        <div>D</div>
+                        <div>GP</div>
+                        <div>GC</div>
+                        <div>SG</div>
+                    </div>
+
+                    ${rankingGrupo.map((item, index) => `
+
+                        <div class="ranking-row">
+
+                            <div>${index + 1}</div>
+
+                            <div>
+                                ${item.time?.nome || "-"}
+                            </div>
+
+                            <div>${item.pontos}</div>
+                            <div>${item.jogos}</div>
+                            <div>${item.vitorias}</div>
+                            <div>${item.empates}</div>
+                            <div>${item.derrotas}</div>
+                            <div>${item.golsPro}</div>
+                            <div>${item.golsContra}</div>
+                            <div>${item.saldoGols}</div>
+
+                        </div>
+
+                    `).join("")}
+
+                </div>
+
+            </div>
+        `;
+
+    }).join("");
 }
 
 /* =====================================================
