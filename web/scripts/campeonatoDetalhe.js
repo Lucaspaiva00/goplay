@@ -11,6 +11,10 @@ const busy = {
     finalizarJogo: new Set(),
 };
 
+/* =====================================================
+   INIT
+===================================================== */
+
 document.addEventListener("DOMContentLoaded", () => {
     campeonatoId = new URLSearchParams(location.search).get("campeonatoId");
 
@@ -43,22 +47,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const btnGerarJogosGrupos = document.getElementById("btnGerarJogosGrupos");
-    if (btnGerarJogosGrupos) btnGerarJogosGrupos.addEventListener("click", gerarLiga);
+    if (btnGerarJogosGrupos) {
+        btnGerarJogosGrupos.addEventListener("click", gerarLiga);
+    }
 
-    const btnGerarGrupos = document.getElementById("btnGerarGrupos");
-    if (btnGerarGrupos) btnGerarGrupos.style.display = "none";
-
-    const btnGerarMataMata = document.getElementById("btnGerarMataMata");
-    if (btnGerarMataMata) btnGerarMataMata.style.display = "none";
-
-    const btnVerChaveamento = document.getElementById("btnVerChaveamento");
-    if (btnVerChaveamento) btnVerChaveamento.style.display = "none";
-
-    const btnAbrirBracket = document.getElementById("btnAbrirBracket");
-    if (btnAbrirBracket) btnAbrirBracket.style.display = "none";
+    esconderElementosAntigos();
 
     carregarDetalhes();
 });
+
+/* =====================================================
+   HELPERS
+===================================================== */
 
 function abrirSecao(idSecao) {
     document.querySelectorAll(".nav-pill").forEach((b) => b.classList.remove("active"));
@@ -71,6 +71,20 @@ function abrirSecao(idSecao) {
     if (sec) sec.classList.add("active");
 
     window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function esconderElementosAntigos() {
+    const btnGerarGrupos = document.getElementById("btnGerarGrupos");
+    if (btnGerarGrupos) btnGerarGrupos.style.display = "none";
+
+    const btnGerarMataMata = document.getElementById("btnGerarMataMata");
+    if (btnGerarMataMata) btnGerarMataMata.style.display = "none";
+
+    const btnVerChaveamento = document.getElementById("btnVerChaveamento");
+    if (btnVerChaveamento) btnVerChaveamento.style.display = "none";
+
+    const btnAbrirBracket = document.getElementById("btnAbrirBracket");
+    if (btnAbrirBracket) btnAbrirBracket.style.display = "none";
 }
 
 function escapeHTML(str) {
@@ -115,28 +129,27 @@ async function safeFetchJSON(url, options = {}) {
     return data;
 }
 
-function renderCampeonatoInfo(c) {
-    const el = document.getElementById("campeonatoInfo");
-    if (!el) return;
-
-    const fmtData = (d) => {
-        if (!d) return "—";
-        const dt = new Date(d);
-        if (Number.isNaN(dt.getTime())) return "—";
-        return dt.toLocaleDateString("pt-BR");
-    };
-
-    el.innerHTML = `
-        <div class="item"><strong>Nome:</strong> ${escapeHTML(c.nome || "—")}</div>
-        <div class="item"><strong>Tipo:</strong> Liga ida e volta</div>
-        <div class="item"><strong>Times:</strong> ${(c.times?.length || 0)} / ${escapeHTML(c.maxTimes || 4)}</div>
-        <div class="item"><strong>Jogos:</strong> ${(c.jogos?.length || 0)} / 12</div>
-        <div class="item"><strong>Status:</strong> ${escapeHTML(c.status || "—")}</div>
-        <div class="item"><strong>Fase atual:</strong> ${escapeHTML(c.faseAtual || "LIGA")}</div>
-        <div class="item"><strong>Início:</strong> ${escapeHTML(fmtData(c.dataInicio))}</div>
-        <div class="item"><strong>Fim:</strong> ${escapeHTML(fmtData(c.dataFim))}</div>
-    `;
+function formatDate(value) {
+    if (!value) return "—";
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) return "—";
+    return dt.toLocaleDateString("pt-BR");
 }
+
+function getStatusLabel(status) {
+    const s = String(status || "").toUpperCase();
+
+    if (s === "EM_CRIACAO") return "Em criação";
+    if (s === "INSCRICOES_ABERTAS") return "Inscrições abertas";
+    if (s === "EM_ANDAMENTO") return "Em andamento";
+    if (s === "FINALIZADO") return "Finalizado";
+
+    return status || "—";
+}
+
+/* =====================================================
+   CARREGAMENTO
+===================================================== */
 
 async function carregarDetalhes(force = false) {
     if (busy.carregar && !force) return;
@@ -158,20 +171,9 @@ async function carregarDetalhes(force = false) {
         renderTimes(c);
         renderJogos(c);
         await renderRanking(c);
+        renderAreaFinal(c);
+        renderAreaGrupos(c);
         ajustarAcoes(c);
-
-        const listaGrupos = document.getElementById("listaGrupos");
-        if (listaGrupos) {
-            listaGrupos.innerHTML = `<div class="empty">Este campeonato é Liga Ida e Volta. Não usa grupos.</div>`;
-        }
-
-        const chipGrupos = document.getElementById("chipGrupos");
-        if (chipGrupos) chipGrupos.textContent = "Não usa grupos";
-
-        const finalInfo = document.getElementById("finalInfo");
-        if (finalInfo) {
-            finalInfo.innerHTML = `<div class="empty">Este campeonato não possui chaveamento. A classificação é por pontos.</div>`;
-        }
 
     } catch (err) {
         console.error(err);
@@ -182,6 +184,76 @@ async function carregarDetalhes(force = false) {
     }
 }
 
+/* =====================================================
+   INFO
+===================================================== */
+
+function renderCampeonatoInfo(c) {
+    const el = document.getElementById("campeonatoInfo");
+    if (!el) return;
+
+    const totalTimes = c.times?.length || 0;
+    const totalJogos = c.jogos?.length || 0;
+    const jogosFinalizados = (c.jogos || []).filter(j => j.finalizado).length;
+    const jogosPendentes = totalJogos - jogosFinalizados;
+
+    el.innerHTML = `
+        <div class="item">
+            <strong>Nome:</strong>
+            ${escapeHTML(c.nome || "—")}
+        </div>
+
+        <div class="item">
+            <strong>Formato:</strong>
+            Liga Ida e Volta
+        </div>
+
+        <div class="item">
+            <strong>Times:</strong>
+            ${totalTimes}/4
+        </div>
+
+        <div class="item">
+            <strong>Jogos:</strong>
+            ${totalJogos}/12
+        </div>
+
+        <div class="item">
+            <strong>Finalizados:</strong>
+            ${jogosFinalizados}
+        </div>
+
+        <div class="item">
+            <strong>Pendentes:</strong>
+            ${jogosPendentes}
+        </div>
+
+        <div class="item">
+            <strong>Status:</strong>
+            ${escapeHTML(getStatusLabel(c.status))}
+        </div>
+
+        <div class="item">
+            <strong>Fase atual:</strong>
+            ${escapeHTML(c.faseAtual || "LIGA")}
+        </div>
+
+        <div class="item">
+            <strong>Início:</strong>
+            ${escapeHTML(formatDate(c.dataInicio))}
+        </div>
+
+        <div class="item">
+            <strong>Fim:</strong>
+            ${escapeHTML(formatDate(c.dataFim))}
+        </div>
+    `;
+}
+
+/* =====================================================
+   AÇÕES
+===================================================== */
+
 function ajustarAcoes(c) {
     const totalTimes = c.times?.length || 0;
     const totalJogos = c.jogos?.length || 0;
@@ -191,7 +263,10 @@ function ajustarAcoes(c) {
     if (btnGerarJogosGrupos) {
         if (totalTimes === 4 && totalJogos === 0) {
             btnGerarJogosGrupos.style.display = "inline-flex";
-            btnGerarJogosGrupos.innerHTML = `<i class="fa-solid fa-futbol"></i> Gerar Liga Ida e Volta`;
+            btnGerarJogosGrupos.innerHTML = `
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                Gerar Liga Ida e Volta
+            `;
         } else {
             btnGerarJogosGrupos.style.display = "none";
         }
@@ -215,11 +290,14 @@ function ensureNextStepCTA(c) {
 
     const totalTimes = c.times?.length || 0;
     const totalJogos = c.jogos?.length || 0;
+    const jogosFinalizados = (c.jogos || []).filter(j => j.finalizado).length;
 
     if (totalJogos > 0) {
         wrap.innerHTML = `
             <div class="empty">
-                Liga gerada com sucesso. Agora finalize os jogos para atualizar a classificação.
+                Liga gerada com sucesso. 
+                Jogos finalizados: <strong>${jogosFinalizados}/${totalJogos}</strong>.
+                Agora acompanhe a aba <strong>Jogos</strong> e o <strong>Ranking</strong>.
             </div>
         `;
         return;
@@ -228,7 +306,8 @@ function ensureNextStepCTA(c) {
     if (totalTimes < 4) {
         wrap.innerHTML = `
             <div class="empty">
-                Adicione exatamente 4 times para liberar a geração da Liga Ida e Volta. (${totalTimes}/4)
+                Adicione exatamente 4 times para liberar a geração da Liga Ida e Volta. 
+                <strong>${totalTimes}/4</strong>
             </div>
         `;
         return;
@@ -251,6 +330,10 @@ function ensureNextStepCTA(c) {
         </div>
     `;
 }
+
+/* =====================================================
+   TIMES
+===================================================== */
 
 function renderTimes(c) {
     const div = document.getElementById("listaTimes");
@@ -278,11 +361,11 @@ function renderTimes(c) {
         return;
     }
 
-    div.innerHTML = (c.times || []).map((t) => `
+    div.innerHTML = (c.times || []).map((t, index) => `
         <div class="item">
             <div>
-                <strong>${escapeHTML(t?.time?.nome ?? "Time")}</strong>
-                <div class="muted" style="font-size:12px;">Inscrito</div>
+                <strong>${index + 1}. ${escapeHTML(t?.time?.nome ?? "Time")}</strong>
+                <div class="muted" style="font-size:12px;">Inscrito na liga</div>
             </div>
             <span class="chip">OK</span>
         </div>
@@ -410,6 +493,56 @@ async function criarEAdicionarTime() {
     }
 }
 
+/* =====================================================
+   GRUPOS / FINAL
+===================================================== */
+
+function renderAreaGrupos() {
+    const listaGrupos = document.getElementById("listaGrupos");
+    if (listaGrupos) {
+        listaGrupos.innerHTML = `
+            <div class="empty">
+                Este campeonato é no formato <strong>Liga Ida e Volta</strong>.
+                Não utiliza grupos.
+            </div>
+        `;
+    }
+
+    const chipGrupos = document.getElementById("chipGrupos");
+    if (chipGrupos) chipGrupos.textContent = "Não usa grupos";
+}
+
+function renderAreaFinal(c) {
+    const finalInfo = document.getElementById("finalInfo");
+    const chipFinal = document.getElementById("chipFinal");
+
+    if (chipFinal) {
+        chipFinal.textContent = c.status === "FINALIZADO" ? "Finalizado" : "Por pontos";
+    }
+
+    if (!finalInfo) return;
+
+    if (c.status === "FINALIZADO") {
+        finalInfo.innerHTML = `
+            <div class="empty">
+                🏆 Campeonato finalizado. O campeão será definido pela liderança da tabela.
+            </div>
+        `;
+        return;
+    }
+
+    finalInfo.innerHTML = `
+        <div class="empty">
+            Este campeonato ainda está em formato de <strong>pontos corridos</strong>.
+            Após estabilizarmos a liga, podemos adicionar semifinal e final.
+        </div>
+    `;
+}
+
+/* =====================================================
+   GERAR LIGA
+===================================================== */
+
 async function gerarLiga() {
     if (busy.gerarLiga) return;
 
@@ -435,6 +568,10 @@ async function gerarLiga() {
     }
 }
 
+/* =====================================================
+   JOGOS
+===================================================== */
+
 function renderJogos(c) {
     const jogosDiv = document.getElementById("listaJogos");
     const chip = document.getElementById("chipJogos");
@@ -449,7 +586,11 @@ function renderJogos(c) {
     if (!jogosDiv) return;
 
     if (!jogos.length) {
-        jogosDiv.innerHTML = `<div class="empty">Nenhum jogo gerado ainda.</div>`;
+        jogosDiv.innerHTML = `
+            <div class="empty">
+                Nenhum jogo gerado ainda.
+            </div>
+        `;
         return;
     }
 
@@ -463,55 +604,124 @@ function renderJogos(c) {
 
     jogosDiv.innerHTML = Object.keys(agrupados)
         .sort((a, b) => Number(a) - Number(b))
-        .map((rodada) => `
-            <div style="margin-bottom:16px;">
-                <div style="font-weight:900;margin-bottom:10px;">
-                    Rodada ${rodada}
-                </div>
-
-                ${agrupados[rodada].map((j) => {
-            const badge = j.tipoJogo === "VOLTA" ? "🔁 Volta" : "➡️ Ida";
+        .map((rodada) => {
+            const jogosRodada = agrupados[rodada];
 
             return `
-                        <div class="match">
-                            <div class="match-main">
-                                <div class="match-title">
-                                    ${escapeHTML(j.timeA?.nome || "Time A")}
-                                    x
-                                    ${escapeHTML(j.timeB?.nome || "Time B")}
-                                </div>
-                                <div class="match-sub">
-                                    ${badge} • Jogo #${Number(j.id)}
-                                </div>
-                            </div>
+                <div class="rodada-box" style="margin-bottom:22px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+                        <h3 style="margin:0;color:#052845;font-size:18px;font-weight:900;">
+                            Rodada ${rodada}
+                        </h3>
+                        <span class="chip">${jogosRodada.length} jogo(s)</span>
+                    </div>
 
-                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                                <span class="chip">
-                                    ${j.finalizado ? "Finalizado" : "Em aberto"}
-                                </span>
+                    <div style="display:flex;flex-direction:column;gap:12px;">
+                        ${jogosRodada.map(renderJogoCard).join("")}
+                    </div>
+                </div>
+            `;
+        }).join("");
+}
 
-                                <button class="btn btn-light" onclick="abrirDetalhesJogo(${Number(j.id)})">
-                                    <i class="fa-solid fa-eye"></i> Detalhes
-                                </button>
+function renderJogoCard(j) {
+    const isVolta = j.tipoJogo === "VOLTA";
+    const badge = isVolta ? "🔁 Volta" : "➡️ Ida";
 
-                                ${j.finalizado ? `
-                                    <strong>${j.golsA ?? 0} x ${j.golsB ?? 0}</strong>
-                                ` : `
-                                    <div class="score-inputs" style="flex-wrap:wrap;">
-                                        <input id="gA${Number(j.id)}" type="number" min="0" placeholder="Gols A" />
-                                        <input id="gB${Number(j.id)}" type="number" min="0" placeholder="Gols B" />
+    const timeA = j.timeA?.nome || "Time A";
+    const timeB = j.timeB?.nome || "Time B";
 
-                                        <button class="btn btn-primary" onclick="finalizarJogo(${Number(j.id)})" id="btnFinalizar${Number(j.id)}">
-                                            <i class="fa-solid fa-check"></i> Finalizar
-                                        </button>
-                                    </div>
-                                `}
-                            </div>
-                        </div>
-                    `;
-        }).join("")}
+    const statusLabel = j.finalizado ? "Finalizado" : "Em aberto";
+    const statusColor = j.finalizado ? "#065f46" : "#92400e";
+    const statusBg = j.finalizado ? "#ecfdf5" : "#fffbeb";
+
+    return `
+        <div class="match" style="
+            background:#fff;
+            border:1px solid #e8eef7;
+            border-radius:18px;
+            padding:16px;
+            box-shadow:0 6px 18px rgba(15,23,42,.05);
+        ">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <span class="chip">${badge}</span>
+                    <span class="chip">Jogo #${Number(j.id)}</span>
+                    <span class="chip" style="background:${statusBg};color:${statusColor};">
+                        ${statusLabel}
+                    </span>
+                </div>
+
+                <button class="btn btn-light" onclick="abrirDetalhesJogo(${Number(j.id)})">
+                    <i class="fa-solid fa-eye"></i> Detalhes
+                </button>
             </div>
-        `).join("");
+
+            <div style="
+                display:grid;
+                grid-template-columns:1fr auto 1fr;
+                align-items:center;
+                gap:14px;
+                margin:10px 0 14px;
+            ">
+                <div style="font-weight:900;color:#052845;font-size:16px;text-align:right;">
+                    ${escapeHTML(timeA)}
+                </div>
+
+                <div style="
+                    min-width:120px;
+                    text-align:center;
+                    font-weight:900;
+                    font-size:22px;
+                    background:#f8fafc;
+                    border:1px solid #e5e7eb;
+                    border-radius:14px;
+                    padding:10px 14px;
+                    color:#052845;
+                ">
+                    ${j.finalizado ? `${j.golsA ?? 0} x ${j.golsB ?? 0}` : "x"}
+                </div>
+
+                <div style="font-weight:900;color:#052845;font-size:16px;">
+                    ${escapeHTML(timeB)}
+                </div>
+            </div>
+
+            ${j.finalizado ? "" : `
+                <div style="
+                    display:flex;
+                    justify-content:flex-end;
+                    align-items:center;
+                    gap:10px;
+                    flex-wrap:wrap;
+                    border-top:1px solid #eef2f6;
+                    padding-top:14px;
+                ">
+                    <input
+                        id="gA${Number(j.id)}"
+                        type="number"
+                        min="0"
+                        placeholder="Gols ${escapeHTML(timeA)}"
+                        style="width:150px;padding:11px;border-radius:12px;border:1px solid #dbe3ef;"
+                    />
+
+                    <span style="font-weight:900;">x</span>
+
+                    <input
+                        id="gB${Number(j.id)}"
+                        type="number"
+                        min="0"
+                        placeholder="Gols ${escapeHTML(timeB)}"
+                        style="width:150px;padding:11px;border-radius:12px;border:1px solid #dbe3ef;"
+                    />
+
+                    <button class="btn btn-primary" onclick="finalizarJogo(${Number(j.id)})" id="btnFinalizar${Number(j.id)}">
+                        <i class="fa-solid fa-check"></i> Finalizar
+                    </button>
+                </div>
+            `}
+        </div>
+    `;
 }
 
 async function finalizarJogo(id) {
@@ -550,7 +760,11 @@ async function finalizarJogo(id) {
     }
 }
 
-async function renderRanking(c) {
+/* =====================================================
+   RANKING
+===================================================== */
+
+async function renderRanking() {
     const wrap = document.getElementById("rankingWrap");
     const chip = document.getElementById("chipRanking");
 
@@ -600,12 +814,17 @@ async function renderRanking(c) {
                 `;
         }).join("")}
         `;
+
     } catch (err) {
         console.error(err);
         wrap.innerHTML = `<div class="empty">Erro ao carregar ranking.</div>`;
         chip.textContent = "—";
     }
 }
+
+/* =====================================================
+   NAVEGAÇÃO
+===================================================== */
 
 function abrirDetalhesJogo(jogoId) {
     location.href = `jogo-detalhe.html?jogoId=${Number(jogoId)}`;
