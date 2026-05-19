@@ -156,24 +156,7 @@ const listAll = async (req, res) => {
     try {
 
         const campeonatos =
-            await prisma.campeonato.findMany({
-
-                include: {
-                    society: true,
-
-                    times: {
-                        include: {
-                            time: true
-                        }
-                    },
-
-                    jogos: true
-                },
-
-                orderBy: {
-                    id: "desc"
-                }
-            });
+            await prisma.campeonato.findMany();
 
         return res.json(campeonatos);
 
@@ -182,7 +165,7 @@ const listAll = async (req, res) => {
         console.error(err);
 
         return res.status(500).json({
-            error: "Erro ao listar campeonatos."
+            error: err.message
         });
     }
 };
@@ -197,45 +180,23 @@ const listBySociety = async (req, res) => {
         const societyId =
             Number(req.params.societyId);
 
-        if (!Number.isFinite(societyId)) {
-
-            return res.status(400).json({
-                error: "societyId inválido."
-            });
-        }
-
         const campeonatos =
             await prisma.campeonato.findMany({
 
                 where: {
                     societyId
-                },
-
-                include: {
-
-                    times: {
-                        include: {
-                            time: true
-                        }
-                    },
-
-                    jogos: true,
-                },
-
-                orderBy: {
-                    id: "desc"
                 }
+
             });
 
         return res.json(campeonatos);
 
     } catch (err) {
 
-        console.error("ERRO LIST BY SOCIETY:");
         console.error(err);
 
         return res.status(500).json({
-            error: "Erro ao listar campeonatos."
+            error: err.message
         });
     }
 };
