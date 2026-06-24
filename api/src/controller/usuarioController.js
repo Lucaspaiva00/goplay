@@ -148,15 +148,19 @@ const update = async (req, res) => {
 
         const data = {};
 
+        // Nome
         if (req.body.nome !== undefined) {
             data.nome = String(req.body.nome || "").trim();
+
             if (!data.nome) {
                 return res.status(400).json({ error: "Nome inválido." });
             }
         }
 
+        // Email
         if (req.body.email !== undefined) {
             data.email = normalizeEmail(req.body.email);
+
             if (!data.email) {
                 return res.status(400).json({ error: "E-mail inválido." });
             }
@@ -169,23 +173,96 @@ const update = async (req, res) => {
             });
 
             if (existe) {
-                return res.status(400).json({ error: "Este e-mail já está sendo usado." });
+                return res.status(400).json({
+                    error: "Este e-mail já está sendo usado."
+                });
             }
         }
 
+        // Telefone
         if (req.body.telefone !== undefined) {
-            data.telefone = req.body.telefone ? String(req.body.telefone).trim() : null;
+            data.telefone = req.body.telefone
+                ? String(req.body.telefone).trim()
+                : null;
         }
 
+        // CPF
+        if (req.body.cpf !== undefined) {
+            data.cpf = req.body.cpf
+                ? String(req.body.cpf).trim()
+                : null;
+        }
+
+        // Nascimento
+        if (req.body.nascimento !== undefined) {
+            data.nascimento = req.body.nascimento
+                ? new Date(req.body.nascimento)
+                : null;
+        }
+
+        // Sexo
+        if (req.body.sexo !== undefined) {
+            data.sexo = req.body.sexo || null;
+        }
+
+        // Perna dominante
+        if (req.body.pernaMelhor !== undefined) {
+            data.pernaMelhor = req.body.pernaMelhor
+                ? String(req.body.pernaMelhor).trim()
+                : null;
+        }
+
+        // Posição em campo
+        if (req.body.posicaoCampo !== undefined) {
+            data.posicaoCampo = req.body.posicaoCampo
+                ? String(req.body.posicaoCampo).trim()
+                : null;
+        }
+
+        // Altura
+        if (req.body.altura !== undefined) {
+            data.altura =
+                req.body.altura === null ||
+                    req.body.altura === ""
+                    ? null
+                    : Number(req.body.altura);
+        }
+
+        // Peso
+        if (req.body.peso !== undefined) {
+            data.peso =
+                req.body.peso === null ||
+                    req.body.peso === ""
+                    ? null
+                    : Number(req.body.peso);
+        }
+
+        // Modalidade
+        if (req.body.modalidade !== undefined) {
+            data.modalidade = req.body.modalidade
+                ? String(req.body.modalidade).trim()
+                : null;
+        }
+
+        // Goleiro
+        if (req.body.goleiro !== undefined) {
+            data.goleiro = Boolean(req.body.goleiro);
+        }
+
+        // Senha
         if (req.body.senha !== undefined) {
             const senha = String(req.body.senha || "").trim();
 
             if (!senha) {
-                return res.status(400).json({ error: "Senha inválida." });
+                return res.status(400).json({
+                    error: "Senha inválida."
+                });
             }
 
             if (senha.length < 6) {
-                return res.status(400).json({ error: "A senha deve ter pelo menos 6 caracteres." });
+                return res.status(400).json({
+                    error: "A senha deve ter pelo menos 6 caracteres."
+                });
             }
 
             data.senha = await bcrypt.hash(senha, 10);
@@ -196,11 +273,16 @@ const update = async (req, res) => {
             data
         });
 
-        return res.status(200).json(sanitizeUser(usuarioAtualizado));
+        return res.status(200).json(
+            sanitizeUser(usuarioAtualizado)
+        );
 
     } catch (error) {
         console.log("ERRO AO ATUALIZAR USUÁRIO:", error);
-        return res.status(500).json({ error: "Erro ao atualizar usuário." });
+
+        return res.status(500).json({
+            error: "Erro ao atualizar usuário."
+        });
     }
 };
 
