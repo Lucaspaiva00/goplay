@@ -39,6 +39,8 @@
 
             <input id="nome" class="input" placeholder="Nome do item">
             <input id="preco" class="input" type="number" step="0.01" placeholder="Preço (ex: 12.50)">
+            <label class="label" for="imagem">Foto do produto (opcional)</label>
+            <input id="imagem" class="input" type="file" accept="image/*">
 
             <button class="btn btn-primary" onclick="salvarItem()">Salvar Item</button>
         </section>
@@ -64,6 +66,8 @@
             <div class="modal-body">
                 <input id="editNome" class="input" placeholder="Nome do item">
                 <input id="editPreco" class="input" type="number" step="0.01" placeholder="Preço (ex: 12.50)">
+                <label class="label" for="editImagem">Nova foto (opcional)</label>
+                <input id="editImagem" class="input" type="file" accept="image/*">
             </div>
 
             <div class="modal-footer">
@@ -74,6 +78,7 @@
     </div>
 
     <script src="../js/goplay_home.js"></script>
+    <script src="../scripts/uploadCloudinary.js"></script>
     <script src="../scripts/cardapio.js"></script>
     <script src="../scripts/menu.js"></script>
 

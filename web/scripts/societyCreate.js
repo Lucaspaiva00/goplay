@@ -1,7 +1,7 @@
 // /web/scripts/societyCreate.js
 const BASE_URL = "https://goplay-dzlr.onrender.com";
 
-function salvarSociety() {
+async function salvarSociety() {
     const usuario = JSON.parse(localStorage.getItem("usuarioLogado"));
 
     if (!usuario || !usuario.id) {
@@ -10,9 +10,26 @@ function salvarSociety() {
         return;
     }
 
+    const nome = document.getElementById("nome").value.trim();
+    if (!nome) {
+        alert("Informe o nome do Society.");
+        return;
+    }
+
+    let imagem = null;
+    const imagemFile = document.getElementById("imagem")?.files?.[0] || null;
+    if (imagemFile) {
+        try {
+            imagem = await uploadImage(imagemFile);
+        } catch (e) {
+            alert(e.message || "Erro no upload da imagem.");
+            return;
+        }
+    }
+
     const data = {
         usuarioId: usuario.id,
-        nome: document.getElementById("nome").value.trim(),
+        nome,
         descricao: document.getElementById("descricao").value.trim(),
         telefone: document.getElementById("telefone").value.trim(),
         whatsapp: document.getElementById("whatsapp").value.trim(),
@@ -25,12 +42,8 @@ function salvarSociety() {
         endereco: document.getElementById("endereco").value.trim(),
         estado: document.getElementById("estado").value.trim(),
         cidade: document.getElementById("cidade").value.trim(),
+        imagem
     };
-
-    if (!data.nome) {
-        alert("Informe o nome do Society.");
-        return;
-    }
 
     fetch(`${BASE_URL}/society`, {
         method: "POST",

@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 // Criar item do cardápio
 const create = async (req, res) => {
     try {
-        const { societyId, nome, preco } = req.body;
+        const { societyId, nome, preco, imagem } = req.body;
 
         if (!societyId || !nome || preco === undefined || preco === null || preco === "") {
             return res.status(400).json({ error: "Campos obrigatórios faltando." });
@@ -14,7 +14,8 @@ const create = async (req, res) => {
             data: {
                 societyId: Number(societyId),
                 nome: nome.trim(),
-                preco: Number(preco)
+                preco: Number(preco),
+                imagem: imagem || null
             }
         });
 
@@ -69,7 +70,7 @@ const readOne = async (req, res) => {
 const update = async (req, res) => {
     try {
         const { id } = req.params;
-        const { nome, preco } = req.body;
+        const { nome, preco, imagem } = req.body;
 
         const itemExistente = await prisma.cardapio.findUnique({
             where: { id: Number(id) }
@@ -87,7 +88,8 @@ const update = async (req, res) => {
             where: { id: Number(id) },
             data: {
                 nome: nome.trim(),
-                preco: Number(preco)
+                preco: Number(preco),
+                imagem: imagem !== undefined ? (imagem || null) : itemExistente.imagem
             }
         });
 

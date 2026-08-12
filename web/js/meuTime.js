@@ -69,6 +69,7 @@ async function carregarMeuTime() {
         const time = data.time;
 
         dadosTime.innerHTML = `
+            ${time.brasao ? `<img src="${escapeHtml(time.brasao)}" alt="Brasão" style="width:72px;height:72px;border-radius:12px;object-fit:cover;border:1px solid #e5e7eb;margin-bottom:12px;">` : ""}
             <h2 style="margin-bottom: 10px;">${escapeHtml(time.nome)}</h2>
             <p><b>Society:</b> ${escapeHtml(time?.society?.nome || "-")}</p>
             <p><b>Localidade:</b> ${escapeHtml(time.cidade || "—")} - ${escapeHtml(time.estado || "—")}</p>
@@ -80,9 +81,14 @@ async function carregarMeuTime() {
             listaJogadores.innerHTML = `<p>Nenhum jogador no time ainda.</p>`;
         } else {
             listaJogadores.innerHTML = time.jogadores.map(j => `
-                <div class="player-item">
-                    <b>${escapeHtml(j.nome)}</b><br>
-                    <small>${escapeHtml(j.posicaoCampo || "Posição não informada")}</small>
+                <div class="player-item" style="display:flex;gap:10px;align-items:center;">
+                    ${j.fotoUrl
+                        ? `<img class="player-avatar" src="${escapeHtml(j.fotoUrl)}" alt="">`
+                        : `<div class="player-avatar" style="display:flex;align-items:center;justify-content:center;background:#e5e7eb;color:#6b7280;">${escapeHtml((j.nome || "?").charAt(0))}</div>`}
+                    <div>
+                        <b>${escapeHtml(j.nome)}</b><br>
+                        <small>${escapeHtml(j.posicaoCampo || "Posição não informada")}</small>
+                    </div>
                 </div>
             `).join("");
         }

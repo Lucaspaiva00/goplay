@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
 }
 
 datasource db {
@@ -131,6 +131,7 @@ model Usuario {
   email        String    @unique
   senha        String
   telefone     String?
+  fotoUrl      String?
   pernaMelhor  String?
   posicaoCampo String?
   altura       Float?
@@ -213,8 +214,9 @@ model Cardapio {
   societyId Int
   society   Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
 
-  nome  String
-  preco Float
+  nome   String
+  preco  Float
+  imagem String?
 
   createdAt    DateTime      @default(now())
   comandaItems ComandaItem[]

@@ -132,11 +132,16 @@ window.salvarCampo = async function salvarCampo() {
     const valorMensal = (el("valorMensal")?.value || "").trim();
     const dimensoes = (el("dimensoes")?.value || "").trim();
     const estiloGramado = (el("estiloGramado")?.value || "").trim();
-    const foto = (el("foto")?.value || "").trim();
+    const fotoFile = el("foto")?.files?.[0] || null;
 
     if (!nome) {
       alert("Informe o nome do campo.");
       return;
+    }
+
+    let fotoUrl = null;
+    if (fotoFile) {
+      fotoUrl = await uploadImage(fotoFile);
     }
 
     const payload = {
@@ -146,7 +151,7 @@ window.salvarCampo = async function salvarCampo() {
       valorMensal: valorMensal !== "" ? Number(valorMensal) : null,
       dimensoes: dimensoes || null,
       gramado: estiloGramado || null,
-      fotoUrl: foto || null
+      fotoUrl
     };
 
     await fetchJSON(`${BASE_URL}/campos`, {
@@ -179,7 +184,7 @@ window.abrirModalEdicaoCampo = async function abrirModalEdicaoCampo(campoId) {
     el("editValorMensal").value = campo.valorMensal ?? "";
     el("editDimensoes").value = campo.dimensoes || "";
     el("editEstiloGramado").value = campo.gramado || "";
-    el("editFoto").value = campo.fotoUrl || "";
+    if (el("editFoto")) el("editFoto").value = "";
 
     el("editCampoModal").style.display = "flex";
     document.body.style.overflow = "hidden";
@@ -207,11 +212,16 @@ window.salvarEdicaoCampo = async function salvarEdicaoCampo() {
     const valorMensal = (el("editValorMensal")?.value || "").trim();
     const dimensoes = (el("editDimensoes")?.value || "").trim();
     const estiloGramado = (el("editEstiloGramado")?.value || "").trim();
-    const foto = (el("editFoto")?.value || "").trim();
+    const fotoFile = el("editFoto")?.files?.[0] || null;
 
     if (!nome) {
       alert("Informe o nome do campo.");
       return;
+    }
+
+    let fotoUrl = campoEmEdicao.fotoUrl || null;
+    if (fotoFile) {
+      fotoUrl = await uploadImage(fotoFile);
     }
 
     const payload = {
@@ -220,7 +230,7 @@ window.salvarEdicaoCampo = async function salvarEdicaoCampo() {
       valorMensal: valorMensal !== "" ? Number(valorMensal) : null,
       dimensoes: dimensoes || null,
       gramado: estiloGramado || null,
-      fotoUrl: foto || null
+      fotoUrl
     };
 
     await fetchJSON(`${BASE_URL}/campos/${campoEmEdicao.id}`, {

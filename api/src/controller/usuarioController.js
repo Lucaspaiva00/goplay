@@ -91,7 +91,8 @@ const login = async (req, res) => {
             id: usuario.id,
             nome: usuario.nome,
             email: usuario.email,
-            tipo: usuario.tipo
+            tipo: usuario.tipo,
+            fotoUrl: usuario.fotoUrl || null
         });
 
     } catch (err) {
@@ -247,6 +248,13 @@ const update = async (req, res) => {
         // Goleiro
         if (req.body.goleiro !== undefined) {
             data.goleiro = Boolean(req.body.goleiro);
+        }
+
+        // Foto de perfil
+        if (req.body.fotoUrl !== undefined) {
+            data.fotoUrl = req.body.fotoUrl
+                ? String(req.body.fotoUrl).trim()
+                : null;
         }
 
         // Senha

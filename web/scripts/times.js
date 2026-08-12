@@ -158,12 +158,15 @@ function montarCardTime(t, usuario) {
     return `
         <div class="time-card">
             <div class="time-card-top" style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;">
-                <div class="time-card-info" style="display:flex;flex-direction:column;gap:6px;">
-                    <strong>${escapeHtml(t.nome || "-")}</strong>
-                    ${subtitulo}
-                    <small>${cidadeEstado || "Cidade não informada"}</small>
-                    <small>Jogadores: ${jogadores}</small>
-                    ${t.modalidade ? `<small>Modalidade: ${escapeHtml(t.modalidade)}</small>` : ""}
+                <div class="time-card-info" style="display:flex;gap:12px;align-items:flex-start;">
+                    ${t.brasao ? `<img src="${escapeHtml(t.brasao)}" alt="Brasão" style="width:48px;height:48px;border-radius:10px;object-fit:cover;border:1px solid #e5e7eb;">` : ""}
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        <strong>${escapeHtml(t.nome || "-")}</strong>
+                        ${subtitulo}
+                        <small>${cidadeEstado || "Cidade não informada"}</small>
+                        <small>Jogadores: ${jogadores}</small>
+                        ${t.modalidade ? `<small>Modalidade: ${escapeHtml(t.modalidade)}</small>` : ""}
+                    </div>
                 </div>
 
                 <div class="time-card-badges" style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -240,11 +243,22 @@ async function salvarTime() {
         return;
     }
 
+    const brasaoFile = document.getElementById("brasao")?.files?.[0] || null;
+    let brasao = null;
+    if (brasaoFile) {
+        try {
+            brasao = await uploadImage(brasaoFile);
+        } catch (e) {
+            alert(e.message || "Erro no upload do brasão.");
+            return;
+        }
+    }
+
     const payload = {
         donoId: usuario.id,
         societyId: Number(societyId),
         nome: document.getElementById("nome").value.trim(),
-        brasao: document.getElementById("brasao").value.trim() || null,
+        brasao,
         descricao: document.getElementById("descricao").value.trim() || null,
         estado: document.getElementById("estado").value.trim() || null,
         cidade: document.getElementById("cidade").value.trim() || null,

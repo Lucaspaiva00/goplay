@@ -8,7 +8,8 @@ function getUsuarioLogado() {
     }
 }
 
-const usuarioLogado = getUsuarioLogado();
+let usuarioLogado = getUsuarioLogado();
+let fotoUrlAtual = usuarioLogado?.fotoUrl || null;
 
 if (!usuarioLogado?.id) {
     alert("Sessão expirada. Faça login novamente.");
@@ -38,6 +39,22 @@ function limparFeedback() {
 
     box.className = "perfil-feedback";
     box.textContent = "";
+}
+
+function setHeroFoto(url) {
+    const img = el("perfilHeroImg");
+    const icon = el("perfilHeroIcon");
+    if (!img || !icon) return;
+
+    if (url) {
+        img.src = url;
+        img.style.display = "block";
+        icon.style.display = "none";
+    } else {
+        img.removeAttribute("src");
+        img.style.display = "none";
+        icon.style.display = "block";
+    }
 }
 
 async function fetchJSON(url, options = {}) {
@@ -73,6 +90,10 @@ async function carregarPerfil() {
         el("altura").value = data.altura || "";
         el("peso").value = data.peso || "";
         el("goleiro").checked = !!data.goleiro;
+        if (el("foto")) el("foto").value = "";
+
+        fotoUrlAtual = data.fotoUrl || null;
+        setHeroFoto(fotoUrlAtual);
     } catch (err) {
         console.error("ERRO LOAD PERFIL:", err);
         mostrarFeedback(err.message || "Erro ao carregar os dados do perfil.", "error");
@@ -110,17 +131,8 @@ async function salvarPerfil() {
         return;
     }
 
-    const payload = {
-        nome,
-        telefone,
-        nascimento: nascimentoValue ? new Date(`${nascimentoValue}T12:00:00`).toISOString() : null,
-        sexo,
-        pernaMelhor,
-        posicaoCampo,
-        altura: alturaValue ? Number(alturaValue) : null,
-        peso: pesoValue ? Number(pesoValue) : null,
-        goleiro: el("goleiro").checked
-    };
+    let fotoUrl = fotoUrlAtual;
+    const fotoFile = el("foto")?.files?.[0] || null;
 
     try {
         if (btn) {
@@ -128,20 +140,42 @@ async function salvarPerfil() {
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Salvando alterações...`;
         }
 
+        if (fotoFile) {
+            fotoUrl = await uploadImage(fotoFile);
+        }
+
+        const payload = {
+            nome,
+            telefone,
+            nascimento: nascimentoValue ? new Date(`${nascimentoValue}T12:00:00`).toISOString() : null,
+            sexo,
+            pernaMelhor,
+            posicaoCampo,
+            altura: alturaValue ? Number(alturaValue) : null,
+            peso: pesoValue ? Number(pesoValue) : null,
+            goleiro: el("goleiro").checked,
+            fotoUrl: fotoUrl || null
+        };
+
         const result = await fetchJSON(`${BASE_URL}/usuarios/${usuarioLogado.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         });
 
-        const usuarioAtualizado = {
+        fotoUrlAtual = result.fotoUrl || fotoUrl || null;
+        setHeroFoto(fotoUrlAtual);
+        if (el("foto")) el("foto").value = "";
+
+        usuarioLogado = {
             ...usuarioLogado,
             nome: result.nome || payload.nome,
             telefone: result.telefone || payload.telefone,
-            tipo: result.tipo || usuarioLogado.tipo
+            tipo: result.tipo || usuarioLogado.tipo,
+            fotoUrl: fotoUrlAtual
         };
 
-        localStorage.setItem("usuarioLogado", JSON.stringify(usuarioAtualizado));
+        localStorage.setItem("usuarioLogado", JSON.stringify(usuarioLogado));
 
         mostrarFeedback("Perfil atualizado com sucesso!", "success");
     } catch (err) {

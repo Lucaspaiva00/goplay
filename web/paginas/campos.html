@@ -42,7 +42,8 @@
             <input id="valorMensal" class="input" placeholder="Valor Mensal (opcional)">
             <input id="dimensoes" class="input" placeholder="Dimensões (ex: 30x50m)">
             <input id="estiloGramado" class="input" placeholder="Estilo do Gramado">
-            <input id="foto" class="input" placeholder="URL da foto">
+            <label class="label" for="foto">Foto do campo</label>
+            <input id="foto" class="input" type="file" accept="image/*">
 
             <button class="btn btn-primary" onclick="salvarCampo()">Salvar Campo</button>
         </section>
@@ -71,7 +72,8 @@
                 <input id="editValorMensal" class="input" placeholder="Valor Mensal (opcional)">
                 <input id="editDimensoes" class="input" placeholder="Dimensões (ex: 30x50m)">
                 <input id="editEstiloGramado" class="input" placeholder="Estilo do Gramado">
-                <input id="editFoto" class="input" placeholder="URL da foto">
+                <label class="label" for="editFoto">Nova foto (opcional)</label>
+                <input id="editFoto" class="input" type="file" accept="image/*">
             </div>
 
             <div class="modal-footer">
@@ -82,6 +84,7 @@
     </div>
 
     <script src="../js/goplay_home.js"></script>
+    <script src="../scripts/uploadCloudinary.js"></script>
     <script src="../scripts/campos.js"></script>
     <script src="../scripts/menu.js"></script>
 

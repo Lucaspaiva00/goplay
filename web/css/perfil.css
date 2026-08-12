@@ -29,6 +29,13 @@
     justify-content: center;
     font-size: 28px;
     flex-shrink: 0;
+    overflow: hidden;
+}
+
+.perfil-hero-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .perfil-hero-text h2 {

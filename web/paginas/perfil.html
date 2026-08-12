@@ -32,8 +32,9 @@
     <main class="content perfil-page">
 
         <section class="perfil-hero">
-            <div class="perfil-hero-icon">
-                <i class="fas fa-user"></i>
+            <div class="perfil-hero-icon" id="perfilHeroAvatar">
+                <i class="fas fa-user" id="perfilHeroIcon"></i>
+                <img id="perfilHeroImg" alt="Foto de perfil" style="display:none;">
             </div>
 
             <div class="perfil-hero-text">
@@ -76,6 +77,11 @@
                             <i class="fa-solid fa-user"></i>
                             <input id="nome" class="input" placeholder="Seu nome completo">
                         </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="foto">Foto de perfil</label>
+                        <input id="foto" class="input" type="file" accept="image/*">
                     </div>
 
                     <div class="field">
@@ -175,6 +181,7 @@
     </main>
 
     <script src="../js/goplay_home.js"></script>
+    <script src="../scripts/uploadCloudinary.js"></script>
     <script src="../scripts/menu.js"></script>
     <script src="../scripts/perfil.js"></script>
 

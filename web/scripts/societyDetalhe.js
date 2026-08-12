@@ -48,9 +48,12 @@ function renderSocietyInfo(data) {
 
     el("societyInfo").innerHTML = `
       <div class="society-header-row">
-        <div>
-            <h3>${data.nome || "-"}</h3>
-            <p class="society-description">${data.descricao || "Sem descrição cadastrada."}</p>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+            ${data.imagem ? `<img src="${data.imagem}" alt="Society" style="width:72px;height:72px;border-radius:12px;object-fit:cover;border:1px solid #e5e7eb;">` : ""}
+            <div>
+                <h3>${data.nome || "-"}</h3>
+                <p class="society-description">${data.descricao || "Sem descrição cadastrada."}</p>
+            </div>
         </div>
 
         ${isDonoSociety ? `
@@ -104,6 +107,7 @@ function preencherFormularioEdicao(data) {
     el("editEndereco").value = data.endereco || "";
     el("editCidade").value = data.cidade || "";
     el("editEstado").value = data.estado || "";
+    if (el("editImagem")) el("editImagem").value = "";
 }
 
 async function carregarSociety() {
@@ -221,12 +225,18 @@ async function salvarEdicaoSociety() {
             cep: el("editCep").value.trim(),
             endereco: el("editEndereco").value.trim(),
             cidade: el("editCidade").value.trim(),
-            estado: el("editEstado").value.trim()
+            estado: el("editEstado").value.trim(),
+            imagem: societyAtual.imagem || null
         };
 
         if (!body.nome) {
             alert("O nome do society é obrigatório.");
             return;
+        }
+
+        const imagemFile = el("editImagem")?.files?.[0] || null;
+        if (imagemFile) {
+            body.imagem = await uploadImage(imagemFile);
         }
 
         const res = await fetch(`${BASE_URL}/society/${societyAtual.id}`, {

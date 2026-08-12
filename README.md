@@ -63,4 +63,19 @@ O GoPlay foi criado para donos de quadras, organizadores de campeonatos e gestor
 
 ---
 
+## 🖼️ Upload de imagens (Cloudinary)
+
+Upload direto do browser para o Cloudinary (unsigned preset). A API só salva a URL retornada.
+
+Usa a mesma cloud/preset do Desejo Proibido. Arquivos do GoPlay vão na pasta `goplay`.
+
+Constantes no frontend (`web/scripts/uploadCloudinary.js`):
+- `CLOUD_NAME = "dfdinbti3"`
+- `UPLOAD_PRESET = "desejoproibido"`
+- `FOLDER = "goplay"`
+
+Nunca coloque `API_SECRET` no frontend.
+
+---
+
 ## 📁 Estrutura do Projeto

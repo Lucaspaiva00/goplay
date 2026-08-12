@@ -49,9 +49,14 @@ function renderCardapio(lista) {
     div.innerHTML = lista.map(item => `
         <div class="cardapio-card">
             <div class="cardapio-top">
-                <div>
-                    <h3 class="cardapio-nome">${item.nome || "-"}</h3>
-                    <p class="cardapio-preco">${formatMoney(item.preco)}</p>
+                <div style="display:flex;gap:12px;align-items:center;">
+                    ${item.imagem
+                        ? `<img src="${item.imagem}" alt="" style="width:56px;height:56px;border-radius:12px;object-fit:cover;border:1px solid #e5e7eb;">`
+                        : ""}
+                    <div>
+                        <h3 class="cardapio-nome">${item.nome || "-"}</h3>
+                        <p class="cardapio-preco">${formatMoney(item.preco)}</p>
+                    </div>
                 </div>
 
                 <div class="cardapio-actions">
@@ -103,10 +108,17 @@ window.salvarItem = async function salvarItem() {
             return;
         }
 
+        let imagem = null;
+        const imagemFile = el("imagem")?.files?.[0] || null;
+        if (imagemFile) {
+            imagem = await uploadImage(imagemFile);
+        }
+
         const data = {
             societyId: Number(societyId),
             nome,
-            preco
+            preco,
+            imagem
         };
 
         await fetchJSON(`${BASE_URL}/cardapio`, {
@@ -118,6 +130,7 @@ window.salvarItem = async function salvarItem() {
         alert("Item adicionado ao cardápio!");
         el("nome").value = "";
         el("preco").value = "";
+        if (el("imagem")) el("imagem").value = "";
 
         await carregarCardapio();
     } catch (e) {
@@ -133,6 +146,7 @@ window.abrirModalEdicaoItem = async function abrirModalEdicaoItem(itemId) {
 
         el("editNome").value = item.nome || "";
         el("editPreco").value = item.preco ?? "";
+        if (el("editImagem")) el("editImagem").value = "";
 
         el("editItemModal").style.display = "flex";
         document.body.style.overflow = "hidden";
@@ -163,10 +177,16 @@ window.salvarEdicaoItem = async function salvarEdicaoItem() {
             return;
         }
 
+        let imagem = itemEmEdicao.imagem || null;
+        const imagemFile = el("editImagem")?.files?.[0] || null;
+        if (imagemFile) {
+            imagem = await uploadImage(imagemFile);
+        }
+
         await fetchJSON(`${BASE_URL}/cardapio/${itemEmEdicao.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ nome, preco })
+            body: JSON.stringify({ nome, preco, imagem })
         });
 
         fecharModalItem();

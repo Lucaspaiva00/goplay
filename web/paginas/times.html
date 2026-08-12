@@ -42,7 +42,8 @@
             <label class="label">Society</label>
             <select id="societyId" class="input"></select>
 
-            <input id="brasao" class="input" placeholder="URL do brasão (opcional)">
+            <label class="label" for="brasao">Brasão (opcional)</label>
+            <input id="brasao" class="input" type="file" accept="image/*">
             <textarea id="descricao" class="input textarea" placeholder="Descrição"></textarea>
             <input id="estado" class="input" placeholder="Estado (ex: SP)">
             <input id="cidade" class="input" placeholder="Cidade">
@@ -58,6 +59,7 @@
     </main>
 
     <script src="../js/goplay_home.js"></script>
+    <script src="../scripts/uploadCloudinary.js"></script>
     <script src="../scripts/times.js"></script>
     <script src="../scripts/menu.js"></script>
 

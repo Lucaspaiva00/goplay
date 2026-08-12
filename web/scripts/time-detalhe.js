@@ -366,6 +366,7 @@ async function carregarTime(timeId) {
 
         infoEl.innerHTML = `
           <div style="text-align:left;">
+            ${time.brasao ? `<img src="${escapeHtml(time.brasao)}" alt="Brasão" style="width:72px;height:72px;border-radius:12px;object-fit:cover;border:1px solid #e5e7eb;margin-bottom:12px;">` : ""}
             <p><strong>Nome:</strong> ${escapeHtml(time.nome)}</p>
             <p><strong>Society:</strong> ${escapeHtml(time?.society?.nome || "-")}</p>
             <p><strong>Cidade:</strong> ${escapeHtml(time.cidade || "-")} / ${escapeHtml(time.estado || "-")}</p>
@@ -386,11 +387,16 @@ async function carregarTime(timeId) {
             listEl.innerHTML = `
               <div style="text-align:left;">
                 ${jogadores.map(j => `
-                  <div style="padding:10px 0;border-bottom:1px solid #eee;">
-                    <strong>${escapeHtml(j.nome)}</strong><br/>
-                    <span style="color:#6b7280;font-size:13px;">
-                      ${escapeHtml(j.posicaoCampo || "—")} ${j.goleiro ? "• Goleiro" : ""}
-                    </span>
+                  <div style="padding:10px 0;border-bottom:1px solid #eee;display:flex;gap:10px;align-items:center;">
+                    ${j.fotoUrl
+                        ? `<img src="${escapeHtml(j.fotoUrl)}" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">`
+                        : `<div style="width:36px;height:36px;border-radius:50%;background:#e5e7eb;display:flex;align-items:center;justify-content:center;color:#6b7280;font-size:14px;">${escapeHtml((j.nome || "?").charAt(0))}</div>`}
+                    <div>
+                      <strong>${escapeHtml(j.nome)}</strong><br/>
+                      <span style="color:#6b7280;font-size:13px;">
+                        ${escapeHtml(j.posicaoCampo || "—")} ${j.goleiro ? "• Goleiro" : ""}
+                      </span>
+                    </div>
                   </div>
                 `).join("")}
               </div>

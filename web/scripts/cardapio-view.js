@@ -57,7 +57,12 @@ async function carregarCardapio() {
         div.innerHTML = data.map((i) => `
             <div class="cardapio-item" style="margin-bottom:12px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-                    <strong style="font-size:18px;">${i.nome || "-"}</strong>
+                    <div style="display:flex;gap:12px;align-items:center;">
+                        ${i.imagem
+                            ? `<img src="${i.imagem}" alt="" style="width:48px;height:48px;border-radius:10px;object-fit:cover;border:1px solid #e5e7eb;">`
+                            : ""}
+                        <strong style="font-size:18px;">${i.nome || "-"}</strong>
+                    </div>
                     <span style="font-weight:800;color:#052748;">${money(i.preco)}</span>
                 </div>
             </div>

@@ -18,7 +18,8 @@ const create = async (req, res) => {
             cep,
             endereco,
             estado,
-            cidade
+            cidade,
+            imagem
         } = req.body;
 
         if (!usuarioId || !nome) {
@@ -40,7 +41,8 @@ const create = async (req, res) => {
                 cep,
                 endereco,
                 estado,
-                cidade
+                cidade,
+                imagem: imagem || null
             }
         });
 
@@ -122,7 +124,8 @@ const update = async (req, res) => {
             cep,
             endereco,
             estado,
-            cidade
+            cidade,
+            imagem
         } = req.body;
 
         const societyExistente = await prisma.society.findUnique({
@@ -152,7 +155,8 @@ const update = async (req, res) => {
                 cep: cep || null,
                 endereco: endereco || null,
                 estado: estado || null,
-                cidade: cidade || null
+                cidade: cidade || null,
+                imagem: imagem !== undefined ? (imagem || null) : undefined
             }
         });
 
@@ -173,6 +177,7 @@ const listAll = async (req, res) => {
                 nome: true,
                 cidade: true,
                 estado: true,
+                imagem: true,
             },
             orderBy: { id: "desc" },
         });

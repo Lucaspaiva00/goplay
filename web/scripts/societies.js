@@ -19,9 +19,12 @@ async function carregarSocieties() {
         div.innerHTML = societies.map(s => `
             <div class="card society-card">
                 <div class="society-card-top">
-                    <div class="society-main">
-                        <strong>${s.nome || "-"}</strong>
-                        <small>${s.cidade || ""}${s.estado ? " / " + s.estado : ""}</small>
+                    <div class="society-main" style="display:flex;gap:12px;align-items:center;">
+                        ${s.imagem ? `<img src="${s.imagem}" alt="" style="width:48px;height:48px;border-radius:10px;object-fit:cover;">` : ""}
+                        <div>
+                            <strong>${s.nome || "-"}</strong>
+                            <small>${s.cidade || ""}${s.estado ? " / " + s.estado : ""}</small>
+                        </div>
                     </div>
 
                     <button class="btn-details" onclick="verDetalhes(${s.id})">

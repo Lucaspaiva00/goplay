@@ -223,7 +223,8 @@ const details = async (req, res) => {
                         email: true,
                         telefone: true,
                         posicaoCampo: true,
-                        goleiro: true
+                        goleiro: true,
+                        fotoUrl: true
                     }
                 }
             }
@@ -468,7 +469,8 @@ const getTimeByPlayer = async (req, res) => {
                         id: true,
                         nome: true,
                         posicaoCampo: true,
-                        goleiro: true
+                        goleiro: true,
+                        fotoUrl: true
                     }
                 }
             }
