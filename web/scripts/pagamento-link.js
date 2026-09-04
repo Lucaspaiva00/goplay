@@ -93,9 +93,9 @@ async function compartilhar() {
     alert("✅ Link copiado!");
 }
 
-async function confirmarPagamento(pagamentoId) {
-    await fetchJSON(`${BASE_URL}/pagamentos/${encodeURIComponent(pagamentoId)}/confirmar`, { method: "POST" });
-    alert("✅ Confirmado como pago!");
+async function avisarPagamento(pagamentoId) {
+    await fetchJSON(`${BASE_URL}/pagamentos/${encodeURIComponent(pagamentoId)}/avisar`, { method: "POST" });
+    alert("✅ Empresa avisada! Aguarde a conferência do caixa.");
     await boot();
 }
 
@@ -112,7 +112,7 @@ async function boot() {
 
     el("btnCopiar").onclick = () => copiarPix().catch(() => alert("Erro ao copiar"));
     el("btnCompartilhar").onclick = () => compartilhar().catch(() => alert("Erro ao compartilhar"));
-    el("btnConfirmar").onclick = () => confirmarPagamento(pagamentoId).catch(e => alert(e.message || "Erro"));
+    el("btnConfirmar").onclick = () => avisarPagamento(pagamentoId).catch(e => alert(e.message || "Erro"));
     el("btnVoltar").onclick = voltar;
 
     try {

@@ -13,6 +13,14 @@ enum TipoUsuario {
   DONO_SOCIETY
 }
 
+enum FuncaoFuncionario {
+  ADMIN
+  MESARIO
+  CAIXA
+  BAR
+  RECEPCAO
+}
+
 enum TipoPagamento {
   AVULSO
   MENSALISTA
@@ -215,8 +223,48 @@ model Society {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   comandas  Comanda[]
+  funcionarios     Funcionario[]
 
   @@index([usuarioId])
+}
+
+model Funcionario {
+  id Int @id @default(autoincrement())
+
+  societyId Int
+  society   Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  nome    String
+  acesso  String @unique
+  pinHash String
+  funcao  FuncaoFuncionario
+  ativo   Boolean @default(true)
+
+  sessionVersion Int @default(1)
+  ultimoAcessoEm DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  notificacoes NotificacaoFuncionario[]
+
+  @@index([societyId])
+  @@index([funcao])
+  @@index([ativo])
+}
+
+model NotificacaoFuncionario {
+  id Int @id @default(autoincrement())
+
+  funcionarioId Int
+  funcionario   Funcionario @relation(fields: [funcionarioId], references: [id], onDelete: Cascade)
+
+  titulo   String
+  mensagem String
+  lido     Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([funcionarioId])
+  @@index([lido])
 }
 
 model Cardapio {
@@ -342,6 +390,7 @@ model Pagamento {
   forma  FormaPagamento  @default(PIX)
 
   pagoEm    DateTime?
+  avisoPagamentoEm DateTime?
   createdAt DateTime  @default(now())
 
   @@index([societyId])

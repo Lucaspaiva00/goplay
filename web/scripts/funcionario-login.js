@@ -1,0 +1,6 @@
+const BASE_URL='https://goplay-dzlr.onrender.com';
+async function entrar(){
+  const acesso=document.getElementById('acesso').value.trim(),pin=document.getElementById('pin').value.trim(),btn=document.getElementById('btnEntrar');
+  if(!acesso||!pin)return alert('Informe usuário de acesso e PIN.');
+  try{btn.disabled=true;btn.textContent='Entrando...';const r=await fetch(`${BASE_URL}/funcionario/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({acesso,pin})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Erro ao entrar.');localStorage.setItem('authToken',d.authToken);localStorage.setItem('funcionarioLogado',JSON.stringify(d.funcionario));localStorage.setItem('usuarioLogado',JSON.stringify(d.usuarioOperacional));localStorage.setItem('societyId',String(d.funcionario.society.id));localStorage.setItem('societyContextName',d.funcionario.society.nome);location.href='operacao.html';}catch(e){alert(e.message);}finally{btn.disabled=false;btn.innerHTML='<i class="fa fa-right-to-bracket"></i> Entrar na operação';}}
+document.getElementById('btnEntrar').onclick=entrar;document.getElementById('pin').addEventListener('keydown',e=>{if(e.key==='Enter')entrar();});

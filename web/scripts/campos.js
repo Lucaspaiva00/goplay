@@ -52,7 +52,7 @@ function renderCampos(campos) {
 
   const usuario = getUsuarioLogado();
   const tipo = String(usuario?.tipo || "").toUpperCase();
-  const podeGerenciar = tipo === "DONO_SOCIETY";
+  const podeGerenciar = tipo === "DONO_SOCIETY" || (tipo === "FUNCIONARIO" && String(usuario?.funcao || "").toUpperCase() === "ADMIN");
 
   if (!Array.isArray(campos) || campos.length === 0) {
     wrap.innerHTML = `<div class="empty-state">Nenhuma quadra cadastrada nesta empresa.</div>`;

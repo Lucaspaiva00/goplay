@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GoPlay — Acesso da Equipe</title>
+  <link rel="stylesheet" href="../css/auth.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="auth-body">
+  <div class="auth-container">
+    <h1 class="auth-title">Acesso da Equipe</h1>
+    <p style="color:#6b7280;margin-top:-12px;margin-bottom:18px">Use o usuário e o PIN criados pelo responsável da empresa.</p>
+    <input id="acesso" class="input" autocomplete="username" placeholder="Usuário de acesso (ex: joao.caixa)">
+    <input id="pin" class="input" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN">
+    <button class="btn" id="btnEntrar"><i class="fa fa-right-to-bracket"></i> Entrar na operação</button>
+    <p class="auth-link"><a href="login.html">← Login de cliente ou dono</a></p>
+  </div>
+  <script src="../scripts/session.js"></script>
+  <script src="../scripts/funcionario-login.js"></script>
+</body>
+</html>

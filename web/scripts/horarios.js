@@ -248,26 +248,16 @@ async function dropAgendamento(event, novaData, novaHora) {
 
     if (!ok) return;
 
-    alert(
-        "Front pronto para drag & drop.\n\n" +
-        "Mas seu backend ainda precisa de uma rota para salvar a remarcação, por exemplo:\n" +
-        "PUT /agendamentos/:id/remarcar"
-    );
-
-    /*
-    QUANDO O BACKEND EXISTIR, USAR ISSO:
-
-    await fetchJSON(`${BASE_URL}/agendamentos/${ag.id}/remarcar`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            data: novaData,
-            horaInicio: novaHora
-        })
-    });
-
-    await carregarAgenda();
-    */
+    try {
+        await fetchJSON(`${BASE_URL}/agendamentos/${ag.id}/remarcar`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ data: novaData, horaInicio: novaHora })
+        });
+        await carregarAgenda();
+    } catch (e) {
+        alert(e.message || "Não foi possível remarcar a reserva.");
+    }
 }
 
 function avancarSemana() {

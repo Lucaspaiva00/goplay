@@ -1,258 +1,58 @@
 if (!window.menuLoaded) {
   window.menuLoaded = true;
-
   const BASE_URL = "https://goplay-dzlr.onrender.com";
   const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado") || "null");
   const menu = document.getElementById("menuDynamic");
+  if (!usuarioLogado?.id) window.location.href = "login.html";
 
-  if (!usuarioLogado?.id) {
-    window.location.href = "login.html";
+  const esc = v => String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  async function api(url, options={}){const r=await fetch(url,options),t=await r.text().catch(()=>"");let d=null;try{d=t?JSON.parse(t):null}catch{}if(!r.ok)throw new Error(d?.error||t||`HTTP ${r.status}`);return d;}
+  function localEmpresa(){const id=Number(localStorage.getItem("societyId")||0),nome=localStorage.getItem("societyContextName")||"";return id?{id,nome}:null;}
+  function saveEmpresa(e){if(!e?.id){localStorage.removeItem("societyId");localStorage.removeItem("societyContextName");return;}localStorage.setItem("societyId",String(e.id));localStorage.setItem("societyContextName",e.nome||"Empresa");}
+  window.getEmpresaSelecionada=localEmpresa;
+  window.exigirEmpresaSelecionada=function(){const e=localEmpresa();if(e)return e;alert("Selecione uma empresa primeiro.");return null;};
+  window.navegarComEmpresa=function(p){if(window.exigirEmpresaSelecionada())location.href=p;};
+  window.abrirMinhaEmpresaMenu=function(){const e=window.exigirEmpresaSelecionada();if(e)location.href=`society-detalhe.html?societyId=${e.id}`;};
+  window.sairSistema=function(){["usuarioLogado","funcionarioLogado","authToken","societyId","societyContextName","societyOwnerId"].forEach(k=>localStorage.removeItem(k));location.href="login.html";};
+
+  const section=t=>`<li class="menu-section-label">${esc(t)}</li>`;
+  const item=(i,t,a)=>`<li onclick="${a}"><i class="fa ${i}"></i><span>${esc(t)}</span></li>`;
+  let html=item("fa-house","Início",usuarioLogado.tipo==="FUNCIONARIO"?"location.href='operacao.html'":"location.href='home.html'");
+
+  if(usuarioLogado.tipo==="DONO_SOCIETY"){
+    html+=section("OPERAÇÃO")+item("fa-gauge-high","Operação de Hoje","navegarComEmpresa('operacao.html')")+item("fa-calendar","Agenda","navegarComEmpresa('horarios.html')")+item("fa-cash-register","Caixa & Bar","navegarComEmpresa('caixa-bar.html')");
+    html+=section("ESPORTES")+item("fa-trophy","Campeonatos","navegarComEmpresa('campeonatos.html')")+item("fa-users","Times","navegarComEmpresa('times.html')");
+    html+=section("FINANCEIRO")+item("fa-credit-card","Recebimentos","navegarComEmpresa('recebimentos.html')")+item("fa-chart-line","Visão Gerencial","navegarComEmpresa('society-dashboard.html')");
+    html+=section("EMPRESA")+item("fa-user-shield","Funcionários","navegarComEmpresa('funcionarios.html')")+item("fa-building","Minha Empresa","abrirMinhaEmpresaMenu()")+item("fa-futbol","Quadras","navegarComEmpresa('campos.html')")+item("fa-utensils","Cardápio","navegarComEmpresa('cardapio.html')")+item("fa-plus","Cadastrar Empresa","location.href='society-create.html'");
   }
-
-  const escapeHtml = (valor) => String(valor ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-
-  async function fetchJSON(url) {
-    const res = await fetch(url);
-    const text = await res.text().catch(() => "");
-    let data = null;
-    try { data = text ? JSON.parse(text) : null; } catch { data = null; }
-    if (!res.ok) throw new Error(data?.error || text || `HTTP ${res.status}`);
-    return data;
+  if(usuarioLogado.tipo==="FUNCIONARIO"){
+    const f=usuarioLogado.funcao;
+    html+=section("OPERAÇÃO");
+    if(["ADMIN","CAIXA","BAR","RECEPCAO","MESARIO"].includes(f)) html+=item("fa-gauge-high","Operação de Hoje","location.href='operacao.html'");
+    if(["ADMIN","CAIXA","RECEPCAO"].includes(f)) html+=item("fa-calendar","Agenda","location.href='horarios.html'");
+    if(["ADMIN","CAIXA","BAR","RECEPCAO"].includes(f)) html+=item("fa-cash-register",f==="BAR"?"Bar / Comandas":"Caixa & Comandas","location.href='caixa-bar.html'");
+    if(["ADMIN","CAIXA"].includes(f)) html+=item("fa-credit-card","Recebimentos","location.href='recebimentos.html'");
+    if(["ADMIN","MESARIO"].includes(f)) html+=section("ESPORTES")+item("fa-trophy","Campeonatos","location.href='campeonatos.html'");
+    if(f==="ADMIN") html+=section("EMPRESA")+item("fa-user-shield","Funcionários","location.href='funcionarios.html'")+item("fa-futbol","Quadras","location.href='campos.html'")+item("fa-utensils","Cardápio","location.href='cardapio.html'");
   }
-
-  function getSocietyIdFromUrl() {
-    try {
-      const id = new URL(window.location.href).searchParams.get("societyId");
-      return id && Number.isFinite(Number(id)) ? Number(id) : null;
-    } catch {
-      return null;
-    }
+  if(usuarioLogado.tipo==="DONO_TIME"){
+    html+=section("JOGAR")+item("fa-building","Explorar Empresas","location.href='societies.html'")+item("fa-calendar-check","Agendar Horário","location.href='time-agendamento.html'")+item("fa-receipt","Minha Comanda","location.href='comanda.html'")+item("fa-list","Meus Agendamentos","location.href='meus-agendamentos.html'")+item("fa-money-bill","Meus Pagamentos","location.href='meus-pagamentos.html'");
+    html+=section("MEU TIME")+item("fa-users","Meus Times","location.href='times.html'")+item("fa-trophy","Campeonatos","location.href='campeonatos-view.html'");
   }
-
-  function salvarEmpresaContexto(empresa) {
-    if (!empresa?.id) {
-      localStorage.removeItem("societyId");
-      localStorage.removeItem("societyContextName");
-      return;
-    }
-    localStorage.setItem("societyId", String(empresa.id));
-    localStorage.setItem("societyContextName", empresa.nome || "Empresa");
+  if(usuarioLogado.tipo==="PLAYER"){
+    html+=section("JOGAR")+item("fa-building","Explorar Empresas","location.href='societies.html'")+item("fa-receipt","Minha Comanda","location.href='comanda.html'")+item("fa-trophy","Campeonatos","location.href='campeonatos-view.html'");
+    html+=section("TIME")+item("fa-users","Times","location.href='times.html'")+item("fa-user-friends","Meu Time","location.href='meu-time.html'");
   }
+  html+=section("CONTA");
+  if(usuarioLogado.tipo!=="FUNCIONARIO") html+=item("fa-user","Perfil","location.href='perfil.html'");
+  html+=`<li id="btnSairMenu"><i class="fa fa-sign-out-alt"></i><span>Sair</span></li>`;
+  if(menu)menu.innerHTML=html;document.getElementById("btnSairMenu")?.addEventListener("click",window.sairSistema);
 
-  function getEmpresaSelecionadaLocal() {
-    const id = Number(localStorage.getItem("societyId") || 0);
-    const nome = localStorage.getItem("societyContextName") || "";
-    return id ? { id, nome } : null;
-  }
+  function installStyles(){if(document.getElementById("goplayContextStyles"))return;const st=document.createElement("style");st.id="goplayContextStyles";st.textContent=`.empresa-context-box{margin:0 14px 14px;padding:12px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(255,255,255,.07)}.empresa-context-box label{display:block;color:#b9c9d8;font-size:10px;font-weight:900;letter-spacing:.08em;margin:0 0 7px;text-transform:uppercase}.empresa-context-box select{width:100%;padding:9px 10px;border:1px solid rgba(255,255,255,.18);border-radius:10px;background:#fff;color:#052845;font-size:13px;font-weight:700}.empresa-context-hint{color:#d8e3ec;font-size:11px;line-height:1.35;margin-top:7px}.menu-section-label{padding:15px 22px 5px!important;color:#7fa0b9!important;font-size:10px!important;font-weight:900!important;letter-spacing:.12em!important;cursor:default!important}.menu-section-label:hover{background:transparent!important}.topbar-empresa-chip{margin-left:auto;max-width:260px;padding:7px 11px;border-radius:999px;background:#eef6fb;color:#052845;font-size:12px;font-weight:800}.notif-btn{position:relative;border:0;background:#eef6fb;color:#052845;border-radius:999px;width:38px;height:38px;margin-left:8px;cursor:pointer}.notif-count{position:absolute;right:-3px;top:-4px;background:#d33;color:#fff;font-size:10px;border-radius:999px;min-width:17px;height:17px;display:grid;place-items:center}.notif-panel{position:fixed;right:18px;top:68px;width:min(380px,calc(100vw - 28px));max-height:480px;overflow:auto;background:#fff;border:1px solid #dfe7ee;border-radius:15px;box-shadow:0 18px 50px rgba(5,40,69,.22);z-index:9999;padding:12px}.notif-row{padding:11px;border-bottom:1px solid #edf1f4;cursor:pointer}.notif-row.unread{background:#f2f9fd}.notif-row strong{display:block;color:#052845}.notif-row small{color:#71808b}.notif-head{display:flex;justify-content:space-between;align-items:center;padding:5px}.notif-head button{border:0;background:none;color:#0b678f;font-weight:800;cursor:pointer}@media(max-width:640px){.topbar-empresa-chip{max-width:120px;font-size:10px}}`;document.head.appendChild(st);}
+  function renderContext(list,selected){installStyles();const sidebar=document.getElementById("sidebar");if(!sidebar||!menu)return;let box=document.getElementById("empresaContextBox");if(!box){box=document.createElement("div");box.id="empresaContextBox";box.className="empresa-context-box";sidebar.insertBefore(box,menu);}const locked=usuarioLogado.tipo==="FUNCIONARIO";box.innerHTML=`<label><i class="fa fa-location-dot"></i> Empresa atual</label><select id="empresaContextSelect" ${locked?'disabled':''}><option value="">Selecione</option>${list.map(e=>`<option value="${e.id}" ${Number(e.id)===Number(selected?.id)?'selected':''}>${esc(e.nome)}</option>`).join('')}</select><div class="empresa-context-hint">${locked?'Seu acesso está vinculado a esta empresa.':'Agenda, comanda e gestão usam a empresa selecionada aqui.'}</div>`;document.getElementById("empresaContextSelect")?.addEventListener("change",ev=>{if(locked)return;const e=list.find(x=>Number(x.id)===Number(ev.target.value));saveEmpresa(e||null);location.reload();});const top=document.querySelector(".topbar");if(top){let chip=document.getElementById("topbarEmpresaChip");if(!chip){chip=document.createElement("div");chip.id="topbarEmpresaChip";chip.className="topbar-empresa-chip";top.appendChild(chip);}chip.textContent=selected?`📍 ${selected.nome}`:"📍 Selecione a empresa";}}
+  async function context(){try{let list=[];if(usuarioLogado.tipo==="FUNCIONARIO"){const e=await api(`${BASE_URL}/society/${usuarioLogado.societyId}`);list=e?[e]:[];}else if(usuarioLogado.tipo==="DONO_SOCIETY")list=await api(`${BASE_URL}/society/owner/${usuarioLogado.id}`);else list=await api(`${BASE_URL}/society`);if(!Array.isArray(list))list=[];let id=Number(localStorage.getItem("societyId")||0);if(usuarioLogado.tipo==="FUNCIONARIO")id=Number(usuarioLogado.societyId);let selected=list.find(e=>Number(e.id)===id)||null;if(!selected&&usuarioLogado.tipo==="DONO_SOCIETY"&&list.length===1)selected=list[0];if(selected)saveEmpresa(selected);renderContext(list,selected);window.GOPLAY_EMPRESAS=list;window.GOPLAY_EMPRESA_ATUAL=selected;return{empresas:list,empresa:selected};}catch(e){console.error(e);renderContext([],null);return{empresas:[],empresa:null,error:e};}}
+  window.GoPlayEmpresaContextReady=context();
 
-  window.getEmpresaSelecionada = getEmpresaSelecionadaLocal;
-
-  window.sairSistema = function () {
-    localStorage.removeItem("usuarioLogado");
-    localStorage.removeItem("societyId");
-    localStorage.removeItem("societyContextName");
-    localStorage.removeItem("societyOwnerId");
-    window.location.href = "login.html";
-  };
-
-  function focarSeletorEmpresa() {
-    const select = document.getElementById("empresaContextSelect");
-    if (select) {
-      select.focus();
-      select.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }
-
-  window.exigirEmpresaSelecionada = function () {
-    const empresa = getEmpresaSelecionadaLocal();
-    if (empresa?.id) return empresa;
-    alert("Selecione uma empresa primeiro.");
-    focarSeletorEmpresa();
-    return null;
-  };
-
-  window.navegarComEmpresa = function (pagina) {
-    const empresa = window.exigirEmpresaSelecionada();
-    if (!empresa) return;
-    window.location.href = pagina;
-  };
-
-  window.abrirMinhaEmpresaMenu = function () {
-    const empresa = window.exigirEmpresaSelecionada();
-    if (!empresa) return;
-    window.location.href = `society-detalhe.html?societyId=${encodeURIComponent(empresa.id)}`;
-  };
-
-  function menuSection(label) {
-    return `<li class="menu-section-label">${escapeHtml(label)}</li>`;
-  }
-
-  function menuItem(icon, label, action) {
-    return `<li onclick="${action}"><i class="fa ${icon}"></i><span>${escapeHtml(label)}</span></li>`;
-  }
-
-  let html = menuItem("fa-house", "Início", "location.href='home.html'");
-
-  if (usuarioLogado.tipo === "DONO_SOCIETY") {
-    html += menuSection("OPERAÇÃO");
-    html += menuItem("fa-calendar", "Agenda", "navegarComEmpresa('horarios.html')");
-    html += menuItem("fa-receipt", "Comandas", "navegarComEmpresa('comanda-admin.html')");
-
-    html += menuSection("ESPORTES");
-    html += menuItem("fa-trophy", "Campeonatos", "navegarComEmpresa('campeonatos.html')");
-    html += menuItem("fa-users", "Times", "navegarComEmpresa('times.html')");
-
-    html += menuSection("FINANCEIRO");
-    html += menuItem("fa-credit-card", "Recebimentos", "navegarComEmpresa('recebimentos.html')");
-    html += menuItem("fa-chart-line", "Visão Geral", "navegarComEmpresa('society-dashboard.html')");
-
-    html += menuSection("EMPRESA");
-    html += menuItem("fa-building", "Minha Empresa", "abrirMinhaEmpresaMenu()");
-    html += menuItem("fa-futbol", "Quadras", "navegarComEmpresa('campos.html')");
-    html += menuItem("fa-utensils", "Cardápio", "navegarComEmpresa('cardapio.html')");
-    html += menuItem("fa-plus", "Cadastrar Empresa", "location.href='society-create.html'");
-  }
-
-  if (usuarioLogado.tipo === "DONO_TIME") {
-    html += menuSection("JOGAR");
-    html += menuItem("fa-building", "Explorar Empresas", "location.href='societies.html'");
-    html += menuItem("fa-calendar-check", "Agendar Horário", "location.href='time-agendamento.html'");
-    html += menuItem("fa-receipt", "Minha Comanda", "location.href='comanda.html'");
-    html += menuItem("fa-list", "Meus Agendamentos", "location.href='meus-agendamentos.html'");
-    html += menuItem("fa-money-bill", "Meus Pagamentos", "location.href='meus-pagamentos.html'");
-
-    html += menuSection("MEU TIME");
-    html += menuItem("fa-users", "Meus Times", "location.href='times.html'");
-    html += menuItem("fa-trophy", "Campeonatos", "location.href='campeonatos-view.html'");
-  }
-
-  if (usuarioLogado.tipo === "PLAYER") {
-    html += menuSection("JOGAR");
-    html += menuItem("fa-building", "Explorar Empresas", "location.href='societies.html'");
-    html += menuItem("fa-receipt", "Minha Comanda", "location.href='comanda.html'");
-    html += menuItem("fa-trophy", "Campeonatos", "location.href='campeonatos-view.html'");
-
-    html += menuSection("TIME");
-    html += menuItem("fa-users", "Times", "location.href='times.html'");
-    html += menuItem("fa-user-friends", "Meu Time", "location.href='meu-time.html'");
-  }
-
-  html += menuSection("CONTA");
-  html += menuItem("fa-user", "Perfil", "location.href='perfil.html'");
-  html += `<li id="btnSairMenu"><i class="fa fa-sign-out-alt"></i><span>Sair</span></li>`;
-
-  if (menu) menu.innerHTML = html;
-  document.getElementById("btnSairMenu")?.addEventListener("click", window.sairSistema);
-
-  function instalarEstilosContexto() {
-    if (document.getElementById("goplayEmpresaContextStyles")) return;
-    const style = document.createElement("style");
-    style.id = "goplayEmpresaContextStyles";
-    style.textContent = `
-      .empresa-context-box{margin:0 14px 14px;padding:12px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(255,255,255,.07)}
-      .empresa-context-box label{display:block;color:#b9c9d8;font-size:10px;font-weight:900;letter-spacing:.08em;margin:0 0 7px;text-transform:uppercase}
-      .empresa-context-box select{width:100%;padding:9px 10px;border:1px solid rgba(255,255,255,.18);border-radius:10px;background:#fff;color:#052845;font-size:13px;font-weight:700}
-      .empresa-context-hint{color:#d8e3ec;font-size:11px;line-height:1.35;margin-top:7px}
-      .menu-section-label{padding:15px 22px 5px!important;color:#7fa0b9!important;font-size:10px!important;font-weight:900!important;letter-spacing:.12em!important;cursor:default!important}
-      .menu-section-label:hover{background:transparent!important}
-      .topbar-empresa-chip{margin-left:auto;max-width:320px;padding:7px 11px;border-radius:999px;background:#eef6fb;color:#052845;font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      @media(max-width:640px){.topbar-empresa-chip{max-width:135px;font-size:10px}.empresa-context-box{margin-left:10px;margin-right:10px}}
-    `;
-    document.head.appendChild(style);
-  }
-
-  function renderContextoEmpresa(empresas, selecionadaId) {
-    instalarEstilosContexto();
-    const sidebar = document.getElementById("sidebar");
-    const menuEl = document.getElementById("menuDynamic");
-    if (!sidebar || !menuEl) return;
-
-    let box = document.getElementById("empresaContextBox");
-    if (!box) {
-      box = document.createElement("div");
-      box.id = "empresaContextBox";
-      box.className = "empresa-context-box";
-      sidebar.insertBefore(box, menuEl);
-    }
-
-    const placeholder = usuarioLogado.tipo === "DONO_SOCIETY"
-      ? "Selecione sua empresa"
-      : "Selecione onde você está";
-
-    box.innerHTML = `
-      <label><i class="fa fa-location-dot"></i> Empresa atual</label>
-      <select id="empresaContextSelect">
-        <option value="">${placeholder}</option>
-        ${(empresas || []).map(e => `<option value="${e.id}" ${Number(e.id) === Number(selecionadaId) ? "selected" : ""}>${escapeHtml(e.nome)}${e.cidade ? ` — ${escapeHtml(e.cidade)}` : ""}</option>`).join("")}
-      </select>
-      <div class="empresa-context-hint">Agenda, comanda e gestão usam a empresa selecionada aqui.</div>
-    `;
-
-    const select = document.getElementById("empresaContextSelect");
-    select?.addEventListener("change", () => {
-      const id = Number(select.value || 0);
-      const empresa = (empresas || []).find(e => Number(e.id) === id) || null;
-      salvarEmpresaContexto(empresa);
-      window.dispatchEvent(new CustomEvent("goplay:empresa-changed", { detail: empresa }));
-      // Mantém todas as páginas antigas sincronizadas sem depender de cada script escutar o evento.
-      window.location.reload();
-    });
-
-    const topbar = document.querySelector(".topbar");
-    if (topbar) {
-      let chip = document.getElementById("topbarEmpresaChip");
-      if (!chip) {
-        chip = document.createElement("div");
-        chip.id = "topbarEmpresaChip";
-        chip.className = "topbar-empresa-chip";
-        topbar.appendChild(chip);
-      }
-      const empresa = (empresas || []).find(e => Number(e.id) === Number(selecionadaId));
-      chip.textContent = empresa ? `📍 ${empresa.nome}` : "📍 Nenhuma empresa selecionada";
-    }
-  }
-
-  async function carregarContextoEmpresas() {
-    try {
-      const empresas = usuarioLogado.tipo === "DONO_SOCIETY"
-        ? await fetchJSON(`${BASE_URL}/society/owner/${usuarioLogado.id}`)
-        : await fetchJSON(`${BASE_URL}/society`);
-
-      const lista = Array.isArray(empresas) ? empresas : [];
-      const urlId = getSocietyIdFromUrl();
-      const localId = Number(localStorage.getItem("societyId") || 0) || null;
-
-      let selecionada = null;
-      if (urlId) selecionada = lista.find(e => Number(e.id) === Number(urlId)) || null;
-      if (!selecionada && localId) selecionada = lista.find(e => Number(e.id) === Number(localId)) || null;
-
-      // Para dono com somente uma empresa não há ambiguidade: mantém fluxo rápido.
-      if (!selecionada && usuarioLogado.tipo === "DONO_SOCIETY" && lista.length === 1) {
-        selecionada = lista[0];
-      }
-
-      if (selecionada) salvarEmpresaContexto(selecionada);
-      else if (localId) salvarEmpresaContexto(null);
-
-      if (usuarioLogado.tipo === "DONO_SOCIETY") {
-        localStorage.setItem("societyOwnerId", String(usuarioLogado.id));
-      }
-
-      window.GOPLAY_EMPRESAS = lista;
-      window.GOPLAY_EMPRESA_ATUAL = selecionada;
-      renderContextoEmpresa(lista, selecionada?.id || null);
-      return { empresas: lista, empresa: selecionada };
-    } catch (e) {
-      console.error("Erro ao carregar contexto de empresa:", e);
-      renderContextoEmpresa([], null);
-      return { empresas: [], empresa: null, error: e };
-    }
-  }
-
-  window.GoPlayEmpresaContextReady = carregarContextoEmpresas();
+  async function notifications(){if(!localStorage.getItem("authToken"))return;installStyles();const top=document.querySelector(".topbar");if(!top)return;let btn=document.getElementById("notifBtn");if(!btn){btn=document.createElement("button");btn.id="notifBtn";btn.className="notif-btn";btn.innerHTML='<i class="fa fa-bell"></i><span id="notifCount" class="notif-count" style="display:none">0</span>';top.appendChild(btn);}async function load(){try{const d=await api(`${BASE_URL}/notificacoes`);const c=document.getElementById("notifCount");c.textContent=d.naoLidas||0;c.style.display=d.naoLidas?'grid':'none';window.__notifData=d;}catch(e){console.error(e);}}btn.onclick=async()=>{document.getElementById("notifPanel")?.remove();await load();const d=window.__notifData||{itens:[]};const p=document.createElement("div");p.id="notifPanel";p.className="notif-panel";p.innerHTML=`<div class="notif-head"><strong>Notificações</strong><button id="markAllNotif">Marcar todas como lidas</button></div>${d.itens.length?d.itens.map(n=>`<div class="notif-row ${n.lido?'':'unread'}" data-id="${n.id}"><strong>${esc(n.titulo)}</strong><div>${esc(n.mensagem)}</div><small>${new Date(n.createdAt).toLocaleString('pt-BR')}</small></div>`).join(''):'<div class="notif-row">Nenhuma notificação.</div>'}`;document.body.appendChild(p);p.querySelectorAll('[data-id]').forEach(r=>r.onclick=async()=>{await api(`${BASE_URL}/notificacoes/${r.dataset.id}/lida`,{method:'POST'});r.classList.remove('unread');load();});p.querySelector('#markAllNotif').onclick=async()=>{await api(`${BASE_URL}/notificacoes/lidas/todas`,{method:'POST'});p.remove();load();};};await load();}
+  notifications();
 }

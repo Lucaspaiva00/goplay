@@ -955,6 +955,18 @@ function renderJogos(c) {
         }).join("");
 }
 
+function permissoesJogoUI() {
+    try {
+        const u = JSON.parse(localStorage.getItem("usuarioLogado") || "null");
+        const tipo = String(u?.tipo || "").toUpperCase();
+        const funcao = String(u?.funcao || "").toUpperCase();
+        return {
+            configurar: tipo === "DONO_SOCIETY" || (tipo === "FUNCIONARIO" && funcao === "ADMIN"),
+            operar: tipo === "DONO_SOCIETY" || (tipo === "FUNCIONARIO" && ["ADMIN","MESARIO"].includes(funcao))
+        };
+    } catch { return { configurar:false, operar:false }; }
+}
+
 function renderJogoCard(j) {
     const isVolta = j.tipoJogo === "VOLTA";
     const isFinal = j.tipoJogo === "MATA_MATA";
@@ -968,7 +980,7 @@ function renderJogoCard(j) {
       <div class="match" style="background:#fff;border:1px solid #e8eef7;border-radius:18px;padding:16px;box-shadow:0 6px 18px rgba(15,23,42,.05);">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span class="chip">${badge}</span><span class="chip">${aoVivo ? '<span class="live-dot"></span>' : ''}${status}</span>${j.mesaConfigurada ? '<span class="chip">🎛 Mesa liberada</span>' : '<span class="chip">Mesa não configurada</span>'}</div>
-          <div class="match-actions"><button class="btn btn-light" onclick="abrirCentralJogo(${Number(j.id)})"><i class="fa-solid fa-tv"></i> ${aoVivo ? 'Assistir ao vivo' : 'Central da partida'}</button>${j.finalizado ? '' : `<button class="btn btn-primary" onclick="abrirConfigMesa(${Number(j.id)})"><i class="fa-solid fa-clipboard-user"></i> Configurar Mesa</button>`}</div>
+          <div class="match-actions"><button class="btn btn-light" onclick="abrirCentralJogo(${Number(j.id)})"><i class="fa-solid fa-tv"></i> ${aoVivo ? 'Assistir ao vivo' : 'Central da partida'}</button>${j.finalizado ? '' : `${permissoesJogoUI().operar ? `<button class="btn btn-light" onclick="abrirMesaDireta(${Number(j.id)})"><i class="fa-solid fa-stopwatch"></i> Abrir Mesa</button>` : ''}${permissoesJogoUI().configurar ? `<button class="btn btn-primary" onclick="abrirConfigMesa(${Number(j.id)})"><i class="fa-solid fa-clipboard-user"></i> Configurar acesso</button>` : ''}`}</div>
         </div>
         <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin:10px 0;">
           <div style="font-weight:900;color:#052845;font-size:16px;text-align:right;">${escapeHTML(timeA)}</div>
@@ -1124,6 +1136,9 @@ let mesaJogoIdAtual = null;
 function abrirCentralJogo(jogoId) {
     window.open(`jogo-detalhe.html?jogoId=${Number(jogoId)}`, "_blank", "noopener");
 }
+function abrirMesaDireta(jogoId) {
+    window.open(`mesa-jogo.html?jogoId=${Number(jogoId)}`, "_blank", "noopener");
+}
 function abrirDetalhesJogo(jogoId) { abrirCentralJogo(jogoId); }
 function abrirConfigMesa(jogoId) {
     mesaJogoIdAtual = Number(jogoId);
@@ -1157,6 +1172,7 @@ async function copiarLinkMesa() { const input=document.getElementById("mesaLink"
 window.finalizarJogo = finalizarJogo;
 window.abrirDetalhesJogo = abrirDetalhesJogo;
 window.abrirCentralJogo = abrirCentralJogo;
+window.abrirMesaDireta = abrirMesaDireta;
 window.abrirConfigMesa = abrirConfigMesa;
 window.abrirSecao = abrirSecao;
 window.gerarLiga = gerarLiga;

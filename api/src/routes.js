@@ -20,6 +20,10 @@ const pagamentoController = require("./controller/pagamentoController");
 const agendamentoController = require("./controller/agendamentoController");
 const comandaController = require("./controller/comandaController");
 const { subscribeJogo } = require("./realtime");
+const funcionarioController = require("./controller/funcionarioController");
+const notificacaoController = require("./controller/notificacaoController");
+const operacaoController = require("./controller/operacaoController");
+const { authenticate, authenticateOptional, requireSocietyRoles, requireEntitySocietyRoles } = require("./auth");
 
 /* =====================================================
    AUTH / USUÁRIOS
@@ -28,6 +32,11 @@ const { subscribeJogo } = require("./realtime");
 router.post("/login", usuarioController.login);
 router.post("/forgot-password", usuarioController.forgotPassword);
 router.post("/reset-password", usuarioController.resetPassword);
+router.post("/funcionario/login", funcionarioController.login);
+
+router.get("/notificacoes", authenticate, notificacaoController.list);
+router.post("/notificacoes/:id/lida", authenticate, notificacaoController.markRead);
+router.post("/notificacoes/lidas/todas", authenticate, notificacaoController.markAll);
 
 router.post("/usuarios", usuarioController.create);
 router.get("/usuarios/:id", usuarioController.readOne);
@@ -47,7 +56,17 @@ router.post("/society", societyController.create);
 router.get("/society", societyController.listAll);
 router.get("/society/owner/:usuarioId", societyController.readByOwner);
 router.get("/society/:id", societyController.readById);
-router.put("/society/:id", societyController.update);
+router.put("/society/:id", ...requireSocietyRoles(["ADMIN"], req => req.params.id), societyController.update);
+
+/* =====================================================
+   FUNCIONÁRIOS / OPERAÇÃO
+===================================================== */
+router.get("/society/:societyId/funcionarios", ...requireSocietyRoles(["ADMIN"], req => req.params.societyId), funcionarioController.list);
+router.post("/society/:societyId/funcionarios", ...requireSocietyRoles(["ADMIN"], req => req.params.societyId), funcionarioController.create);
+router.put("/society/:societyId/funcionarios/:id", ...requireSocietyRoles(["ADMIN"], req => req.params.societyId), funcionarioController.update);
+router.post("/society/:societyId/funcionarios/:id/revogar", ...requireSocietyRoles(["ADMIN"], req => req.params.societyId), funcionarioController.revoke);
+router.get("/society/:societyId/operacao", ...requireSocietyRoles(["ADMIN","CAIXA","BAR","RECEPCAO","MESARIO"], req => req.params.societyId), operacaoController.dashboard);
+
 
 /* =====================================================
    SOCIETY PLAYERS
@@ -81,21 +100,21 @@ router.post("/time/:timeId/inativar", timeController.inativar);
    CARDÁPIO
 ===================================================== */
 
-router.post("/cardapio", cardapioController.create);
+router.post("/cardapio", ...requireSocietyRoles(["ADMIN"], req => req.body.societyId), cardapioController.create);
 router.get("/cardapio/society/:societyId", cardapioController.list);
 router.get("/cardapio/item/:id", cardapioController.readOne);
-router.put("/cardapio/:id", cardapioController.update);
-router.delete("/cardapio/:id", cardapioController.remove);
+router.put("/cardapio/:id", ...requireEntitySocietyRoles(["ADMIN"], "cardapio"), cardapioController.update);
+router.delete("/cardapio/:id", ...requireEntitySocietyRoles(["ADMIN"], "cardapio"), cardapioController.remove);
 
 /* =====================================================
    CAMPOS
 ===================================================== */
 
-router.post("/campos", campoController.create);
+router.post("/campos", ...requireSocietyRoles(["ADMIN"], req => req.body.societyId), campoController.create);
 router.get("/campos/society/:societyId", campoController.listBySociety);
 router.get("/campos/:id", campoController.readOne);
-router.put("/campos/:id", campoController.update);
-router.delete("/campos/:id", campoController.remove);
+router.put("/campos/:id", ...requireEntitySocietyRoles(["ADMIN"], "campo"), campoController.update);
+router.delete("/campos/:id", ...requireEntitySocietyRoles(["ADMIN"], "campo"), campoController.remove);
 
 /* =====================================================
    CONVITES
@@ -110,8 +129,9 @@ router.post("/convite", conviteController.convidar);
 router.get("/agendamentos/disponiveis", agendamentoController.horariosDisponiveis);
 router.post("/agendamentos", agendamentoController.create);
 router.get("/agendamentos/time/:timeId", agendamentoController.listByTime);
-router.get("/agendamentos/society/:societyId", agendamentoController.listBySociety);
+router.get("/agendamentos/society/:societyId", ...requireSocietyRoles(["ADMIN","CAIXA","RECEPCAO"], req => req.params.societyId), agendamentoController.listBySociety);
 router.post("/agendamentos/:id/cancelar", agendamentoController.cancelar);
+router.put("/agendamentos/:id/remarcar", ...requireEntitySocietyRoles(["ADMIN","CAIXA","RECEPCAO"], "agendamento"), agendamentoController.remarcar);
 
 /* =====================================================
    PAGAMENTOS
@@ -119,8 +139,9 @@ router.post("/agendamentos/:id/cancelar", agendamentoController.cancelar);
 
 router.post("/pagamentos/agendamento", pagamentoController.createPagamentoAgendamento);
 router.post("/pagamentos/mensalidade", pagamentoController.createMensalidade);
-router.post("/pagamentos/:id/confirmar", pagamentoController.confirmarPagamento);
-router.get("/pagamentos/society/:societyId", pagamentoController.listBySociety);
+router.post("/pagamentos/:id/confirmar", authenticate, pagamentoController.confirmarPagamento);
+router.post("/pagamentos/:id/avisar", authenticate, pagamentoController.avisarPagamento);
+router.get("/pagamentos/society/:societyId", authenticate, pagamentoController.listBySociety);
 router.get("/pagamentos/time/:timeId", pagamentoController.listByTime);
 router.get("/pagamentos/usuario/:usuarioId", pagamentoController.listarPorUsuario);
 router.get("/pagamentos/:id", pagamentoController.readOne);
@@ -129,26 +150,26 @@ router.get("/pagamentos/:id", pagamentoController.readOne);
    CAMPEONATOS
 ===================================================== */
 
-router.post("/campeonato", campeonatoController.create);
+router.post("/campeonato", ...requireSocietyRoles(["ADMIN"], req => req.body.societyId), campeonatoController.create);
 router.get("/campeonato", campeonatoController.listAll);
 router.get("/campeonato/society/:societyId", campeonatoController.listBySociety);
 router.get("/campeonato/:id", campeonatoController.readOne);
 
-router.post("/campeonato/:id/add-time", campeonatoController.addTime);
-router.post("/campeonato/:id/generate-groups", campeonatoController.generateGroups);
-router.post("/campeonato/:id/generate-league", campeonatoController.generateLeague);
+router.post("/campeonato/:id/add-time", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.addTime);
+router.post("/campeonato/:id/generate-groups", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.generateGroups);
+router.post("/campeonato/:id/generate-league", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.generateLeague);
 
 /* Compatibilidade com front antigo */
-router.post("/campeonato/:id/generate", campeonatoController.generateLeague);
-router.post("/campeonato/:id/generate-group-matches", campeonatoController.generateGroupMatches);
-router.post("/campeonato/:id/generate-mata-mata", campeonatoController.generateMataMata);
+router.post("/campeonato/:id/generate", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.generateLeague);
+router.post("/campeonato/:id/generate-group-matches", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.generateGroupMatches);
+router.post("/campeonato/:id/generate-mata-mata", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.generateMataMata);
 
 router.get("/campeonato/:id/ranking", campeonatoController.ranking);
 router.get("/campeonato/:id/ranking-grupos", campeonatoController.rankingPorGrupos);
 router.get("/campeonato/:id/bracket", campeonatoController.getBracket);
 
-router.put("/campeonato/:id", campeonatoController.updateInfo);
-router.post("/campeonato/:id/groups-manual", campeonatoController.salvarGruposManual
+router.put("/campeonato/:id", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.updateInfo);
+router.post("/campeonato/:id/groups-manual", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.salvarGruposManual
 );
 
 /* =====================================================
@@ -156,33 +177,33 @@ router.post("/campeonato/:id/groups-manual", campeonatoController.salvarGruposMa
 ===================================================== */
 
 router.get("/jogo/:id/stream", subscribeJogo);
-router.get("/jogo/:id/mesa", jogoController.readMesa);
-router.post("/jogo/:id/mesa/configurar", jogoController.configurarMesa);
-router.post("/jogo/:id/mesa/revogar", jogoController.revogarMesa);
-router.post("/jogo/:id/cronometro", jogoController.controlarCronometro);
-router.delete("/jogo/:id/evento/ultimo", jogoController.desfazerUltimoEvento);
+router.get("/jogo/:id/mesa", authenticateOptional, jogoController.readMesa);
+router.post("/jogo/:id/mesa/configurar", authenticateOptional, jogoController.configurarMesa);
+router.post("/jogo/:id/mesa/revogar", authenticateOptional, jogoController.revogarMesa);
+router.post("/jogo/:id/cronometro", authenticateOptional, jogoController.controlarCronometro);
+router.delete("/jogo/:id/evento/ultimo", authenticateOptional, jogoController.desfazerUltimoEvento);
 router.get("/jogo/:id", jogoController.readOne);
-router.put("/jogo/:id/stats", jogoController.updateStats);
-router.post("/jogo/:id/escalacao", jogoController.addLineup);
-router.post("/jogo/:id/evento", jogoController.addEvento);
-router.post("/jogo/:id/finalizar", campeonatoController.finalizarJogo);
+router.put("/jogo/:id/stats", authenticateOptional, jogoController.updateStats);
+router.post("/jogo/:id/escalacao", authenticateOptional, jogoController.addLineup);
+router.post("/jogo/:id/evento", authenticateOptional, jogoController.addEvento);
+router.post("/jogo/:id/finalizar", authenticateOptional, campeonatoController.finalizarJogo);
 
 /* Compatibilidade se algum front chamar essa rota */
-router.post("/campeonato/jogo/:id/finalizar", campeonatoController.finalizarJogo);
+router.post("/campeonato/jogo/:id/finalizar", authenticateOptional, campeonatoController.finalizarJogo);
 
 /* =====================================================
    COMANDAS
 ===================================================== */
 
-router.post("/comanda", comandaController.abrir);
-router.post("/comanda/:id/item", comandaController.adicionarItem);
-router.delete("/comanda/item/:itemId", comandaController.removerItem);
-router.get("/comanda/society/:societyId", comandaController.listBySociety);
-router.get("/comanda/usuario/:usuarioId", comandaController.listByUsuario);
-router.get("/comanda/usuario/:usuarioId/empresa/:societyId/aberta", comandaController.readOpenByUsuarioSociety);
-router.get("/comanda/:id", comandaController.readOne);
-router.post("/comanda/:id/fechar", comandaController.fechar);
-router.post("/comanda/:id/gerar-pagamento", comandaController.gerarPagamento);
-router.post("/comanda/:id/pagar", comandaController.pagar);
+router.post("/comanda", authenticate, comandaController.abrir);
+router.post("/comanda/:id/item", authenticate, comandaController.adicionarItem);
+router.delete("/comanda/item/:itemId", authenticate, comandaController.removerItem);
+router.get("/comanda/society/:societyId", authenticate, comandaController.listBySociety);
+router.get("/comanda/usuario/:usuarioId", authenticate, comandaController.listByUsuario);
+router.get("/comanda/usuario/:usuarioId/empresa/:societyId/aberta", authenticate, comandaController.readOpenByUsuarioSociety);
+router.get("/comanda/:id", authenticate, comandaController.readOne);
+router.post("/comanda/:id/fechar", authenticate, comandaController.fechar);
+router.post("/comanda/:id/gerar-pagamento", authenticate, comandaController.gerarPagamento);
+router.post("/comanda/:id/pagar", authenticate, comandaController.pagar);
 
 module.exports = router;

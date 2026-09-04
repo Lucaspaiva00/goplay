@@ -1,0 +1,96 @@
+GOPLAY — FASE 3: OPERAÇÃO PROFISSIONAL
+Data: 04/09/2026
+
+ENTREGAS PRINCIPAIS
+1. Funcionários e permissões por empresa
+   - ADMIN
+   - MESARIO
+   - CAIXA
+   - BAR
+   - RECEPCAO
+   - Acesso individual por usuário + PIN criptografado
+   - Ativar/desativar acesso
+   - Trocar PIN
+   - Revogar sessões imediatamente
+
+2. Sessão autenticada no backend
+   - Login normal passa a emitir token assinado
+   - Login separado da equipe
+   - Front envia Authorization automaticamente
+   - Permissões sensíveis validadas na API, não apenas no menu
+
+3. Caixa & Bar
+   - Tela operacional independente
+   - Bar adiciona produtos e fecha comandas
+   - Caixa confirma pagamentos
+   - Recepção visualiza sem poder confirmar recebimentos
+   - Admin e proprietário possuem operação completa
+
+4. Notificações
+   - Sino de notificações no topo
+   - Reserva criada/cancelada/remarcada
+   - Comanda aberta/fechada
+   - Cliente avisa que fez PIX
+   - Caixa confirma pagamento
+   - Notificações separadas para cliente/dono e funcionários
+
+5. Pagamento seguro
+   - Cliente não consegue mais marcar o próprio pagamento como PAGO
+   - Botão passa a ser “Já fiz o PIX — avisar empresa”
+   - Status continua PENDENTE
+   - Caixa/Admin faz a confirmação real
+
+6. Dashboard operacional
+   - Reservas de hoje
+   - Comandas abertas
+   - Comandas aguardando pagamento
+   - Pagamentos pendentes
+   - Jogos ao vivo
+   - Funcionários ativos
+   - Listas práticas do que exige atenção agora
+
+7. Agenda operacional
+   - Drag & drop agora salva a remarcação no backend
+   - Validação de conflito de horário
+   - Notificação automática após remarcação
+
+8. Mesa de Jogo + permissões
+   - Proprietário/Admin pode configurar/revogar acesso da Mesa
+   - Mesário autenticado pode operar a Mesa diretamente
+   - Link específico da Mesa continua funcionando sem login
+   - Backend não confia mais em X-GoPlay-User-Id para autorização
+
+9. Proteções adicionadas no backend
+   - Edição de empresa
+   - Quadras
+   - Cardápio
+   - Campeonato administrativo
+   - Comandas
+   - Confirmação de pagamentos
+   - Funcionários
+   - Operação da partida
+
+MIGRATION NOVA
+20260904152000_fase3_funcionarios_permissoes
+
+ALTERAÇÕES DE BANCO
+- Enum FuncaoFuncionario
+- Tabela Funcionario
+- Tabela NotificacaoFuncionario
+- Pagamento.avisoPagamentoEm
+
+IMPORTANTE APÓS O DEPLOY
+No Shell do Render, dentro de /api:
+  npx prisma migrate deploy && npx prisma generate
+
+IMPORTANTE SOBRE LOGIN
+Como a Fase 3 introduz sessão autenticada por token, usuários que estavam logados antes do deploy podem precisar sair e entrar novamente uma vez.
+
+TESTES RECOMENDADOS
+- Criar funcionário Caixa, fazer login pelo acesso da equipe e confirmar pagamento.
+- Criar funcionário Bar, adicionar item e fechar comanda; confirmar que não pode marcar pagamento como pago.
+- Criar Recepção e confirmar que pode ver agenda/comandas, mas não confirmar recebimento.
+- Criar Mesário e abrir a Mesa de uma partida autenticado.
+- Desativar funcionário e confirmar que a sessão deixa de funcionar.
+- Cliente clicar “Já fiz o PIX” e verificar notificação no Caixa/Admin.
+- Arrastar reserva na agenda e confirmar que a nova data/horário persiste.

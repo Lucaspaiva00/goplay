@@ -83,21 +83,24 @@ function tokenMesaValido(req, jogo) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
-function getUsuarioId(req) {
-  const raw = req.headers["x-goplay-user-id"] || req.body?.usuarioId || req.query?.usuarioId;
-  const id = Number(raw);
-  return Number.isFinite(id) ? id : null;
+async function donoPodeOperar(req, jogo) {
+  const a=req.actor;
+  if(a?.kind==="USER"&&a.tipo==="DONO_SOCIETY") return Number(jogo?.campeonato?.society?.usuarioId)===Number(a.id);
+  if(a?.kind==="STAFF") return Number(a.societyId)===Number(jogo?.campeonato?.society?.id)&&["ADMIN","MESARIO"].includes(a.funcao);
+  return false;
 }
 
-async function donoPodeOperar(req, jogo) {
-  const usuarioId = getUsuarioId(req);
-  return !!usuarioId && Number(jogo?.campeonato?.society?.usuarioId) === usuarioId;
+async function podeConfigurarMesa(req,jogo){
+  const a=req.actor;
+  if(a?.kind==="USER"&&a.tipo==="DONO_SOCIETY") return Number(jogo?.campeonato?.society?.usuarioId)===Number(a.id);
+  if(a?.kind==="STAFF") return Number(a.societyId)===Number(jogo?.campeonato?.society?.id)&&a.funcao==="ADMIN";
+  return false;
 }
 
 async function exigirOperador(req, res, jogo) {
   if (tokenMesaValido(req, jogo)) return true;
   if (await donoPodeOperar(req, jogo)) return true;
-  res.status(403).json({ error: "Acesso restrito ao mesário autorizado ou ao dono da empresa." });
+  res.status(403).json({ error: "Acesso restrito à Mesa, Mesário, Administrador ou dono da empresa." });
   return false;
 }
 
@@ -210,7 +213,7 @@ const readMesa = async (req, res) => {
     const jogoId = Number(req.params.id);
     const jogo = await buscarJogoCompleto(prisma, jogoId);
     if (!jogo) return res.status(404).json({ error: "Jogo não encontrado." });
-    if (!tokenMesaValido(req, jogo)) return res.status(403).json({ error: "Link da mesa inválido ou revogado." });
+    if (!(await exigirOperador(req, res, jogo))) return;
     return res.json({
       jogo: { ...sanitizarJogoPublico(jogo), mesarioNome: jogo.mesarioNome },
       elencoA: jogo.timeA?.jogadores || [],
@@ -227,7 +230,7 @@ const configurarMesa = async (req, res) => {
     const jogoId = Number(req.params.id);
     const jogo = await buscarJogoCompleto(prisma, jogoId);
     if (!jogo) return res.status(404).json({ error: "Jogo não encontrado." });
-    if (!(await donoPodeOperar(req, jogo))) return res.status(403).json({ error: "Somente o dono da empresa pode liberar a Mesa de Jogo." });
+    if (!(await podeConfigurarMesa(req, jogo))) return res.status(403).json({ error: "Somente o dono ou Administrador pode liberar a Mesa de Jogo." });
 
     const mesarioNome = String(req.body.mesarioNome || "Mesário").trim().slice(0, 120) || "Mesário";
     const mesaToken = crypto.randomBytes(32).toString("hex");
@@ -248,7 +251,7 @@ const revogarMesa = async (req, res) => {
     const jogoId = Number(req.params.id);
     const jogo = await buscarJogoCompleto(prisma, jogoId);
     if (!jogo) return res.status(404).json({ error: "Jogo não encontrado." });
-    if (!(await donoPodeOperar(req, jogo))) return res.status(403).json({ error: "Somente o dono da empresa pode revogar a Mesa de Jogo." });
+    if (!(await podeConfigurarMesa(req, jogo))) return res.status(403).json({ error: "Somente o dono ou Administrador pode revogar a Mesa de Jogo." });
     await prisma.jogo.update({ where: { id: jogoId }, data: { mesaToken: null, mesarioNome: null } });
     emitJogo(jogoId, { tipo: "mesa-revogada" });
     return res.json({ ok: true });

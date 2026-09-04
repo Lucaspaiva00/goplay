@@ -1,5 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const { notifyUsuario, notifyStaff } = require("../notifications");
 
 /* =========================
    HELPERS
@@ -141,18 +142,10 @@ const create = async (req, res) => {
     }
 
     const agendamento = await prisma.agendamento.create({
-      data: {
-        societyId,
-        campoId,
-        timeId,
-        data,
-        horaInicio,
-        horaFim,
-        valor: campo.valorAvulso,
-        status: "PENDENTE",
-      },
+      data: { societyId, campoId, timeId, data, horaInicio, horaFim, valor: campo.valorAvulso, status: "PENDENTE" },
     });
-
+    await notifyUsuario(prisma, time.donoId, "Reserva criada", `Reserva em ${dataStr} às ${horaInicio} aguardando confirmação/pagamento.`);
+    await notifyStaff(prisma, societyId, "Nova reserva", `${time.nome} reservou ${campo.nome} para ${dataStr} às ${horaInicio}.`, ["ADMIN","CAIXA","RECEPCAO"]);
     return res.status(201).json(agendamento);
   } catch (err) {
     console.error(err);
@@ -201,7 +194,7 @@ const cancelar = async (req, res) => {
 
     const agendamento = await prisma.agendamento.findUnique({
       where: { id },
-      include: { pagamento: true },
+      include: { pagamento: true, time: true, campo: true },
     });
 
     if (!agendamento) {
@@ -218,11 +211,9 @@ const cancelar = async (req, res) => {
       });
     }
 
-    await prisma.agendamento.update({
-      where: { id },
-      data: { status: "CANCELADO" },
-    });
-
+    await prisma.agendamento.update({ where: { id }, data: { status: "CANCELADO" } });
+    await notifyUsuario(prisma, agendamento.time?.donoId, "Reserva cancelada", `A reserva de ${agendamento.horaInicio} foi cancelada.`);
+    await notifyStaff(prisma, agendamento.societyId, "Reserva cancelada", `${agendamento.time?.nome || "Time"} cancelou a reserva das ${agendamento.horaInicio}.`, ["ADMIN","CAIXA","RECEPCAO"]);
     res.json({ ok: true });
   } catch (err) {
     console.error(err);
@@ -265,7 +256,46 @@ const listBySociety = async (req, res) => {
   }
 };
 
+
+/* =========================
+   REMARCAR AGENDAMENTO (OPERAÇÃO)
+========================= */
+const remarcar = async (req, res) => {
+  try {
+    const id = toId(req.params.id);
+    const dataStr = String(req.body.data || "").trim();
+    const horaInicio = String(req.body.horaInicio || "").trim();
+    if (!id || !/^\d{4}-\d{2}-\d{2}$/.test(dataStr) || !/^\d{2}:\d{2}$/.test(horaInicio)) {
+      return res.status(400).json({ error: "Data ou horário inválidos." });
+    }
+    const atual = await prisma.agendamento.findUnique({ where: { id }, include: { time: true, campo: true } });
+    if (!atual) return res.status(404).json({ error: "Agendamento não encontrado." });
+    if (atual.status === "CANCELADO") return res.status(400).json({ error: "Agendamento cancelado não pode ser remarcado." });
+    const data = parseDateOnly(dataStr);
+    const [hh, mm] = horaInicio.split(":").map(Number);
+    if (!Number.isInteger(hh) || hh < 0 || hh > 23 || !Number.isInteger(mm) || mm < 0 || mm > 59) return res.status(400).json({ error: "Horário inválido." });
+    const fimMin = hh * 60 + mm + 60;
+    if (fimMin > 24 * 60) return res.status(400).json({ error: "Horário final ultrapassa o dia." });
+    const horaFim = `${String(Math.floor(fimMin / 60)).padStart(2, "0")}:${String(fimMin % 60).padStart(2, "0")}`;
+    const conflito = await prisma.agendamento.findFirst({
+      where: {
+        id: { not: id }, campoId: atual.campoId, data, status: { not: "CANCELADO" },
+        OR: [{ horaInicio: { lte: horaInicio }, horaFim: { gt: horaInicio } }, { horaInicio: { lt: horaFim }, horaFim: { gte: horaFim } }]
+      }
+    });
+    if (conflito) return res.status(409).json({ error: "Esse horário já está ocupado nesta quadra." });
+    const atualizado = await prisma.agendamento.update({ where: { id }, data: { data, horaInicio, horaFim } });
+    await notifyUsuario(prisma, atual.time?.donoId, "Reserva remarcada", `Sua reserva foi movida para ${dataStr} às ${horaInicio}.`);
+    await notifyStaff(prisma, atual.societyId, "Reserva remarcada", `${atual.time?.nome || "Time"} agora joga em ${dataStr} às ${horaInicio}.`, ["ADMIN","CAIXA","RECEPCAO"]);
+    return res.json(atualizado);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Erro ao remarcar agendamento." });
+  }
+};
+
 module.exports = {
+  remarcar,
   horariosDisponiveis,
   create,
   listByTime,

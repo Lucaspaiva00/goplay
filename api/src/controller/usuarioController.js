@@ -3,6 +3,7 @@ const prisma = new PrismaClient();
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
+const { createToken } = require("../auth");
 
 /* ============================================
    HELPERS
@@ -87,12 +88,14 @@ const login = async (req, res) => {
             return res.status(400).json({ error: "Senha incorreta." });
         }
 
+        const authToken = createToken({ kind: "USER", id: usuario.id });
         return res.status(200).json({
             id: usuario.id,
             nome: usuario.nome,
             email: usuario.email,
             tipo: usuario.tipo,
-            fotoUrl: usuario.fotoUrl || null
+            fotoUrl: usuario.fotoUrl || null,
+            authToken
         });
 
     } catch (err) {

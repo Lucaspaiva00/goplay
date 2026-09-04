@@ -136,16 +136,16 @@ async function compartilharLink() {
     alert("Link copiado com sucesso.");
 }
 
-async function confirmarPagamento(pagamentoId) {
-    if (!confirm("Deseja confirmar este pagamento como PAGO?")) {
+async function avisarPagamento(pagamentoId) {
+    if (!confirm("Você já realizou o PIX e deseja avisar a empresa para conferência?")) {
         return;
     }
 
-    await fetchJSON(`${BASE_URL}/pagamentos/${encodeURIComponent(pagamentoId)}/confirmar`, {
+    await fetchJSON(`${BASE_URL}/pagamentos/${encodeURIComponent(pagamentoId)}/avisar`, {
         method: "POST",
     });
 
-    alert("Pagamento confirmado com sucesso.");
+    alert("Empresa avisada. O pagamento será confirmado pelo caixa após conferência.");
     window.location.reload();
 }
 
@@ -204,7 +204,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 btnConfirmar.disabled = true;
                 btnConfirmar.innerHTML = `<i class="fa-solid fa-ban"></i> Pagamento cancelado`;
             } else {
-                btnConfirmar.onclick = () => confirmarPagamento(pagamentoId).catch(e => {
+                btnConfirmar.innerHTML = `<i class="fa-solid fa-bell"></i> Já fiz o PIX — avisar empresa`;
+                btnConfirmar.onclick = () => avisarPagamento(pagamentoId).catch(e => {
                     console.error(e);
                     alert(e?.message || "Erro ao confirmar pagamento.");
                 });

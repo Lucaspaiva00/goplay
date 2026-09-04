@@ -1,10 +1,30 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const { notifyUsuario, notifyStaff } = require("../notifications");
 
 const toId = (v) => {
     const n = Number(v);
     return Number.isFinite(n) ? n : null;
 };
+
+
+async function podeOperar(req, comanda, roles = ["ADMIN", "CAIXA", "BAR", "RECEPCAO"], allowSelf = true) {
+    const a = req.actor;
+    if (!a || !comanda) return false;
+    if (allowSelf && a.kind === "USER" && Number(a.id) === Number(comanda.usuarioId)) return true;
+    if (a.kind === "STAFF") return Number(a.societyId) === Number(comanda.societyId) && roles.includes(a.funcao);
+    if (a.kind === "USER" && a.tipo === "DONO_SOCIETY") {
+        const own = await prisma.society.findFirst({ where: { id: Number(comanda.societyId), usuarioId: Number(a.id) }, select: { id: true } });
+        return !!own;
+    }
+    return false;
+}
+async function podeGerirEmpresa(req, societyId, roles=["ADMIN","CAIXA","BAR","RECEPCAO"]) {
+    const a=req.actor;
+    if(a?.kind==="STAFF") return Number(a.societyId)===Number(societyId)&&roles.includes(a.funcao);
+    if(a?.kind==="USER"&&a.tipo==="DONO_SOCIETY") return !!(await prisma.society.findFirst({where:{id:Number(societyId),usuarioId:Number(a.id)},select:{id:true}}));
+    return false;
+}
 
 const includeResumo = {
     usuario: { select: { id: true, nome: true, email: true } },
@@ -25,6 +45,9 @@ const abrir = async (req, res) => {
 
         if (!usuarioId || !societyId) {
             return res.status(400).json({ error: "Selecione a empresa antes de abrir a comanda." });
+        }
+        if (!req.actor || req.actor.kind !== "USER" || Number(req.actor.id) !== Number(usuarioId)) {
+            return res.status(403).json({ error: "Você só pode abrir uma comanda para o próprio usuário." });
         }
 
         const [usuario, society] = await Promise.all([
@@ -52,15 +75,10 @@ const abrir = async (req, res) => {
         }
 
         const comanda = await prisma.comanda.create({
-            data: {
-                usuarioId,
-                societyId,
-                timeId: timeId || null,
-                status: "ABERTA"
-            },
+            data: { usuarioId, societyId, timeId: timeId || null, status: "ABERTA" },
             include: includeResumo
         });
-
+        await notifyStaff(prisma, societyId, "Nova comanda", `${comanda.usuario?.nome || "Cliente"} abriu uma comanda.`, ["ADMIN","CAIXA","BAR"]);
         return res.status(201).json(comanda);
     } catch (err) {
         console.error("Erro ao abrir comanda:", err);
@@ -84,9 +102,8 @@ const adicionarItem = async (req, res) => {
         const result = await prisma.$transaction(async (tx) => {
             const comanda = await tx.comanda.findUnique({ where: { id: comandaId } });
 
-            if (!comanda || comanda.status !== "ABERTA") {
-                throw new Error("Comanda inválida ou fechada.");
-            }
+            if (!comanda || comanda.status !== "ABERTA") throw new Error("Comanda inválida ou fechada.");
+            if (!(await podeOperar(req, comanda, ["ADMIN","CAIXA","BAR"]))) throw new Error("Sem permissão para movimentar esta comanda.");
 
             const produto = await tx.cardapio.findUnique({ where: { id: cardapioId } });
             if (!produto) throw new Error("Produto não encontrado.");
@@ -136,9 +153,8 @@ const removerItem = async (req, res) => {
         if (!item) return res.status(404).json({ error: "Item não encontrado." });
 
         const comanda = await prisma.comanda.findUnique({ where: { id: item.comandaId } });
-        if (!comanda || comanda.status !== "ABERTA") {
-            return res.status(400).json({ error: "Só é possível remover itens de uma comanda aberta." });
-        }
+        if (!comanda || comanda.status !== "ABERTA") return res.status(400).json({ error: "Só é possível remover itens de uma comanda aberta." });
+        if (!(await podeOperar(req, comanda, ["ADMIN","CAIXA","BAR"]))) return res.status(403).json({ error: "Sem permissão para movimentar esta comanda." });
 
         await prisma.$transaction(async (tx) => {
             await tx.comandaItem.delete({ where: { id: itemId } });
@@ -162,6 +178,7 @@ const listBySociety = async (req, res) => {
     try {
         const societyId = toId(req.params.societyId);
         if (!societyId) return res.status(400).json({ error: "Empresa inválida." });
+        if (!(await podeGerirEmpresa(req, societyId))) return res.status(403).json({ error: "Sem acesso às comandas desta empresa." });
 
         const lista = await prisma.comanda.findMany({
             where: { societyId },
@@ -184,6 +201,9 @@ const listByUsuario = async (req, res) => {
     try {
         const usuarioId = toId(req.params.usuarioId);
         if (!usuarioId) return res.status(400).json({ error: "Usuário inválido." });
+        if (!(req.actor?.kind === "USER" && Number(req.actor.id) === Number(usuarioId))) {
+            return res.status(403).json({ error: "Sem acesso às comandas deste usuário." });
+        }
 
         const societyId = toId(req.query.societyId);
         const status = req.query.status ? String(req.query.status).toUpperCase() : null;
@@ -216,6 +236,9 @@ const readOpenByUsuarioSociety = async (req, res) => {
         if (!usuarioId || !societyId) {
             return res.status(400).json({ error: "Usuário ou empresa inválidos." });
         }
+        if (!(req.actor?.kind === "USER" && Number(req.actor.id) === Number(usuarioId))) {
+            return res.status(403).json({ error: "Sem acesso a esta comanda." });
+        }
 
         const comanda = await prisma.comanda.findFirst({
             where: { usuarioId, societyId, status: "ABERTA" },
@@ -244,6 +267,7 @@ const readOne = async (req, res) => {
         });
 
         if (!comanda) return res.status(404).json({ error: "Comanda não encontrada." });
+        if (!(await podeOperar(req, comanda))) return res.status(403).json({ error: "Sem acesso a esta comanda." });
         return res.json(comanda);
     } catch (err) {
         console.error(err);
@@ -262,18 +286,15 @@ const fechar = async (req, res) => {
             include: { itens: { select: { id: true } } }
         });
 
-        if (!comanda || comanda.status !== "ABERTA") {
-            return res.status(400).json({ error: "Comanda inválida." });
-        }
+        if (!comanda || comanda.status !== "ABERTA") return res.status(400).json({ error: "Comanda inválida." });
+        if (!(await podeOperar(req, comanda, ["ADMIN","CAIXA","BAR"]))) return res.status(403).json({ error: "Sem permissão para fechar esta comanda." });
         if (!comanda.itens.length) {
             return res.status(400).json({ error: "Adicione pelo menos um item antes de fechar a comanda." });
         }
 
-        await prisma.comanda.update({
-            where: { id },
-            data: { status: "FECHADA", fechadaEm: new Date() }
-        });
-
+        await prisma.comanda.update({ where: { id }, data: { status: "FECHADA", fechadaEm: new Date() } });
+        await notifyUsuario(prisma, comanda.usuarioId, "Comanda fechada", `Sua comanda foi fechada no valor de R$ ${Number(comanda.total||0).toFixed(2)}.`);
+        await notifyStaff(prisma, comanda.societyId, "Comanda aguardando pagamento", `Comanda #${comanda.codigo || comanda.id} foi fechada.`, ["ADMIN","CAIXA"]);
         return res.json({ ok: true });
     } catch (err) {
         console.error(err);
@@ -289,9 +310,8 @@ const gerarPagamento = async (req, res) => {
         const id = toId(req.params.id);
         const comanda = await prisma.comanda.findUnique({ where: { id }, include: { pagamento: true } });
 
-        if (!comanda || comanda.status !== "FECHADA") {
-            return res.status(400).json({ error: "Comanda precisa estar fechada." });
-        }
+        if (!comanda || comanda.status !== "FECHADA") return res.status(400).json({ error: "Comanda precisa estar fechada." });
+        if (!(await podeOperar(req, comanda, ["ADMIN","CAIXA","BAR"]))) return res.status(403).json({ error: "Sem permissão para gerar pagamento." });
 
         if (comanda.pagamento) return res.json(comanda.pagamento);
 
@@ -323,9 +343,8 @@ const pagar = async (req, res) => {
         const id = toId(req.params.id);
         const comanda = await prisma.comanda.findUnique({ where: { id }, include: { pagamento: true } });
 
-        if (!comanda || !comanda.pagamento) {
-            return res.status(400).json({ error: "Pagamento não encontrado." });
-        }
+        if (!comanda || !comanda.pagamento) return res.status(400).json({ error: "Pagamento não encontrado." });
+        if (!(await podeOperar(req, comanda, ["ADMIN","CAIXA"], false))) return res.status(403).json({ error: "Somente Caixa/Administrador pode confirmar pagamento." });
 
         await prisma.$transaction(async (tx) => {
             await tx.pagamento.update({
@@ -338,6 +357,7 @@ const pagar = async (req, res) => {
             });
         });
 
+        await notifyUsuario(prisma, comanda.usuarioId, "Pagamento confirmado", `Pagamento da comanda #${comanda.codigo || comanda.id} confirmado.`);
         return res.json({ ok: true });
     } catch (err) {
         console.error(err);

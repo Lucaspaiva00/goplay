@@ -1,5 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const { notifyUsuario, notifyStaff } = require("../notifications");
 
 /* =========================
    HELPERS
@@ -13,6 +14,14 @@ const toMoney = (value) => {
     const n = Number(value);
     return Number.isFinite(n) ? n : null;
 };
+
+
+async function podeGerirPagamento(req, pagamento, roles=["ADMIN","CAIXA"]) {
+    const a=req.actor;if(!a||!pagamento)return false;
+    if(a.kind==="STAFF") return Number(a.societyId)===Number(pagamento.societyId)&&roles.includes(a.funcao);
+    if(a.kind==="USER"&&a.tipo==="DONO_SOCIETY") return !!(await prisma.society.findFirst({where:{id:Number(pagamento.societyId),usuarioId:Number(a.id)},select:{id:true}}));
+    return false;
+}
 
 /* =========================
    GET /pagamentos/:id
@@ -183,6 +192,9 @@ const confirmarPagamento = async (req, res) => {
             if (!pagamento) {
                 return { status: 404, body: { error: "Pagamento não encontrado." } };
             }
+            if (!(await podeGerirPagamento(req, pagamento))) {
+                return { status: 403, body: { error: "Somente Caixa/Administrador pode confirmar este pagamento." } };
+            }
 
             if (pagamento.status === "PAGO") {
                 return { status: 400, body: { error: "Pagamento já confirmado." } };
@@ -207,6 +219,13 @@ const confirmarPagamento = async (req, res) => {
             return { status: 200, body: { ok: true } };
         });
 
+        if (result.status === 200) {
+            const p = await prisma.pagamento.findUnique({ where: { id }, select: { usuarioId: true, societyId: true, valor: true } });
+            if (p) {
+                await notifyUsuario(prisma, p.usuarioId, "Pagamento confirmado", `Recebemos seu pagamento de R$ ${Number(p.valor||0).toFixed(2)}.`);
+                await notifyStaff(prisma, p.societyId, "Pagamento recebido", `Pagamento de R$ ${Number(p.valor||0).toFixed(2)} confirmado.`, ["ADMIN","CAIXA"]);
+            }
+        }
         return res.status(result.status).json(result.body);
     } catch (e) {
         console.error(e);
@@ -221,9 +240,9 @@ const listBySociety = async (req, res) => {
     try {
         const societyId = toId(req.params.societyId);
 
-        if (!societyId) {
-            return res.status(400).json({ error: "societyId inválido." });
-        }
+        if (!societyId) return res.status(400).json({ error: "societyId inválido." });
+        const probe = { societyId };
+        if (!(await podeGerirPagamento(req, probe))) return res.status(403).json({ error: "Sem acesso aos recebimentos desta empresa." });
 
         const pagamentos = await prisma.pagamento.findMany({
             where: { societyId },
@@ -376,7 +395,37 @@ const createMensalidade = async (req, res) => {
     }
 };
 
+
+/* =========================
+   CLIENTE AVISA QUE FEZ O PIX
+   Não confirma pagamento: apenas notifica a equipe.
+========================= */
+const avisarPagamento = async (req, res) => {
+    try {
+        const id = toId(req.params.id);
+        const p = await prisma.pagamento.findUnique({ where: { id }, include: { society: { select: { nome: true } } } });
+        if (!p) return res.status(404).json({ error: "Pagamento não encontrado." });
+        if (!(req.actor?.kind === "USER" && Number(req.actor.id) === Number(p.usuarioId))) {
+            return res.status(403).json({ error: "Você só pode avisar pagamentos da sua própria conta." });
+        }
+        if (p.status === "PAGO") return res.json({ ok: true, message: "Pagamento já confirmado." });
+        if (p.status !== "PENDENTE") return res.status(400).json({ error: "Pagamento não está pendente." });
+        const agora = new Date();
+        if (p.avisoPagamentoEm && agora.getTime() - new Date(p.avisoPagamentoEm).getTime() < 5 * 60 * 1000) {
+            return res.json({ ok: true, message: "A empresa já foi avisada recentemente." });
+        }
+        await prisma.pagamento.update({ where: { id }, data: { avisoPagamentoEm: agora } });
+        await notifyStaff(prisma, p.societyId, "Cliente informou PIX", `Pagamento #${p.id} de R$ ${Number(p.valor||0).toFixed(2)} aguarda conferência.`, ["ADMIN","CAIXA"]);
+        await notifyUsuario(prisma, p.usuarioId, "PIX informado", `Avisamos ${p.society?.nome || "a empresa"}. O pagamento será confirmado após conferência.`);
+        return res.json({ ok: true });
+    } catch (e) {
+        console.error(e);
+        return res.status(500).json({ error: "Erro ao avisar pagamento." });
+    }
+};
+
 module.exports = {
+    avisarPagamento,
     readOne,
     createPagamentoAgendamento,
     createMensalidade,

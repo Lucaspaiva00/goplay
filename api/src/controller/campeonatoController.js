@@ -785,13 +785,14 @@ const finalizarJogo = async (req, res) => {
         }
 
         const tokenMesa = String(req.headers["x-mesa-token"] || req.body.mesaToken || "").trim();
-        const usuarioId = Number(req.headers["x-goplay-user-id"] || req.body.usuarioId || 0);
         const autorizadoMesa = tokenIgual(tokenMesa, acesso.mesaToken);
-        const autorizadoDono = Number.isFinite(usuarioId) && usuarioId > 0 && Number(acesso.campeonato?.society?.usuarioId) === usuarioId;
+        const actor = req.actor;
+        const autorizadoDono = actor?.kind === "USER" && actor.tipo === "DONO_SOCIETY" && Number(acesso.campeonato?.society?.usuarioId) === Number(actor.id);
+        const autorizadoStaff = actor?.kind === "STAFF" && Number(actor.societyId) === Number(acesso.campeonato?.society?.id) && ["ADMIN","MESARIO"].includes(actor.funcao);
 
-        if (!autorizadoMesa && !autorizadoDono) {
+        if (!autorizadoMesa && !autorizadoDono && !autorizadoStaff) {
             return res.status(403).json({
-                error: "Somente o mesário autorizado ou o dono da empresa pode encerrar o jogo.",
+                error: "Somente Mesa autorizada, Mesário, Administrador ou dono da empresa pode encerrar o jogo.",
             });
         }
 

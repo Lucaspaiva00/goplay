@@ -39,7 +39,10 @@ function login() {
                 return;
             }
 
-            localStorage.setItem("usuarioLogado", JSON.stringify(json));
+            if (json.authToken) localStorage.setItem("authToken", json.authToken);
+            const { authToken, ...usuarioSeguro } = json;
+            localStorage.setItem("usuarioLogado", JSON.stringify(usuarioSeguro));
+            localStorage.removeItem("funcionarioLogado");
             window.location.href = "home.html";
         })
         .catch(() => {
