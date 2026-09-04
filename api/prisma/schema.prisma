@@ -92,6 +92,13 @@ enum StatusCampeonato {
   FINALIZADO
 }
 
+enum StatusOperacaoJogo {
+  AGENDADO
+  AO_VIVO
+  INTERVALO
+  ENCERRADO
+}
+
 enum TipoCampeonato {
   PONTOS_CORRIDOS
   MATA_MATA
@@ -522,6 +529,16 @@ model Jogo {
   observacao String?
   dataHora   DateTime?
 
+  // Operação da partida / Mesa de Jogo
+  mesarioNome          String?
+  mesaToken            String?             @unique
+  statusOperacao       StatusOperacaoJogo  @default(AGENDADO)
+  cronometroSegundos   Int                 @default(0)
+  cronometroInicioEm   DateTime?
+  periodo              Int                 @default(1)
+  iniciadoEm           DateTime?
+  encerradoEm          DateTime?
+
   finalizado Boolean @default(false)
 
   estatisticas EstatisticaJogo[]
@@ -535,6 +552,7 @@ model Jogo {
   @@index([timeAId])
   @@index([timeBId])
   @@index([vencedorId])
+  @@index([statusOperacao])
 }
 
 model EstatisticaJogo {

@@ -49,6 +49,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnAtualizar = document.getElementById("btnAtualizar");
     if (btnAtualizar) btnAtualizar.addEventListener("click", () => carregarDetalhes(true));
 
+    document.getElementById("btnFecharMesaModal")?.addEventListener("click", fecharMesaModal);
+    document.getElementById("btnGerarMesa")?.addEventListener("click", gerarAcessoMesa);
+    document.getElementById("btnRevogarMesa")?.addEventListener("click", revogarAcessoMesa);
+    document.getElementById("btnCopiarMesa")?.addEventListener("click", copiarLinkMesa);
+    document.getElementById("btnAbrirMesaNovaAba")?.addEventListener("click", () => {
+        const link = document.getElementById("mesaLink")?.value;
+        if (link) window.open(link, "_blank", "noopener");
+    });
+    document.getElementById("mesaModal")?.addEventListener("click", (e) => {
+        if (e.target?.id === "mesaModal") fecharMesaModal();
+    });
+
     const btnAddTime = document.getElementById("btnAddTime");
     if (btnAddTime) btnAddTime.addEventListener("click", addTime);
 
@@ -358,6 +370,8 @@ async function carregarDetalhes(force = false) {
         if (titulo) titulo.textContent = c.nome || "Campeonato";
 
         renderCampeonatoInfo(c);
+        renderOverview(c);
+        renderConfigResumo(c);
         await carregarSelectTimes();
         renderTimes(c);
         renderJogos(c);
@@ -407,6 +421,47 @@ function renderCampeonatoInfo(c) {
         </div>
     `;
 }
+function renderOverview(c) {
+    const jogos = c.jogos || [];
+    const finalizados = jogos.filter(j => j.finalizado).length;
+    const aoVivo = jogos.filter(j => j.statusOperacao === "AO_VIVO").length;
+    const mesas = jogos.filter(j => j.mesaConfigurada).length;
+    const cards = document.getElementById("overviewCards");
+    const status = document.getElementById("overviewStatus");
+    if (status) status.textContent = getStatusLabel(c.status);
+    if (cards) cards.innerHTML = `
+      <div class="champ-kpi"><small>Times</small><strong>${c.times?.length || 0}/${c.maxTimes}</strong></div>
+      <div class="champ-kpi"><small>Partidas</small><strong>${finalizados}/${jogos.length}</strong></div>
+      <div class="champ-kpi"><small>Ao vivo agora</small><strong>${aoVivo}</strong></div>
+      <div class="champ-kpi"><small>Mesas configuradas</small><strong>${mesas}</strong></div>`;
+
+    const next = document.getElementById("overviewNext");
+    if (!next) return;
+    if (!jogos.length) {
+      next.innerHTML = `<div class="champ-next-box"><div><strong>Próximo passo: gerar as partidas</strong><div class="muted">Complete os times e gere a liga de ida e volta.</div></div><button class="btn btn-primary" onclick="abrirSecao('sec-times')">Ir para Times</button></div>`;
+    } else if (aoVivo) {
+      const j = jogos.find(x => x.statusOperacao === "AO_VIVO");
+      next.innerHTML = `<div class="champ-next-box"><div><strong><span class="live-dot"></span>Partida acontecendo agora</strong><div class="muted">${escapeHTML(j.timeA?.nome)} × ${escapeHTML(j.timeB?.nome)}</div></div><button class="btn btn-primary" onclick="abrirCentralJogo(${j.id})">Assistir ao vivo</button></div>`;
+    } else if (finalizados < jogos.length) {
+      const j = jogos.find(x => !x.finalizado);
+      next.innerHTML = `<div class="champ-next-box"><div><strong>Próxima partida pendente</strong><div class="muted">${escapeHTML(j.timeA?.nome)} × ${escapeHTML(j.timeB?.nome)} • Configure a mesa antes do jogo.</div></div><button class="btn btn-primary" onclick="abrirConfigMesa(${j.id})">Configurar Mesa</button></div>`;
+    } else {
+      next.innerHTML = `<div class="champ-next-box"><div><strong>Fase concluída</strong><div class="muted">Confira a classificação e o campeão.</div></div><button class="btn btn-light" onclick="abrirSecao('sec-ranking')">Ver classificação</button></div>`;
+    }
+}
+
+function renderConfigResumo(c) {
+    const box = document.getElementById("configResumo");
+    if (!box) return;
+    box.innerHTML = `
+      <div class="item"><strong>Modalidade:</strong> ${escapeHTML(c.modalidade || "-")}</div>
+      <div class="item"><strong>Categoria:</strong> ${escapeHTML(c.categoria || "-")}</div>
+      <div class="item"><strong>Temporada:</strong> ${escapeHTML(c.temporada || "-")}</div>
+      <div class="item"><strong>Início:</strong> ${formatDate(c.dataInicio)}</div>
+      <div class="item"><strong>Fim:</strong> ${formatDate(c.dataFim)}</div>
+      <div class="item"><strong>Empresa:</strong> ${escapeHTML(c.society?.nome || "-")}</div>`;
+}
+
 /* =====================================================
    AÇÕES
 ===================================================== */
@@ -904,100 +959,24 @@ function renderJogoCard(j) {
     const isVolta = j.tipoJogo === "VOLTA";
     const isFinal = j.tipoJogo === "MATA_MATA";
     const badge = isFinal ? "🏆 Final" : (isVolta ? "🔁 Volta" : "➡️ Ida");
-
     const timeA = j.timeA?.nome || "Time A";
     const timeB = j.timeB?.nome || "Time B";
-
-    const statusLabel = j.finalizado ? "Finalizado" : "Em aberto";
-    const statusColor = j.finalizado ? "#065f46" : "#92400e";
-    const statusBg = j.finalizado ? "#ecfdf5" : "#fffbeb";
-
+    const statusMap = { AGENDADO: "Agendado", AO_VIVO: "AO VIVO", INTERVALO: "Intervalo", ENCERRADO: "Encerrado" };
+    const status = j.finalizado ? "Encerrado" : (statusMap[j.statusOperacao] || "Agendado");
+    const aoVivo = j.statusOperacao === "AO_VIVO";
     return `
-        <div class="match" style="
-            background:#fff;
-            border:1px solid #e8eef7;
-            border-radius:18px;
-            padding:16px;
-            box-shadow:0 6px 18px rgba(15,23,42,.05);
-        ">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                    <span class="chip">${badge}</span>
-                    <span class="chip" style="background:${statusBg};color:${statusColor};">
-                        ${statusLabel}
-                    </span>
-                </div>
-
-                <button class="btn btn-light" onclick="abrirDetalhesJogo(${Number(j.id)})">
-                    <i class="fa-solid fa-eye"></i> Detalhes
-                </button>
-            </div>
-
-            <div style="
-                display:grid;
-                grid-template-columns:1fr auto 1fr;
-                align-items:center;
-                gap:14px;
-                margin:10px 0 14px;
-            ">
-                <div style="font-weight:900;color:#052845;font-size:16px;text-align:right;">
-                    ${escapeHTML(timeA)}
-                </div>
-
-                <div style="
-                    min-width:120px;
-                    text-align:center;
-                    font-weight:900;
-                    font-size:22px;
-                    background:#f8fafc;
-                    border:1px solid #e5e7eb;
-                    border-radius:14px;
-                    padding:10px 14px;
-                    color:#052845;
-                ">
-                    ${j.finalizado ? `${j.golsA ?? 0} x ${j.golsB ?? 0}` : "x"}
-                </div>
-
-                <div style="font-weight:900;color:#052845;font-size:16px;">
-                    ${escapeHTML(timeB)}
-                </div>
-            </div>
-
-            ${j.finalizado ? "" : `
-                <div style="
-                    display:flex;
-                    justify-content:flex-end;
-                    align-items:center;
-                    gap:10px;
-                    flex-wrap:wrap;
-                    border-top:1px solid #eef2f6;
-                    padding-top:14px;
-                ">
-                    <input
-                        id="gA${Number(j.id)}"
-                        type="number"
-                        min="0"
-                        placeholder="Gols ${escapeHTML(timeA)}"
-                        style="width:150px;padding:11px;border-radius:12px;border:1px solid #dbe3ef;"
-                    />
-
-                    <span style="font-weight:900;">x</span>
-
-                    <input
-                        id="gB${Number(j.id)}"
-                        type="number"
-                        min="0"
-                        placeholder="Gols ${escapeHTML(timeB)}"
-                        style="width:150px;padding:11px;border-radius:12px;border:1px solid #dbe3ef;"
-                    />
-
-                    <button class="btn btn-primary" onclick="finalizarJogo(${Number(j.id)})" id="btnFinalizar${Number(j.id)}">
-                        <i class="fa-solid fa-check"></i> Finalizar
-                    </button>
-                </div>
-            `}
+      <div class="match" style="background:#fff;border:1px solid #e8eef7;border-radius:18px;padding:16px;box-shadow:0 6px 18px rgba(15,23,42,.05);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span class="chip">${badge}</span><span class="chip">${aoVivo ? '<span class="live-dot"></span>' : ''}${status}</span>${j.mesaConfigurada ? '<span class="chip">🎛 Mesa liberada</span>' : '<span class="chip">Mesa não configurada</span>'}</div>
+          <div class="match-actions"><button class="btn btn-light" onclick="abrirCentralJogo(${Number(j.id)})"><i class="fa-solid fa-tv"></i> ${aoVivo ? 'Assistir ao vivo' : 'Central da partida'}</button>${j.finalizado ? '' : `<button class="btn btn-primary" onclick="abrirConfigMesa(${Number(j.id)})"><i class="fa-solid fa-clipboard-user"></i> Configurar Mesa</button>`}</div>
         </div>
-    `;
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin:10px 0;">
+          <div style="font-weight:900;color:#052845;font-size:16px;text-align:right;">${escapeHTML(timeA)}</div>
+          <div style="min-width:120px;text-align:center;font-weight:900;font-size:22px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:10px 14px;color:#052845;">${(j.golsA ?? 0)} × ${(j.golsB ?? 0)}</div>
+          <div style="font-weight:900;color:#052845;font-size:16px;">${escapeHTML(timeB)}</div>
+        </div>
+        ${j.mesarioNome ? `<div class="muted" style="text-align:center;font-size:12px;">Mesário: <strong>${escapeHTML(j.mesarioNome)}</strong></div>` : ''}
+      </div>`;
 }
 
 async function finalizarJogo(id) {
@@ -1140,10 +1119,44 @@ function renderRanking(campeonato) {
    NAVEGAÇÃO
 ===================================================== */
 
-function abrirDetalhesJogo(jogoId) {
-    location.href = `jogo-detalhe.html?jogoId=${Number(jogoId)}`;
+let mesaJogoIdAtual = null;
+
+function abrirCentralJogo(jogoId) {
+    window.open(`jogo-detalhe.html?jogoId=${Number(jogoId)}`, "_blank", "noopener");
 }
+function abrirDetalhesJogo(jogoId) { abrirCentralJogo(jogoId); }
+function abrirConfigMesa(jogoId) {
+    mesaJogoIdAtual = Number(jogoId);
+    const j = (campeonatoAtual?.jogos || []).find(x => Number(x.id) === mesaJogoIdAtual);
+    document.getElementById("mesaJogoNome").textContent = j ? `${j.timeA?.nome || 'Time A'} × ${j.timeB?.nome || 'Time B'}` : `Jogo #${jogoId}`;
+    document.getElementById("mesarioNome").value = j?.mesarioNome || "";
+    document.getElementById("mesaLink").value = "";
+    document.getElementById("mesaLinkWrap").style.display = "none";
+    document.getElementById("btnRevogarMesa").style.display = j?.mesaConfigurada ? "inline-flex" : "none";
+    document.getElementById("mesaModal").classList.add("open");
+}
+function fecharMesaModal() { document.getElementById("mesaModal")?.classList.remove("open"); }
+function usuarioAtualId() { try { return Number(JSON.parse(localStorage.getItem("usuarioLogado") || "null")?.id || 0); } catch { return 0; } }
+async function gerarAcessoMesa() {
+    if (!mesaJogoIdAtual) return;
+    const nome = document.getElementById("mesarioNome").value.trim();
+    if (!nome) return alert("Informe o nome da pessoa que ficará na mesa.");
+    try {
+      const data = await safeFetchJSON(`${BASE_URL}/jogo/${mesaJogoIdAtual}/mesa/configurar`, { method:"POST", headers:{"Content-Type":"application/json","X-GoPlay-User-Id":String(usuarioAtualId())}, body:JSON.stringify({ usuarioId:usuarioAtualId(), mesarioNome:nome }) });
+      const link = new URL(`mesa-jogo.html`, location.href); link.searchParams.set("jogoId", mesaJogoIdAtual); link.searchParams.set("token", data.mesaToken);
+      document.getElementById("mesaLink").value = link.href; document.getElementById("mesaLinkWrap").style.display = "block"; document.getElementById("btnRevogarMesa").style.display = "inline-flex";
+      await carregarDetalhes(true);
+    } catch(e) { alert(e.message || "Erro ao gerar acesso da mesa."); }
+}
+async function revogarAcessoMesa() {
+    if (!mesaJogoIdAtual || !confirm("Revogar o acesso atual da Mesa de Jogo?")) return;
+    try { await safeFetchJSON(`${BASE_URL}/jogo/${mesaJogoIdAtual}/mesa/revogar`, { method:"POST", headers:{"Content-Type":"application/json","X-GoPlay-User-Id":String(usuarioAtualId())}, body:JSON.stringify({usuarioId:usuarioAtualId()}) }); document.getElementById("mesaLinkWrap").style.display="none"; document.getElementById("btnRevogarMesa").style.display="none"; await carregarDetalhes(true); } catch(e){ alert(e.message || "Erro ao revogar acesso."); }
+}
+async function copiarLinkMesa() { const input=document.getElementById("mesaLink"); if(!input?.value)return; try{await navigator.clipboard.writeText(input.value); alert("Link da Mesa copiado.");}catch{input.select();document.execCommand("copy");alert("Link da Mesa copiado.");} }
 
 window.finalizarJogo = finalizarJogo;
 window.abrirDetalhesJogo = abrirDetalhesJogo;
+window.abrirCentralJogo = abrirCentralJogo;
+window.abrirConfigMesa = abrirConfigMesa;
+window.abrirSecao = abrirSecao;
 window.gerarLiga = gerarLiga;

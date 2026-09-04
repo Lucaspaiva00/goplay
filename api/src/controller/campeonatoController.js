@@ -1,4 +1,6 @@
+const crypto = require("crypto");
 const { PrismaClient } = require("@prisma/client");
+const { emitJogo } = require("../realtime");
 
 const prisma = new PrismaClient();
 
@@ -9,6 +11,14 @@ const prisma = new PrismaClient();
 const toId = (value) => {
     const n = Number(value);
     return Number.isFinite(n) ? n : null;
+};
+
+
+const tokenIgual = (a, b) => {
+    if (!a || !b) return false;
+    const ba = Buffer.from(String(a));
+    const bb = Buffer.from(String(b));
+    return ba.length === bb.length && crypto.timingSafeEqual(ba, bb);
 };
 
 const parseDateOrNull = (value) => {
@@ -22,6 +32,25 @@ const parseDateOrNull = (value) => {
 
     return d;
 };
+
+
+function sanitizarJogoCampeonato(jogo) {
+    if (!jogo) return jogo;
+    const { mesaToken, ...rest } = jogo;
+    return { ...rest, mesaConfigurada: !!mesaToken };
+}
+
+function sanitizarCampeonato(c) {
+    if (!c) return c;
+    return {
+        ...c,
+        jogos: Array.isArray(c.jogos) ? c.jogos.map(sanitizarJogoCampeonato) : c.jogos,
+        grupos: Array.isArray(c.grupos) ? c.grupos.map(g => ({
+            ...g,
+            jogos: Array.isArray(g.jogos) ? g.jogos.map(sanitizarJogoCampeonato) : g.jogos,
+        })) : c.grupos,
+    };
+}
 
 function buildRoundRobinRounds(teamIds) {
     const ids = [...teamIds]
@@ -237,7 +266,7 @@ const listAll = async (req, res) => {
             },
         });
 
-        return res.json(campeonatos);
+        return res.json(campeonatos.map(sanitizarCampeonato));
 
     } catch (err) {
         console.error("ERRO listAll campeonato:", err);
@@ -288,7 +317,7 @@ const listBySociety = async (req, res) => {
             },
         });
 
-        return res.json(campeonatos);
+        return res.json(campeonatos.map(sanitizarCampeonato));
 
     } catch (err) {
         console.error("ERRO listBySociety campeonato:", err);
@@ -413,7 +442,7 @@ const readOne = async (req, res) => {
             });
         }
 
-        return res.json(campeonato);
+        return res.json(sanitizarCampeonato(campeonato));
 
     } catch (err) {
         console.error("ERRO readOne campeonato:", err);
@@ -731,6 +760,8 @@ const finalizarJogo = async (req, res) => {
         const jogoId = toId(req.params.id);
         const golsA = Number(req.body.golsA);
         const golsB = Number(req.body.golsB);
+        const penaltisA = req.body.penaltisA === undefined || req.body.penaltisA === null || req.body.penaltisA === "" ? null : Number(req.body.penaltisA);
+        const penaltisB = req.body.penaltisB === undefined || req.body.penaltisB === null || req.body.penaltisB === "" ? null : Number(req.body.penaltisB);
 
         if (!jogoId || !Number.isFinite(golsA) || !Number.isFinite(golsB)) {
             return res.status(400).json({
@@ -741,6 +772,26 @@ const finalizarJogo = async (req, res) => {
         if (golsA < 0 || golsB < 0) {
             return res.status(400).json({
                 error: "Os gols não podem ser negativos.",
+            });
+        }
+
+        const acesso = await prisma.jogo.findUnique({
+            where: { id: jogoId },
+            include: { campeonato: { include: { society: true } } },
+        });
+
+        if (!acesso) {
+            return res.status(404).json({ error: "Jogo não encontrado." });
+        }
+
+        const tokenMesa = String(req.headers["x-mesa-token"] || req.body.mesaToken || "").trim();
+        const usuarioId = Number(req.headers["x-goplay-user-id"] || req.body.usuarioId || 0);
+        const autorizadoMesa = tokenIgual(tokenMesa, acesso.mesaToken);
+        const autorizadoDono = Number.isFinite(usuarioId) && usuarioId > 0 && Number(acesso.campeonato?.society?.usuarioId) === usuarioId;
+
+        if (!autorizadoMesa && !autorizadoDono) {
+            return res.status(403).json({
+                error: "Somente o mesário autorizado ou o dono da empresa pode encerrar o jogo.",
             });
         }
 
@@ -766,17 +817,19 @@ const finalizarJogo = async (req, res) => {
             const ehFinal = jogo.tipoJogo === "MATA_MATA";
 
             if (ehFinal && golsA === golsB) {
-                return {
-                    status: 400,
-                    body: {
-                        error: "A final precisa ter um vencedor. Informe o placar final após eventual prorrogação/pênaltis.",
-                    },
-                };
+                const penaltisValidos = Number.isFinite(penaltisA) && Number.isFinite(penaltisB) && penaltisA >= 0 && penaltisB >= 0 && penaltisA !== penaltisB;
+                if (!penaltisValidos) {
+                    return {
+                        status: 400,
+                        body: { error: "A final terminou empatada. Informe o resultado dos pênaltis para definir o campeão." },
+                    };
+                }
             }
 
             let vencedorId = null;
             if (golsA > golsB) vencedorId = jogo.timeAId;
             if (golsB > golsA) vencedorId = jogo.timeBId;
+            if (ehFinal && golsA === golsB) vencedorId = penaltisA > penaltisB ? jogo.timeAId : jogo.timeBId;
 
             const jogoAtualizado = await tx.jogo.update({
                 where: { id: jogoId },
@@ -785,6 +838,15 @@ const finalizarJogo = async (req, res) => {
                     golsB,
                     vencedorId,
                     finalizado: true,
+                    desempateTipo: ehFinal && golsA === golsB ? "PENALTIS" : null,
+                    penaltisA: ehFinal && golsA === golsB ? penaltisA : null,
+                    penaltisB: ehFinal && golsA === golsB ? penaltisB : null,
+                    statusOperacao: "ENCERRADO",
+                    cronometroSegundos: acesso.cronometroInicioEm
+                        ? Number(acesso.cronometroSegundos || 0) + Math.max(0, Math.floor((Date.now() - new Date(acesso.cronometroInicioEm).getTime()) / 1000))
+                        : Number(acesso.cronometroSegundos || 0),
+                    cronometroInicioEm: null,
+                    encerradoEm: new Date(),
                 },
             });
 
@@ -984,6 +1046,7 @@ const finalizarJogo = async (req, res) => {
             };
         });
 
+        emitJogo(jogoId, { tipo: "jogo-encerrado" });
         return res.status(result.status).json(result.body);
     } catch (err) {
         console.error("ERRO finalizarJogo campeonato:", err);

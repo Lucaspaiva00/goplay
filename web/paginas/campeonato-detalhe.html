@@ -64,29 +64,23 @@
             </section>
 
             <div class="section-nav">
-                <button class="nav-pill active" data-target="sec-times">
-                    <i class="fa-solid fa-users"></i> Times
-                </button>
-                <button class="nav-pill" data-target="sec-grupos">
-                    <i class="fa-solid fa-table-list"></i> Classificação
-                </button>
-                <button class="nav-pill" data-target="sec-jogos">
-                    <i class="fa-solid fa-futbol"></i> Jogos
-                </button>
-
-                <button class="nav-pill" data-target="sec-ranking">
-                    <i class="fa-solid fa-ranking-star"></i> Ranking
-                </button>
-
-                <button class="nav-pill" data-target="sec-final">
-                    <i class="fa-solid fa-trophy"></i> Chaveamento
-                </button>
+                <button class="nav-pill active" data-target="sec-overview"><i class="fa-solid fa-gauge-high"></i> Visão geral</button>
+                <button class="nav-pill" data-target="sec-jogos"><i class="fa-solid fa-futbol"></i> Partidas</button>
+                <button class="nav-pill" data-target="sec-ranking"><i class="fa-solid fa-ranking-star"></i> Classificação</button>
+                <button class="nav-pill" data-target="sec-times"><i class="fa-solid fa-users"></i> Times</button>
+                <button class="nav-pill" data-target="sec-config"><i class="fa-solid fa-gear"></i> Configurações</button>
             </div>
 
             <div class="grid">
 
+                <section id="sec-overview" class="section active card span-2">
+                    <div class="card-head"><h2 class="card-title"><i class="fa-solid fa-gauge-high"></i> Visão geral do campeonato</h2><span class="chip" id="overviewStatus">Carregando</span></div>
+                    <div id="overviewCards" class="champ-overview-grid"></div>
+                    <div id="overviewNext" class="champ-next"></div>
+                </section>
+
                 <!-- TIMES -->
-                <section id="sec-times" class="section active card span-2">
+                <section id="sec-times" class="section card span-2">
                     <div class="card-head">
                         <h2 class="card-title">
                             <i class="fa-solid fa-users"></i> Times no campeonato
@@ -132,7 +126,7 @@
                 </section>
 
                 <!-- CLASSIFICAÇÃO -->
-                <section id="sec-grupos" class="section card">
+                <section id="sec-grupos" class="section card" style="display:none;">
 
                     <div class="card-head">
                         <h2 class="card-title">
@@ -195,7 +189,7 @@
                 </section>
 
                 <!-- FINAL -->
-                <section id="sec-final" class="section card span-2">
+                <section id="sec-final" class="section card span-2" style="display:none;">
                     <div class="card-head">
                         <h2 class="card-title">
                             <i class="fa-solid fa-trophy"></i> Chaveamento
@@ -215,10 +209,37 @@
                         </button>
                     </div>
                 </section>
+
+                <section id="sec-config" class="section card span-2">
+                    <div class="card-head"><h2 class="card-title"><i class="fa-solid fa-gear"></i> Configurações</h2><span class="chip">Campeonato</span></div>
+                    <div class="champ-config-note">
+                        <strong>Formato atual:</strong> Liga ida e volta com final entre os 2 melhores.
+                        <br><span class="muted">A Mesa de Jogo é configurada individualmente em cada partida.</span>
+                    </div>
+                    <div id="configResumo" class="list"></div>
+                </section>
             </div>
 
         </div>
     </main>
+
+    <div class="champ-modal" id="mesaModal">
+        <div class="champ-modal-box">
+            <div class="champ-modal-head"><div><h2>Mesa de Jogo</h2><small id="mesaJogoNome">Partida</small></div><button id="btnFecharMesaModal" class="back-btn">✕</button></div>
+            <label for="mesarioNome">Nome da pessoa responsável</label>
+            <input id="mesarioNome" type="text" placeholder="Ex.: João — mesário" />
+            <div class="champ-modal-help">Gere um acesso exclusivo e envie somente para quem vai operar esta partida. Gerar novamente revoga o link anterior.</div>
+            <div id="mesaLinkWrap" style="display:none;">
+                <label>Link exclusivo da mesa</label>
+                <div class="champ-copy-row"><input id="mesaLink" readonly><button class="btn btn-light" id="btnCopiarMesa">Copiar</button></div>
+                <button class="btn btn-primary" id="btnAbrirMesaNovaAba" style="margin-top:10px;">Abrir Mesa</button>
+            </div>
+            <div class="champ-modal-actions">
+                <button class="btn btn-outline" id="btnRevogarMesa">Revogar acesso</button>
+                <button class="btn btn-primary" id="btnGerarMesa">Gerar novo acesso</button>
+            </div>
+        </div>
+    </div>
 
     <script src="../scripts/menu.js"></script>
     <script src="../scripts/campeonatoDetalhe.js"></script>

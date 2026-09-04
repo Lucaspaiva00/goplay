@@ -315,10 +315,8 @@ function renderJogos(jogos) {
                 const golsB =
                     j?.golsB ?? "-";
 
-                const status =
-                    j?.finalizado
-                        ? "Finalizado"
-                        : "Pendente";
+                const statusMap = { AGENDADO: "Agendado", AO_VIVO: "AO VIVO", INTERVALO: "Intervalo", ENCERRADO: "Encerrado" };
+                const status = j?.finalizado ? "Encerrado" : (statusMap[j?.statusOperacao] || "Agendado");
 
                 const tipo =
                     j?.tipoJogo === "VOLTA"
@@ -355,14 +353,10 @@ function renderJogos(jogos) {
 
                                 </div>
 
-                                <div class="muted">
-
-                                    ${escapeHtml(
-                    formatDateTime(j?.dataHora)
-                )}
-
+                                <div class="muted">${escapeHtml(formatDateTime(j?.dataHora))}</div>
+                                <div style="margin-top:10px;text-align:right;">
+                                  <button onclick="window.open('jogo-detalhe.html?jogoId=${Number(j?.id)}','_blank','noopener')" style="border:0;border-radius:10px;padding:9px 12px;font-weight:800;cursor:pointer;background:#052845;color:#fff;">${j?.statusOperacao === "AO_VIVO" ? "🔴 Assistir ao vivo" : "Ver central da partida"}</button>
                                 </div>
-
                             </div>
                         `;
             }).join("")}

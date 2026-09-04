@@ -1,0 +1,50 @@
+GOPLAY — FASE 2: CAMPEONATO 2.0 / MESA DE JOGO
+Data: 04/09/2026
+
+ENTREGUE
+- Nova navegação administrativa do campeonato: Visão geral, Partidas, Classificação, Times e Configurações.
+- Visão geral operacional com jogos concluídos, ao vivo e mesas configuradas.
+- Mesa de Jogo exclusiva por partida com link/token revogável.
+- Nome do mesário responsável vinculado à partida.
+- Cronômetro persistido: iniciar, pausar, intervalo e segundo tempo.
+- Eventos rápidos: gol, amarelo, vermelho, chute, chute no gol, escanteio, lateral, falta, substituição e observação.
+- Gol/eventos recalculam placar e estatísticas automaticamente.
+- Desfazer último evento com recálculo para evitar divergências.
+- Escalação de jogadores na própria mesa.
+- Encerramento da partida pela mesa; final empatada aceita decisão por pênaltis.
+- Central pública da partida com placar, cronômetro, linha do tempo, estatísticas e escalações.
+- Atualização em tempo real via SSE (Server-Sent Events), sem biblioteca adicional.
+- Link secreto da mesa não é retornado em rotas públicas.
+
+BANCO
+Esta fase possui uma nova migration:
+api/prisma/migrations/20260904121000_fase2_mesa_jogo/migration.sql
+
+COMANDOS NO MAC
+cd ~/Documents/goplay-atualizacao-andre && \
+unzip -o "$HOME/Downloads/GOPLAY_FASE2_CAMPEONATO_2026-09-04.zip" -d . && \
+cd api && \
+npm ci && \
+npx prisma generate && \
+DATABASE_URL="postgresql://user:pass@localhost:5432/goplay" npx prisma validate && \
+cd .. && \
+git diff --check && \
+git status && \
+git add . && \
+git commit -m "feat: fase 2 campeonato ao vivo e mesa de jogo" && \
+git push origin main
+
+APÓS O DEPLOY NO RENDER (SHELL DO BACKEND /api)
+npx prisma migrate deploy && npx prisma generate
+
+TESTES PRINCIPAIS
+1. Abrir um campeonato e conferir a nova Visão geral.
+2. Em Partidas, clicar Configurar Mesa.
+3. Informar nome do mesário e gerar o link.
+4. Abrir o link em outro navegador/celular.
+5. Iniciar cronômetro e registrar gol/cartão/estatística.
+6. Abrir Central da Partida e confirmar atualização sem recarregar.
+7. Testar Desfazer último evento.
+8. Testar intervalo e segundo tempo.
+9. Encerrar uma partida e verificar classificação.
+10. Em uma final empatada, informar pênaltis e confirmar campeão.

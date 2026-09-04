@@ -19,6 +19,7 @@ const jogoController = require("./controller/jogoController");
 const pagamentoController = require("./controller/pagamentoController");
 const agendamentoController = require("./controller/agendamentoController");
 const comandaController = require("./controller/comandaController");
+const { subscribeJogo } = require("./realtime");
 
 /* =====================================================
    AUTH / USUÁRIOS
@@ -154,6 +155,12 @@ router.post("/campeonato/:id/groups-manual", campeonatoController.salvarGruposMa
    JOGOS
 ===================================================== */
 
+router.get("/jogo/:id/stream", subscribeJogo);
+router.get("/jogo/:id/mesa", jogoController.readMesa);
+router.post("/jogo/:id/mesa/configurar", jogoController.configurarMesa);
+router.post("/jogo/:id/mesa/revogar", jogoController.revogarMesa);
+router.post("/jogo/:id/cronometro", jogoController.controlarCronometro);
+router.delete("/jogo/:id/evento/ultimo", jogoController.desfazerUltimoEvento);
 router.get("/jogo/:id", jogoController.readOne);
 router.put("/jogo/:id/stats", jogoController.updateStats);
 router.post("/jogo/:id/escalacao", jogoController.addLineup);
