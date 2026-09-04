@@ -116,27 +116,10 @@ async function descobrirSocietyId() {
         localStorage.setItem("societyId", viaUrl);
         return viaUrl;
     }
-
-    const viaLS = localStorage.getItem("societyId");
-    if (viaLS) return viaLS;
-
-    const usuario = getUsuarioLogado();
-
-    if (!usuario?.id) {
-        location.href = "login.html";
-        return null;
+    if (window.GoPlayEmpresaContextReady) {
+        await window.GoPlayEmpresaContextReady;
     }
-
-    if (usuario.tipo === "DONO_SOCIETY") {
-        const lista = await fetchJSON(`${BASE_URL}/society/owner/${usuario.id}`);
-
-        if (Array.isArray(lista) && lista.length) {
-            localStorage.setItem("societyId", String(lista[0].id));
-            return String(lista[0].id);
-        }
-    }
-
-    return null;
+    return localStorage.getItem("societyId") || null;
 }
 
 async function carregarRecebimentos() {
@@ -404,7 +387,7 @@ function exportarCSV() {
     URL.revokeObjectURL(url);
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     el("btnFiltrar")?.addEventListener("click", aplicarFiltros);
     el("btnAtualizar")?.addEventListener("click", carregarRecebimentos);
     el("btnExportar")?.addEventListener("click", exportarCSV);
@@ -415,5 +398,5 @@ document.addEventListener("DOMContentLoaded", () => {
     el("filtroDe")?.addEventListener("change", aplicarFiltros);
     el("filtroAte")?.addEventListener("change", aplicarFiltros);
 
-    carregarRecebimentos();
+    await carregarRecebimentos();
 });

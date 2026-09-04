@@ -125,10 +125,7 @@ const createPagamentoAgendamento = async (req, res) => {
             return res.status(400).json({ error: "Agendamento não pertence ao campo informado." });
         }
 
-        if (Number(time.societyId) !== societyId) {
-            return res.status(400).json({ error: "Time não pertence ao society informado." });
-        }
-
+        // O time pode jogar em qualquer empresa; a consistência é garantida pela quadra e pelo agendamento.
         if (Number(campo.societyId) !== societyId) {
             return res.status(400).json({ error: "Campo não pertence ao society informado." });
         }
@@ -352,10 +349,7 @@ const createMensalidade = async (req, res) => {
             return res.status(404).json({ error: "Campo não encontrado." });
         }
 
-        if (Number(time.societyId) !== societyId) {
-            return res.status(400).json({ error: "Time não pertence ao society informado." });
-        }
-
+        // Mensalidade também pode ser contratada em empresa diferente da origem do time.
         if (Number(campo.societyId) !== societyId) {
             return res.status(400).json({ error: "Campo não pertence ao society informado." });
         }

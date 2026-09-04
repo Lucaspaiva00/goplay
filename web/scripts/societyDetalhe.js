@@ -44,7 +44,7 @@ function hideButton(btn) {
 function renderSocietyInfo(data) {
     const usuario = getUsuarioLogado();
     const tipo = String(usuario?.tipo || "").trim().toUpperCase();
-    const isDonoSociety = tipo === "DONO_SOCIETY";
+    const isDonoSociety = tipo === "DONO_SOCIETY" && Number(data?.usuarioId) === Number(usuario?.id);
 
     el("societyInfo").innerHTML = `
       <div class="society-header-row">
@@ -133,6 +133,8 @@ async function carregarSociety() {
     }
 
     societyAtual = data;
+    localStorage.setItem("societyId", String(data.id));
+    localStorage.setItem("societyContextName", data.nome || "Empresa");
     renderSocietyInfo(data);
 }
 
@@ -149,7 +151,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         await carregarSociety();
 
         const tipo = String(usuarioLogado.tipo || "").trim().toUpperCase();
-        const isDonoSociety = tipo === "DONO_SOCIETY";
+        const isDonoSociety = tipo === "DONO_SOCIETY" && Number(societyAtual?.usuarioId) === Number(usuarioLogado.id);
         const isDonoTime = tipo === "DONO_TIME";
         const isPlayer = tipo === "PLAYER";
 
@@ -189,8 +191,8 @@ function abrirEdicaoSociety() {
     const usuario = getUsuarioLogado();
     const tipo = String(usuario?.tipo || "").trim().toUpperCase();
 
-    if (tipo !== "DONO_SOCIETY") {
-        alert("Apenas o dono da empresa pode editar.");
+    if (tipo !== "DONO_SOCIETY" || Number(societyAtual?.usuarioId) !== Number(usuario?.id)) {
+        alert("Apenas o dono desta empresa pode editar.");
         return;
     }
 

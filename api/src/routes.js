@@ -171,6 +171,8 @@ router.post("/comanda", comandaController.abrir);
 router.post("/comanda/:id/item", comandaController.adicionarItem);
 router.delete("/comanda/item/:itemId", comandaController.removerItem);
 router.get("/comanda/society/:societyId", comandaController.listBySociety);
+router.get("/comanda/usuario/:usuarioId", comandaController.listByUsuario);
+router.get("/comanda/usuario/:usuarioId/empresa/:societyId/aberta", comandaController.readOpenByUsuarioSociety);
 router.get("/comanda/:id", comandaController.readOne);
 router.post("/comanda/:id/fechar", comandaController.fechar);
 router.post("/comanda/:id/gerar-pagamento", comandaController.gerarPagamento);

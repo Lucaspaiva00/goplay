@@ -1,0 +1,50 @@
+GOPLAY — FASE 1 DE UX / FLUXOS
+Data: 04/09/2026
+
+ENTREGUE NESTA FASE
+1. Contexto global de Empresa
+   - Seletor de "Empresa atual" no menu.
+   - Usuário escolhe onde está / qual empresa administra.
+   - Fim da escolha silenciosa da primeira empresa da lista.
+   - Contexto reutilizado por Agenda, Comandas, Campeonatos, Recebimentos, Quadras, Cardápio e Dashboard.
+
+2. Comandas
+   - Cliente precisa selecionar a empresa antes de abrir comanda.
+   - Cardápio sempre pertence à empresa escolhida.
+   - Uma comanda aberta por usuário/empresa (reutiliza em vez de duplicar).
+   - Histórico de comandas de todas as empresas.
+   - Nova API para listar comandas do usuário sem depender da empresa atual.
+   - Validação no backend impede produto de outra empresa na comanda.
+
+3. Agendamento
+   - Fluxo: Empresa > Quadra > Data > Horário > Time.
+   - Time pode reservar em qualquer empresa do GoPlay.
+   - Pagamento também aceita reserva do time em empresa diferente da empresa original do time.
+   - PIX vem da empresa selecionada.
+   - Histórico de agendamentos passa a receber a empresa no backend.
+
+4. Menu
+   - Reorganizado por contexto: Operação, Esportes, Financeiro, Empresa e Conta.
+   - Menos opções duplicadas para jogador/dono de time.
+   - "Comandas" + "Minhas Comandas" simplificadas no menu para "Minha Comanda".
+
+5. Onboarding da Empresa
+   - Checklist de configuração no Dashboard.
+   - Perfil, primeira quadra, preço, PIX e cardápio.
+   - Percentual de conclusão.
+   - Atalhos para resolver cada pendência.
+   - Bloco "Operação de hoje": reservas, comandas abertas, pagamentos pendentes e campeonatos ativos.
+
+VALIDAÇÃO
+- Todos os arquivos JavaScript passaram no node --check.
+- HTML alterado passou no parser.
+- Schema Prisma não foi alterado nesta fase.
+- Não existe migration nova para esta entrega.
+
+TESTES RECOMENDADOS APÓS DEPLOY
+- Trocar Empresa atual no menu e verificar Agenda/Dashboard/Comandas.
+- DONO_TIME: escolher uma empresa diferente da empresa original do time e criar agendamento.
+- Abrir comanda em Empresa A, trocar para Empresa B e confirmar que cardápios/comandas não se misturam.
+- Abrir duas vezes a comanda na mesma empresa e confirmar que não duplica.
+- Ver Histórico de Comandas e confirmar nome da empresa.
+- DONO_SOCIETY: conferir checklist do Dashboard e atalhos.

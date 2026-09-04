@@ -105,8 +105,10 @@ const create = async (req, res) => {
       return res.status(404).json({ error: "Time não encontrado." });
     }
 
-    if (time.societyId !== societyId) {
-      return res.status(400).json({ error: "Time não pertence a este society." });
+    // O time pode reservar em qualquer empresa.
+    // O vínculo do time com uma empresa não limita onde ele pode jogar.
+    if (Number(campo.societyId) !== Number(societyId)) {
+      return res.status(400).json({ error: "A quadra selecionada não pertence a esta empresa." });
     }
 
     const horaFim = `${String(Number(horaInicio.split(":")[0]) + 1).padStart(2, "0")}:00`;
@@ -173,6 +175,7 @@ const listByTime = async (req, res) => {
       where: { timeId },
       include: {
         campo: true,
+        society: { select: { id: true, nome: true, imagem: true, pixChave: true, pixTitular: true } },
         pagamento: true,
       },
       orderBy: { data: "desc" },

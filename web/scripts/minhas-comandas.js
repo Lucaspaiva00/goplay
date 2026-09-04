@@ -1,170 +1,87 @@
 const BASE_URL = "https://goplay-dzlr.onrender.com";
-
 const usuarioMC = JSON.parse(localStorage.getItem("usuarioLogado") || "null");
+if (!usuarioMC?.id) window.location.href = "login.html";
 
-if (!usuarioMC?.id) {
-    window.location.href = "login.html";
+function el(id) { return document.getElementById(id); }
+function money(v) { return Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
+function escapeHtml(v) {
+    return String(v ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
 }
-
-let societyId = localStorage.getItem("societyId");
-
-function el(id) {
-    return document.getElementById(id);
-}
-
-function money(v) {
-    return Number(v || 0).toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL"
-    });
-}
-
 async function fetchJSON(url, options = {}) {
     const res = await fetch(url, options);
     const text = await res.text().catch(() => "");
-    let data;
-
-    try {
-        data = text ? JSON.parse(text) : null;
-    } catch {
-        data = null;
-    }
-
-    if (!res.ok) {
-        throw new Error(data?.error || text || "Erro na requisição");
-    }
-
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = null; }
+    if (!res.ok) throw new Error(data?.error || text || "Erro na requisição");
     return data;
 }
 
-/* =========================
-   CARREGAR COMANDAS
-========================= */
 async function carregarComandas() {
     try {
-
-        if (!societyId) {
-            const lista = await fetchJSON(`${BASE_URL}/society/owner/${usuarioMC.id}`);
-            societyId = lista[0]?.id;
-
-            if (!societyId) {
-                throw new Error("Nenhuma empresa encontrada.");
-            }
-
-            localStorage.setItem("societyId", societyId);
-        }
-
-        const comandas = await fetchJSON(`${BASE_URL}/comanda/society/${societyId}`);
-
-        const minhas = comandas.filter(c =>
-            Number(c.usuarioId) === Number(usuarioMC.id)
-        );
-
+        const comandas = await fetchJSON(`${BASE_URL}/comanda/usuario/${usuarioMC.id}`);
         const wrap = el("listaMinhasComandas");
-
-        if (!minhas.length) {
-            wrap.innerHTML = `<div class="empty-state">Você não possui comandas.</div>`;
+        if (!Array.isArray(comandas) || !comandas.length) {
+            wrap.innerHTML = `<div class="empty-state">Você ainda não possui comandas.</div>`;
             return;
         }
 
         wrap.innerHTML = `
+            <div class="comanda-card-head">
+                <div>
+                    <h3><i class="fa fa-receipt"></i> Histórico de comandas</h3>
+                    <p>Todas as suas comandas, em todas as empresas.</p>
+                </div>
+            </div>
             <div class="comandas-admin-list">
-                ${minhas.map(c => `
-                    <div class="comanda-admin-card" data-id="${c.id}">
-                        <div style="display:flex; justify-content:space-between;">
-                            <h4>#${c.codigo || c.id}</h4>
-                            <span class="badge ${c.status.toLowerCase()}">${c.status}</span>
+                ${comandas.map(c => `
+                    <div class="comanda-admin-card" data-id="${c.id}" style="cursor:pointer">
+                        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+                            <div>
+                                <h4>${escapeHtml(c.society?.nome || "Empresa")}</h4>
+                                <p>Comanda #${escapeHtml(c.codigo || c.id)}</p>
+                            </div>
+                            <span class="badge ${String(c.status || "").toLowerCase()}">${escapeHtml(c.status || "-")}</span>
                         </div>
-
                         <p><strong>Total:</strong> ${money(c.total)}</p>
                         <p><strong>Criada em:</strong> ${new Date(c.createdAt).toLocaleString("pt-BR")}</p>
                     </div>
                 `).join("")}
-            </div>
-        `;
-
+            </div>`;
     } catch (e) {
         console.error(e);
-        el("listaMinhasComandas").innerHTML =
-            `<div class="empty-state">${e.message}</div>`;
+        el("listaMinhasComandas").innerHTML = `<div class="empty-state">${escapeHtml(e.message)}</div>`;
     }
 }
 
-/* =========================
-   ABRIR MODAL
-========================= */
 async function abrirDetalheComanda(id) {
     try {
         const comanda = await fetchJSON(`${BASE_URL}/comanda/${id}`);
-
         const itens = Array.isArray(comanda.itens) ? comanda.itens : [];
-
-        el("tituloComanda").textContent =
-            `Comanda #${comanda.codigo || comanda.id}`;
-
-        el("subtituloComanda").textContent =
-            `Status: ${comanda.status}`;
-
-        el("totalDetalheComanda").textContent =
-            money(comanda.total);
-
-        const wrap = el("itensDetalheComanda");
-
-        if (!itens.length) {
-            wrap.innerHTML = `<div class="empty-state">Nenhum item consumido.</div>`;
-        } else {
-            wrap.innerHTML = itens.map(item => `
-                <div class="item-comanda">
-                    <div>
-                        <strong>${item.nomeProduto}</strong><br>
-                        <small>${item.quantidade}x ${money(item.precoUnitario)}</small>
-                    </div>
-                    <strong>${money(item.total)}</strong>
-                </div>
-            `).join("");
-        }
-
+        el("tituloComanda").textContent = `${comanda.society?.nome || "Empresa"} — #${comanda.codigo || comanda.id}`;
+        el("subtituloComanda").textContent = `Status: ${comanda.status}`;
+        el("totalDetalheComanda").textContent = money(comanda.total);
+        el("itensDetalheComanda").innerHTML = itens.length ? itens.map(item => `
+            <div class="item-comanda">
+                <div><strong>${escapeHtml(item.nomeProduto)}</strong><br><small>${item.quantidade}x ${money(item.precoUnitario)}</small></div>
+                <strong>${money(item.total)}</strong>
+            </div>`).join("") : `<div class="empty-state">Nenhum item consumido.</div>`;
         el("modalDetalheComanda").classList.add("show");
-
     } catch (e) {
         console.error(e);
         alert(e.message || "Erro ao carregar detalhes.");
     }
 }
 
-/* =========================
-   FECHAR MODAL
-========================= */
-function fecharModalComanda() {
-    el("modalDetalheComanda").classList.remove("show");
-}
+function fecharModalComanda() { el("modalDetalheComanda")?.classList.remove("show"); }
 
-/* =========================
-   EVENTOS
-========================= */
 document.addEventListener("DOMContentLoaded", () => {
-
     carregarComandas();
-
-    // 🔥 clique nos cards (delegação - padrão profissional)
-    el("listaMinhasComandas").addEventListener("click", (e) => {
+    el("listaMinhasComandas")?.addEventListener("click", e => {
         const card = e.target.closest(".comanda-admin-card");
-        if (!card) return;
-
-        const id = card.getAttribute("data-id");
-        abrirDetalheComanda(id);
+        if (card) abrirDetalheComanda(card.dataset.id);
     });
-
-    // 🔥 fechar modal clicando fora
-    const modal = el("modalDetalheComanda");
-    modal.addEventListener("click", (e) => {
-        if (e.target === modal) {
-            fecharModalComanda();
-        }
+    el("modalDetalheComanda")?.addEventListener("click", e => {
+        if (e.target.id === "modalDetalheComanda") fecharModalComanda();
     });
 });
-
-/* =========================
-   GLOBAL
-========================= */
 window.fecharModalComanda = fecharModalComanda;

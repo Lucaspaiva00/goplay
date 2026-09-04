@@ -75,24 +75,11 @@ async function fetchJSON(url, options = {}) {
 }
 
 async function descobrirSocietyId() {
-    const ls = localStorage.getItem("societyId");
-    if (ls) return ls;
-
-    const usuario = getUsuario();
-    if (!usuario?.id) {
-        location.href = "login.html";
-        return null;
+    if (window.GoPlayEmpresaContextReady) {
+        await window.GoPlayEmpresaContextReady;
     }
-
-    const societies = await fetchJSON(`${BASE_URL}/society/owner/${usuario.id}`);
-    const societyId = societies?.[0]?.id;
-
-    if (societyId) {
-        localStorage.setItem("societyId", String(societyId));
-        return String(societyId);
-    }
-
-    return null;
+    const id = localStorage.getItem("societyId");
+    return id || null;
 }
 
 async function carregarAgenda() {
@@ -293,7 +280,7 @@ function voltarSemana() {
     carregarAgenda();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     el("btnSemanaAnterior")?.addEventListener("click", voltarSemana);
     el("btnProximaSemana")?.addEventListener("click", avancarSemana);
     el("btnAtualizar")?.addEventListener("click", carregarAgenda);
@@ -304,5 +291,5 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.target.id === "modalOverlay") fecharModal();
     });
 
-    carregarAgenda();
+    await carregarAgenda();
 });

@@ -586,3 +586,79 @@
     background: #dbeafe;
     color: #1e3a8a;
 }
+/* ============================================
+   FASE 1 — CONTEXTO DE EMPRESA / COMANDA
+============================================ */
+.comanda-local-label {
+    display: inline-block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    opacity: .78;
+    font-weight: 900;
+    margin-bottom: 5px;
+}
+
+.comanda-context-card {
+    background: #fff;
+    border: 1px solid #dce7f0;
+    border-radius: 18px;
+    padding: 18px 20px;
+    margin-bottom: 18px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: end;
+    box-shadow: 0 8px 24px rgba(16, 24, 40, .06);
+}
+
+.comanda-context-card label {
+    display: block;
+    color: #052845;
+    font-weight: 900;
+    margin-bottom: 8px;
+}
+
+.comanda-context-card select {
+    width: 100%;
+    min-height: 46px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #fff;
+    color: #052845;
+    font-weight: 800;
+}
+
+.comanda-context-card small {
+    display: block;
+    margin-top: 7px;
+    color: #64748b;
+}
+
+.btn-trocar-empresa,
+.btn-history {
+    border: 1px solid #d6e2eb;
+    background: #f8fafc;
+    color: #052845;
+    border-radius: 12px;
+    padding: 11px 14px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.comanda-history-card { margin-top: 18px; }
+.history-head { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.comanda-history-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; }
+.comanda-history-item { border:1px solid #e2e8f0; border-radius:14px; padding:13px; background:#f8fafc; }
+.comanda-history-item .row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:7px; }
+.comanda-history-item h4 { color:#052845; font-size:14px; }
+.comanda-history-item p { color:#64748b; font-size:12px; margin:3px 0; }
+.comanda-history-item strong { color:#052845; }
+.comanda-history-empty { color:#64748b; padding:8px 0; }
+
+@media (max-width: 700px) {
+    .comanda-context-card { grid-template-columns:1fr; }
+    .btn-trocar-empresa { width:100%; }
+    .history-head { align-items:flex-start; flex-direction:column; }
+}

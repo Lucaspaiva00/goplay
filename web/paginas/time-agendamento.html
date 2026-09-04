@@ -39,7 +39,7 @@
 
         .grid-3 {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 14px;
             align-items: end;
         }
@@ -135,6 +135,29 @@
             color: #065f46;
             font-size: 14px;
         }
+
+        .booking-steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 14px;
+        }
+        .booking-step {
+            padding: 9px 10px;
+            border-radius: 10px;
+            background: #f1f5f9;
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 800;
+            text-align: center;
+        }
+        .booking-step b {
+            display: inline-grid; place-items:center; width:20px; height:20px; border-radius:50%;
+            background:#dbe4ec; color:#052845; margin-right:4px;
+        }
+        .booking-step.done, .booking-step.active { background:#eaf5ed; color:#166534; }
+        .booking-step.done b, .booking-step.active b { background:#0dbf45; color:#fff; }
+        @media (max-width: 640px) { .booking-steps { grid-template-columns:1fr 1fr; } }
     </style>
 </head>
 
@@ -166,28 +189,40 @@
             <i class="fa-solid fa-calendar-check"></i>
             <span>Agendar Horário</span>
         </div>
-        <div class="muted">Escolha a quadra, a data e um horário de 1 hora.</div>
+        <div class="muted">Siga a ordem: empresa → quadra → data → horário. Seu time pode reservar em qualquer empresa disponível no GoPlay.</div>
 
         <div class="card">
             <div class="row-info" id="resumoTopo" style="display:none;">
-                <span class="chip" id="chipTime">Time: -</span>
                 <span class="chip" id="chipSociety">Empresa: -</span>
+                <span class="chip" id="chipTime">Time: -</span>
+            </div>
+
+            <div class="booking-steps">
+                <span class="booking-step active"><b>1</b> Empresa</span>
+                <span class="booking-step"><b>2</b> Quadra</span>
+                <span class="booking-step"><b>3</b> Data</span>
+                <span class="booking-step"><b>4</b> Horário</span>
             </div>
 
             <div class="grid-3" style="margin-top:12px;">
                 <div>
-                    <label>Time</label>
-                    <select id="timeId"></select>
+                    <label>Empresa</label>
+                    <select id="societyId"><option value="">Selecione onde deseja jogar</option></select>
                 </div>
 
                 <div>
                     <label>Quadra</label>
-                    <select id="campoId"></select>
+                    <select id="campoId" disabled><option value="">Selecione a empresa primeiro</option></select>
                 </div>
 
                 <div>
                     <label>Data</label>
                     <input type="date" id="data" />
+                </div>
+
+                <div>
+                    <label>Seu time</label>
+                    <select id="timeId"></select>
                 </div>
             </div>
 

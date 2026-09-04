@@ -216,6 +216,7 @@ window.excluirItem = async function excluirItem(itemId, nome) {
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
+    if (window.GoPlayEmpresaContextReady) await window.GoPlayEmpresaContextReady;
     const modal = el("editItemModal");
     if (modal) {
         modal.addEventListener("click", (e) => {

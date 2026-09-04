@@ -1,14 +1,16 @@
 const BASE_URL = "https://goplay-dzlr.onrender.com";
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+    if (window.GoPlayEmpresaContextReady) await window.GoPlayEmpresaContextReady;
     const societyId = localStorage.getItem("societyId");
 
     if (!societyId) {
-        alert("Empresa não encontrada.");
+        const div = document.getElementById("listaCampeonatos");
+        if (div) div.innerHTML = `<div class="empty">Selecione uma empresa no menu para ver os campeonatos.</div>`;
         return;
     }
 
-    carregarCampeonatos(societyId);
+    await carregarCampeonatos(societyId);
 });
 
 async function carregarCampeonatos(societyId) {

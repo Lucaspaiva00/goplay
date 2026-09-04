@@ -47,7 +47,33 @@
             </div>
         </div>
 
-        <!-- KPIS -->
+
+        <section class="onboarding-card" id="onboardingCard">
+            <div class="onboarding-head">
+                <div>
+                    <span class="eyebrow">CONFIGURAÇÃO DA EMPRESA</span>
+                    <h3 id="onboardingTitle">Preparando sua empresa</h3>
+                    <p id="onboardingText">Confira o que falta para operar sem bloqueios.</p>
+                </div>
+                <div class="onboarding-score"><strong id="onboardingPercent">0%</strong><span>concluído</span></div>
+            </div>
+            <div class="progress-track"><div id="onboardingProgress" class="progress-fill"></div></div>
+            <div id="onboardingSteps" class="onboarding-steps"></div>
+        </section>
+
+        <section class="operacao-hoje">
+            <div class="operacao-title">
+                <div><span class="eyebrow">OPERAÇÃO DE HOJE</span><h3>O que precisa da sua atenção</h3></div>
+            </div>
+            <div class="operacao-grid">
+                <button class="operacao-item" onclick="location.href='horarios.html'"><span>Reservas hoje</span><strong id="reservasHoje">0</strong><small>Ver agenda</small></button>
+                <button class="operacao-item" onclick="location.href='comanda-admin.html'"><span>Comandas abertas</span><strong id="comandasAbertas">0</strong><small>Ir para comandas</small></button>
+                <button class="operacao-item" onclick="location.href='recebimentos.html'"><span>Pagamentos pendentes</span><strong id="pagamentosPendentes">0</strong><small>Ver recebimentos</small></button>
+                <button class="operacao-item" onclick="location.href='campeonatos.html'"><span>Campeonatos ativos</span><strong id="campeonatosAtivos">0</strong><small>Gerenciar</small></button>
+            </div>
+        </section>
+
+                <!-- KPIS -->
         <div class="kpis">
 
             <div class="kpi destaque">

@@ -124,3 +124,13 @@
         grid-template-columns: 1fr;
     }
 }
+/* FASE 1 — ONBOARDING E OPERAÇÃO */
+.eyebrow{font-size:10px;font-weight:900;letter-spacing:.12em;color:#64748b;display:block;margin-bottom:5px}
+.onboarding-card,.operacao-hoje{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:20px;margin-bottom:22px;box-shadow:0 8px 24px rgba(15,23,42,.06)}
+.onboarding-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.onboarding-head h3,.operacao-title h3{color:#052845;margin:0 0 4px;font-size:19px}.onboarding-head p{color:#64748b;font-size:13px}
+.onboarding-score{text-align:right}.onboarding-score strong{display:block;color:#0dbf45;font-size:28px}.onboarding-score span{font-size:11px;color:#64748b}
+.progress-track{height:9px;border-radius:999px;background:#edf2f7;overflow:hidden;margin:15px 0}.progress-fill{height:100%;width:0;background:#0dbf45;border-radius:999px;transition:.3s}
+.onboarding-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}.onboarding-step{display:flex;gap:10px;align-items:flex-start;border:1px solid #e2e8f0;border-radius:13px;padding:12px;background:#f8fafc}.onboarding-step.done{background:#f0fdf4;border-color:#bbf7d0}.onboarding-icon{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#e2e8f0;color:#475569;flex:none}.onboarding-step.done .onboarding-icon{background:#16a34a;color:#fff}.onboarding-step strong{display:block;color:#052845;font-size:13px}.onboarding-step small{color:#64748b;font-size:11px;line-height:1.35}.onboarding-step a{display:inline-block;margin-top:5px;color:#0a3b63;font-size:11px;font-weight:800;text-decoration:none}
+.operacao-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:12px}.operacao-item{text-align:left;border:1px solid #e2e8f0;background:#f8fafc;border-radius:14px;padding:14px;cursor:pointer}.operacao-item span{display:block;color:#64748b;font-size:11px}.operacao-item strong{display:block;color:#052845;font-size:24px;margin:5px 0}.operacao-item small{color:#0a3b63;font-weight:800}
+@media(max-width:900px){.operacao-grid{grid-template-columns:1fr 1fr}}@media(max-width:560px){.onboarding-head{flex-direction:column}.onboarding-score{text-align:left}.operacao-grid{grid-template-columns:1fr}}

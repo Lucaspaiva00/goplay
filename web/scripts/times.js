@@ -1,6 +1,7 @@
 const BASE_URL = "https://goplay-dzlr.onrender.com";
 
 document.addEventListener("DOMContentLoaded", async () => {
+    if (window.GoPlayEmpresaContextReady) await window.GoPlayEmpresaContextReady;
     ajustarModoTela();
     await carregarSocietiesNoSelect();
     await carregarTimes();

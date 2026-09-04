@@ -38,16 +38,13 @@ async function fetchJSON(url, options = {}) {
 }
 
 async function descobrirSocietyId() {
-    if (societyId) return societyId;
-
-    const lista = await fetchJSON(`${BASE_URL}/society/owner/${usuarioLogado.id}`);
-    const s = lista[0];
-
-    if (!s) throw new Error("Sem empresa");
-
-    societyId = s.id;
-    localStorage.setItem("societyId", s.id);
-
+    if (window.GoPlayEmpresaContextReady) {
+        await window.GoPlayEmpresaContextReady;
+    }
+    societyId = localStorage.getItem("societyId") ? Number(localStorage.getItem("societyId")) : null;
+    if (!societyId) {
+        throw new Error("Selecione a empresa no menu antes de abrir as comandas.");
+    }
     return societyId;
 }
 
@@ -161,7 +158,7 @@ async function pagarComanda(id) {
     carregarComandas();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
     // 🔥 conectar filtros corretamente
     document.querySelectorAll(".filter-btn").forEach(btn => {
@@ -170,5 +167,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
     el("btnFecharDetalhe").onclick = fecharDetalhe;
 
-    carregarComandas();
+    await carregarComandas();
 });

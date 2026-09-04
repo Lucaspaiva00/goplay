@@ -35,14 +35,29 @@
 
         <section class="comanda-hero">
             <div>
-                <h2>Comanda do Bar</h2>
-                <p>Abra sua comanda, adicione produtos do cardápio e acompanhe o consumo em tempo real.</p>
+                <span class="comanda-local-label">Você está em</span>
+                <h2 id="empresaComandaNome">Selecione uma empresa</h2>
+                <p>Escolha o estabelecimento antes de abrir a comanda. Assim, cardápio e pagamento sempre ficam no lugar correto.</p>
             </div>
 
             <div class="comanda-hero-total">
                 <span>Total atual</span>
                 <strong id="totalComandaHero">R$ 0,00</strong>
             </div>
+        </section>
+
+
+        <section class="comanda-context-card">
+            <div>
+                <label for="empresaComandaSelect"><i class="fa fa-location-dot"></i> Em qual empresa você está?</label>
+                <select id="empresaComandaSelect">
+                    <option value="">Selecione a empresa</option>
+                </select>
+                <small id="empresaComandaEndereco">Nenhuma empresa selecionada.</small>
+            </div>
+            <button type="button" class="btn-trocar-empresa" onclick="location.href='societies.html'">
+                <i class="fa fa-magnifying-glass"></i> Explorar empresas
+            </button>
         </section>
 
         <section class="comanda-status-card">
@@ -93,6 +108,19 @@
                 </button>
             </div>
 
+        </section>
+
+        <section class="comanda-card comanda-history-card">
+            <div class="comanda-card-head history-head">
+                <div>
+                    <h3><i class="fa fa-clock-rotate-left"></i> Histórico recente</h3>
+                    <p>Suas últimas comandas, independentemente da empresa.</p>
+                </div>
+                <button type="button" class="btn-history" onclick="location.href='minhas-comandas.html'">Ver todas</button>
+            </div>
+            <div id="historicoComandas" class="comanda-history-list">
+                <div class="loading">Carregando histórico...</div>
+            </div>
         </section>
 
     </main>

@@ -268,6 +268,7 @@ window.excluirCampo = async function excluirCampo(campoId, nome) {
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
+  if (window.GoPlayEmpresaContextReady) await window.GoPlayEmpresaContextReady;
   try {
     const modal = el("editCampoModal");
     if (modal) {

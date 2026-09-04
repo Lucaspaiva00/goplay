@@ -68,6 +68,7 @@ const readByOwner = async (req, res) => {
             include: {
                 cardapio: true,
                 campos: true,
+                times: { select: { id: true, nome: true, statusVinculo: true, tipoVinculo: true } },
                 societyPlayers: {
                     include: { usuario: true }
                 }
@@ -92,6 +93,7 @@ const readById = async (req, res) => {
             include: {
                 cardapio: true,
                 campos: true,
+                times: { select: { id: true, nome: true, statusVinculo: true, tipoVinculo: true } },
                 societyPlayers: {
                     include: { usuario: true }
                 }
