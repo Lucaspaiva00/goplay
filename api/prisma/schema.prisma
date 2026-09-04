@@ -139,6 +139,24 @@ enum TipoJogo {
   MATA_MATA
 }
 
+enum StatusPresencaHorario {
+  PENDENTE
+  VOU
+  NAO_VOU
+}
+
+enum TipoCobrancaHorario {
+  POR_JOGO
+  MENSAL
+}
+
+enum StatusHorarioFixo {
+  PENDENTE
+  APROVADO
+  RECUSADO
+  PAUSADO
+}
+
 model Usuario {
   id           Int       @id @default(autoincrement())
   nome         String
@@ -183,6 +201,12 @@ model Usuario {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   comandas  Comanda[]
+  gruposOrganizados GrupoHorario[] @relation("GrupoHorarioOrganizador")
+  gruposMembro GrupoHorarioMembro[]
+  horariosFixosOrganizados HorarioFixo[] @relation("HorarioFixoOrganizador")
+  presencasHorario PresencaHorario[]
+  agendamentosOrganizados Agendamento[]
+  disponivelParaConvites Boolean @default(false)
 
   @@index([timeRelacionadoId])
   @@index([resetToken])
@@ -224,6 +248,8 @@ model Society {
   updatedAt DateTime  @updatedAt
   comandas  Comanda[]
   funcionarios     Funcionario[]
+  gruposHorario GrupoHorario[]
+  horariosFixos HorarioFixo[]
 
   @@index([usuarioId])
 }
@@ -260,6 +286,7 @@ model NotificacaoFuncionario {
 
   titulo   String
   mensagem String
+  url      String?
   lido     Boolean @default(false)
   createdAt DateTime @default(now())
 
@@ -297,6 +324,7 @@ model Campo {
 
   createdAt    DateTime      @default(now())
   agendamentos Agendamento[]
+  horariosFixos HorarioFixo[]
   pagamentos   Pagamento[]
 
   @@unique([societyId, nome])
@@ -408,8 +436,8 @@ model Agendamento {
   campoId Int
   campo   Campo @relation(fields: [campoId], references: [id], onDelete: Cascade)
 
-  timeId Int
-  time   Time @relation(fields: [timeId], references: [id], onDelete: Cascade)
+  timeId Int?
+  time   Time? @relation(fields: [timeId], references: [id], onDelete: Cascade)
 
   data       DateTime
   horaInicio String
@@ -420,11 +448,25 @@ model Agendamento {
 
   pagamento Pagamento?
 
+  grupoHorarioId Int?
+  grupoHorario GrupoHorario? @relation(fields: [grupoHorarioId], references: [id], onDelete: SetNull)
+
+  horarioFixoId Int?
+  horarioFixo HorarioFixo? @relation(fields: [horarioFixoId], references: [id], onDelete: SetNull)
+
+  organizadorId Int?
+  organizador Usuario? @relation(fields: [organizadorId], references: [id], onDelete: SetNull)
+
+  presencas PresencaHorario[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([societyId, campoId, data])
   @@index([timeId, data])
+  @@index([grupoHorarioId, data])
+  @@index([horarioFixoId, data])
+  @@index([organizadorId, data])
 }
 
 model SocietyPlayer {
@@ -450,11 +492,119 @@ model Notificacao {
 
   titulo   String
   mensagem String
+  url      String?
   lido     Boolean @default(false)
 
   createdAt DateTime @default(now())
 
   @@index([usuarioId])
+}
+
+
+model GrupoHorario {
+  id Int @id @default(autoincrement())
+
+  societyId Int
+  society Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  organizadorId Int
+  organizador Usuario @relation("GrupoHorarioOrganizador", fields: [organizadorId], references: [id], onDelete: Cascade)
+
+  nome String
+  descricao String?
+  maxJogadores Int @default(20)
+  ativo Boolean @default(true)
+
+  membros GrupoHorarioMembro[]
+  horariosFixos HorarioFixo[]
+  agendamentos Agendamento[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([societyId])
+  @@index([organizadorId])
+  @@index([ativo])
+}
+
+model GrupoHorarioMembro {
+  id Int @id @default(autoincrement())
+
+  grupoId Int
+  grupo GrupoHorario @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+
+  usuarioId Int
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  ativo Boolean @default(true)
+  convidadoEm DateTime @default(now())
+
+  @@unique([grupoId, usuarioId])
+  @@index([grupoId])
+  @@index([usuarioId])
+}
+
+model HorarioFixo {
+  id Int @id @default(autoincrement())
+
+  grupoId Int
+  grupo GrupoHorario @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+
+  societyId Int
+  society Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  campoId Int
+  campo Campo @relation(fields: [campoId], references: [id], onDelete: Cascade)
+
+  organizadorId Int
+  organizador Usuario @relation("HorarioFixoOrganizador", fields: [organizadorId], references: [id], onDelete: Cascade)
+
+  diaSemana Int
+  horaInicio String
+  horaFim String
+  dataInicio DateTime
+  dataFim DateTime?
+  tipoCobranca TipoCobrancaHorario @default(POR_JOGO)
+  status StatusHorarioFixo @default(PENDENTE)
+  quantidadeSemanas Int @default(12)
+  valorPorJogo Float?
+  valorMensal Float?
+  dividirValor Boolean @default(true)
+  ativo Boolean @default(true)
+
+  agendamentos Agendamento[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([grupoId])
+  @@index([societyId])
+  @@index([campoId])
+  @@index([organizadorId])
+  @@index([ativo])
+  @@index([status])
+}
+
+model PresencaHorario {
+  id Int @id @default(autoincrement())
+
+  agendamentoId Int
+  agendamento Agendamento @relation(fields: [agendamentoId], references: [id], onDelete: Cascade)
+
+  usuarioId Int
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  status StatusPresencaHorario @default(PENDENTE)
+  respondidoEm DateTime?
+  valorRateio Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([agendamentoId, usuarioId])
+  @@index([agendamentoId])
+  @@index([usuarioId])
+  @@index([status])
 }
 
 model Campeonato {

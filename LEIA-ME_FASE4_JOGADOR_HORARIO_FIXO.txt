@@ -1,0 +1,49 @@
+GOPLAY — FASE 4: JOGADOR + HORÁRIO FIXO
+Data: 04/09/2026
+
+PRINCIPAIS ENTREGAS
+- Organizador do horário: qualquer usuário pode criar um grupo de jogo recorrente vinculado a uma empresa.
+- Grupo de jogadores: nome, descrição, limite de participantes e lista de membros.
+- Convite por e-mail: aceita vários e-mails separados por vírgula/espaço e dispara notificação no sininho.
+- Jogadores disponíveis: usuário pode optar por aparecer para organizadores que precisam completar a partida.
+- Horário fixo recorrente: dia da semana, quadra, início/fim, período e quantidade de semanas.
+- Aprovação da empresa: quando o organizador é cliente, o horário fixo fica PENDENTE até a empresa aprovar. Administrador/Recepção ou proprietário podem aprovar/recusar.
+- Ao aprovar, o GoPlay valida conflitos e cria automaticamente as ocorrências na agenda.
+- Presença por encontro: 👍 VOU / 👎 NÃO VOU / ⏳ PENDENTE.
+- Organizador e empresa enxergam a lista e os totais de presença.
+- Atualização em tempo real via SSE na tela de presença.
+- Lembrete manual: organizador/empresa pode reenviar pelo sininho para quem ainda não respondeu.
+- Rateio: divide o valor entre quem confirmou 👍 e cria cobrança individual em Pagamentos.
+- Mensalista: horário pode ser cobrado mensalmente e gerar mensalidade para o organizador.
+- PIX: cobrança individual utiliza o fluxo já existente de pagamentos/PIX da empresa.
+- Notificações acionáveis: o sininho agora pode abrir diretamente grupo, presença ou pagamento.
+- Home do jogador/dono de time mostra o próximo horário e a situação da resposta.
+- Agenda da empresa diferencia horário fixo com 🔁 e mostra quantos confirmaram 👍.
+- Operação de Hoje também mostra grupos recorrentes e quantidade de confirmados.
+
+NOVAS TELAS
+- web/paginas/meus-horarios.html
+- web/paginas/horario-grupo.html
+- web/paginas/confirmar-presenca.html
+- web/paginas/horarios-fixos-empresa.html
+
+NOVA MIGRATION
+- api/prisma/migrations/20260904170000_fase4_horarios_fixos_presencas/migration.sql
+
+TESTE RÁPIDO
+1. Entrar como PLAYER ou DONO_TIME.
+2. Abrir "Meus Horários".
+3. Criar "Segunda dos Amigos" na empresa desejada.
+4. Convidar 2 contas por e-mail.
+5. Criar/solicitar um horário fixo para segunda 20:00-21:00.
+6. Entrar como dono da empresa e abrir Horários Fixos.
+7. Aprovar a solicitação.
+8. Entrar como cada jogador e clicar 👍 / 👎.
+9. Deixar a confirmação aberta em outro navegador e conferir atualização automática.
+10. Como organizador, clicar "Lembrar pendentes" e conferir o sininho.
+11. Confirmar 2 ou mais jogadores e clicar "Dividir valor".
+12. Conferir a cobrança criada em Meus Pagamentos e abrir o PIX.
+13. Na Agenda da empresa, confirmar que aparece 🔁 + nome do grupo + quantidade 👍.
+
+OBSERVAÇÃO
+Esta fase altera o schema do Prisma e EXIGE executar `npx prisma migrate deploy` no backend de produção após o deploy.

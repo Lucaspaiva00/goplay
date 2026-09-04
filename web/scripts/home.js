@@ -20,19 +20,21 @@ async function renderHome(){
     </section>`;
 
   if(usuarioLogado.tipo==="PLAYER"){
-    html+=`<section class="action-card"><h3>O que deseja fazer?</h3>
+    html+=`<section id="proximoHorarioHome"></section><section class="action-card"><h3>O que deseja fazer?</h3>
       ${empresa?`<div style="padding:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;margin-bottom:16px"><strong>📍 ${empresa.nome||"Empresa selecionada"}</strong><br><small>Comandas e cardápio usarão este estabelecimento.</small></div>`:""}
       <button class="btn green" onclick="location.href='societies.html'"><i class="fa fa-building"></i> Explorar Empresas</button>
       <button class="btn navy" onclick="location.href='comanda.html'"><i class="fa fa-receipt"></i> Minha Comanda</button>
+      <button class="btn navy" onclick="location.href='meus-horarios.html'"><i class="fa fa-thumbs-up"></i> Meus Horários</button>
       <button class="btn navy" onclick="location.href='meu-time.html'"><i class="fa fa-futbol"></i> Meu Time</button>
       <button class="btn navy" onclick="location.href='campeonatos-view.html'"><i class="fa fa-trophy"></i> Campeonatos</button>
     </section>`;
   }
 
   if(usuarioLogado.tipo==="DONO_TIME"){
-    html+=`<section class="action-card"><h3>Jogar e organizar</h3>
+    html+=`<section id="proximoHorarioHome"></section><section class="action-card"><h3>Jogar e organizar</h3>
       ${empresa?`<div style="padding:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;margin-bottom:16px"><strong>📍 ${empresa.nome||"Empresa selecionada"}</strong><br><small>Você pode trocar de empresa no seletor do menu.</small></div>`:`<div style="padding:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;margin-bottom:16px">Selecione onde deseja jogar pelo menu ou em Explorar Empresas.</div>`}
       <button class="btn green" onclick="location.href='time-agendamento.html'"><i class="fa fa-calendar"></i> Agendar Horário</button>
+      <button class="btn navy" onclick="location.href='meus-horarios.html'"><i class="fa fa-thumbs-up"></i> Meus Horários / Peladas</button>
       <button class="btn navy" onclick="location.href='comanda.html'"><i class="fa fa-receipt"></i> Minha Comanda</button>
       <button class="btn navy" onclick="location.href='meus-agendamentos.html'"><i class="fa fa-list"></i> Meus Agendamentos</button>
       <button class="btn navy" onclick="location.href='times.html'"><i class="fa fa-users"></i> Meus Times</button>
@@ -55,7 +57,18 @@ async function renderHome(){
     }
   }
   homeContent.innerHTML=html;
+  if(["PLAYER","DONO_TIME"].includes(usuarioLogado.tipo)) await carregarProximoHorario();
   if(usuarioLogado.tipo==="DONO_SOCIETY"&&empresa) await carregarResumo(empresa.id);
+}
+
+async function carregarProximoHorario(){
+  const box=document.getElementById("proximoHorarioHome");if(!box)return;
+  try{
+    const r=await fetch(`${BASE_URL}/grupos-horario/meus`);const groups=await r.json();if(!r.ok||!Array.isArray(groups))return;
+    const candidates=groups.filter(g=>g.proximo).sort((a,b)=>new Date(a.proximo.data)-new Date(b.proximo.data));const g=candidates[0];if(!g){box.innerHTML='';return;}
+    const a=g.proximo,p=(a.presencas||[]).find(x=>Number(x.usuarioId)===Number(usuarioLogado.id));const st=p?.status||'PENDENTE';
+    box.innerHTML=`<section class="action-card" style="border:1px solid #dce9f1"><h3>⚽ Próximo horário</h3><p><strong>${g.nome}</strong> • ${new Date(a.data).toLocaleDateString('pt-BR')} às ${a.horaInicio}<br><span style="color:#6b7280">${g.society?.nome||''}</span></p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn green" onclick="location.href='confirmar-presenca.html?agendamentoId=${a.id}'">${st==='VOU'?'👍 Você vai':st==='NAO_VOU'?'👎 Você não vai':'Responder 👍 / 👎'}</button><button class="btn navy" onclick="location.href='horario-grupo.html?grupoId=${g.id}'">Ver grupo</button></div></section>`;
+  }catch(e){console.error(e);}
 }
 
 window.abrirMinhaEmpresa=function(){const e=getEmpresaAtual();if(!e)return alert("Selecione uma empresa no menu.");location.href=`society-detalhe.html?societyId=${e.id}`;};

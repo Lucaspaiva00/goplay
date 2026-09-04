@@ -96,7 +96,9 @@ async function carregar() {
             <td>${p?.society?.nome || "-"}</td>
             <td>${p.tipo || "-"}</td>
             <td>${p.descricao ? String(p.descricao) : "-"}</td>
+            <td><strong>${p.status || "PENDENTE"}</strong></td>
             <td class="right"><strong>${moneyBR(p.valor)}</strong></td>
+            <td><button style="border:0;border-radius:9px;padding:8px 10px;background:#052845;color:#fff;font-weight:800;cursor:pointer" onclick="location.href='pagamentos.html?pagamentoId=${p.id}'">Abrir</button></td>
         </tr>
     `).join("");
 }

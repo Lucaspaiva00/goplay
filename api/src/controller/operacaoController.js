@@ -12,7 +12,7 @@ async function dashboard(req,res){
     const data=parseDateOnly(req.query.data)||new Date();
     data.setHours(0,0,0,0);
     const [reservas,comandas,pagamentos,jogos,funcionarios]=await Promise.all([
-      prisma.agendamento.findMany({where:{societyId,data,status:{not:'CANCELADO'}},include:{campo:true,time:true,pagamento:true},orderBy:{horaInicio:'asc'}}),
+      prisma.agendamento.findMany({where:{societyId,data,status:{not:'CANCELADO'}},include:{campo:true,time:true,pagamento:true,grupoHorario:{select:{id:true,nome:true}},presencas:{select:{status:true}}},orderBy:{horaInicio:'asc'}}),
       prisma.comanda.findMany({where:{societyId,status:{in:['ABERTA','FECHADA']}},include:{usuario:{select:{id:true,nome:true}},itens:true},orderBy:{updatedAt:'desc'}}),
       prisma.pagamento.findMany({where:{societyId,status:'PENDENTE'},include:{usuario:{select:{nome:true}},time:{select:{nome:true}}},orderBy:{createdAt:'asc'}}),
       prisma.jogo.findMany({where:{campeonato:{societyId},statusOperacao:{in:['AO_VIVO','INTERVALO']}},include:{timeA:{select:{nome:true}},timeB:{select:{nome:true}},campeonato:{select:{nome:true}}}}),

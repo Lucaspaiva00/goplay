@@ -23,6 +23,8 @@ const { subscribeJogo } = require("./realtime");
 const funcionarioController = require("./controller/funcionarioController");
 const notificacaoController = require("./controller/notificacaoController");
 const operacaoController = require("./controller/operacaoController");
+const horarioFixoController = require("./controller/horarioFixoController");
+const { subscribeHorario } = require("./horarioRealtime");
 const { authenticate, authenticateOptional, requireSocietyRoles, requireEntitySocietyRoles } = require("./auth");
 
 /* =====================================================
@@ -130,8 +132,30 @@ router.get("/agendamentos/disponiveis", agendamentoController.horariosDisponivei
 router.post("/agendamentos", agendamentoController.create);
 router.get("/agendamentos/time/:timeId", agendamentoController.listByTime);
 router.get("/agendamentos/society/:societyId", ...requireSocietyRoles(["ADMIN","CAIXA","RECEPCAO"], req => req.params.societyId), agendamentoController.listBySociety);
-router.post("/agendamentos/:id/cancelar", agendamentoController.cancelar);
+router.post("/agendamentos/:id/cancelar", authenticate, agendamentoController.cancelar);
 router.put("/agendamentos/:id/remarcar", ...requireEntitySocietyRoles(["ADMIN","CAIXA","RECEPCAO"], "agendamento"), agendamentoController.remarcar);
+
+
+/* =====================================================
+   FASE 4 - GRUPOS / HORÁRIOS FIXOS / PRESENÇA
+===================================================== */
+router.post("/grupos-horario", authenticate, horarioFixoController.createGroup);
+router.get("/grupos-horario/meus", authenticate, horarioFixoController.myGroups);
+router.get("/society/:societyId/grupos-horario", ...requireSocietyRoles(["ADMIN","CAIXA","RECEPCAO"], req => req.params.societyId), horarioFixoController.listSociety);
+router.get("/grupos-horario/:id", authenticate, horarioFixoController.readGroup);
+router.post("/grupos-horario/:id/convidar", authenticate, horarioFixoController.inviteMember);
+router.delete("/grupos-horario/:id/membros/:userId", authenticate, horarioFixoController.removeMember);
+router.post("/grupos-horario/:id/horario-fixo", authenticate, horarioFixoController.createFixed);
+router.post("/horarios-fixos/:id/aprovar", authenticate, horarioFixoController.approveFixed);
+router.post("/horarios-fixos/:id/recusar", authenticate, horarioFixoController.rejectFixed);
+router.get("/grupos-horario/:id/disponiveis", authenticate, horarioFixoController.availablePlayers);
+router.post("/grupos-horario/:id/mensalidade", authenticate, horarioFixoController.generateMonthly);
+router.post("/jogadores/disponibilidade", authenticate, horarioFixoController.setAvailability);
+router.get("/encontros-horario/:id/stream", subscribeHorario);
+router.get("/encontros-horario/:id", authenticate, horarioFixoController.detailOccurrence);
+router.post("/encontros-horario/:id/presenca", authenticate, horarioFixoController.respond);
+router.post("/encontros-horario/:id/lembrete", authenticate, horarioFixoController.remindPending);
+router.post("/encontros-horario/:id/rateio", authenticate, horarioFixoController.generateSplit);
 
 /* =====================================================
    PAGAMENTOS
