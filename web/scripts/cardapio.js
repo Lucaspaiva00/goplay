@@ -76,7 +76,7 @@ async function carregarCardapio() {
     const societyId = getSocietyId();
 
     if (!societyId) {
-        el("listaCardapio").innerHTML = `<p class="error-state">Society não encontrado.</p>`;
+        el("listaCardapio").innerHTML = `<p class="error-state">Empresa não encontrada.</p>`;
         return;
     }
 
@@ -96,7 +96,7 @@ window.salvarItem = async function salvarItem() {
         const societyId = getSocietyId();
 
         if (!societyId) {
-            alert("Erro: Society não encontrado.");
+            alert("Erro: Empresa não encontrada.");
             return;
         }
 

@@ -18,14 +18,11 @@ function salvarCampeonato() {
         regulamentoTexto: document.getElementById("regulamentoTexto").value.trim() || null,
     };
 
-    if (!data.societyId) return alert("Society não encontrado.");
+    if (!data.societyId) return alert("Empresa não encontrada.");
     if (!data.nome) return alert("Informe o nome do campeonato.");
-    if (
-        data.maxTimes < 4 ||
-        data.maxTimes % 4 !== 0
-    ) {
+    if (!Number.isInteger(data.maxTimes) || data.maxTimes < 2) {
         return alert(
-            "A Liga Ida e Volta precisa ter quantidade de times múltipla de 4."
+            "Informe uma quantidade de times a partir de 2."
         );
     }
 

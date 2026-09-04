@@ -159,7 +159,7 @@ async function carregarRecebimentos() {
         const societyId = await descobrirSocietyId();
 
         if (!societyId) {
-            throw new Error("Society não identificado. Acesse pelo Meu Society ou selecione um society válido.");
+            throw new Error("Empresa não identificada. Acesse por Minha Empresa ou selecione uma empresa válida.");
         }
 
         const lista = await fetchJSON(`${BASE_URL}/pagamentos/society/${encodeURIComponent(societyId)}`);
@@ -369,7 +369,7 @@ function exportarCSV() {
     }
 
     const linhas = [
-        ["Data", "Time", "Campo", "Tipo", "Descrição", "Valor", "Status", "Forma"]
+        ["Data", "Time", "Quadra", "Tipo", "Descrição", "Valor", "Status", "Forma"]
     ];
 
     lista.forEach(p => {

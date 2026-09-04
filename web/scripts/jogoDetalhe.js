@@ -42,7 +42,7 @@ function habilitarModoSomenteLeitura() {
 }
 
 function denyEdit() {
-    alert("Somente o dono do society pode alterar dados do jogo.");
+    alert("Somente o dono da empresa pode alterar dados do jogo.");
 }
 
 /* =========================

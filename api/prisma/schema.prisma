@@ -189,6 +189,9 @@ model Society {
   facebook  String?
   youtube   String?
 
+  pixChave   String?
+  pixTitular String?
+
   cep      String?
   endereco String?
   estado   String?

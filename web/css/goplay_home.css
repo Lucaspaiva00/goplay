@@ -577,3 +577,69 @@ label {
     padding: 16px;
     margin-bottom: 12px;
 }
+
+/* ============================================
+   MODAIS RESPONSIVOS / SCROLL MOBILE
+   Mantém header/footer acessíveis e permite rolagem
+   do conteúdo em telas pequenas.
+============================================ */
+.modal-overlay {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+.modal-overlay > .modal-box,
+.modal-overlay > .modal-card,
+.modal-overlay > .modal {
+    max-height: calc(100dvh - 32px);
+    min-height: 0;
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+.modal-overlay > .modal-box {
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-overlay > .modal-box > .modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.modal {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.modal > .modal-card {
+    max-height: calc(100dvh - 36px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 640px) {
+    .modal-overlay,
+    .modal {
+        padding: 8px;
+        align-items: flex-start;
+    }
+
+    .modal-overlay > .modal-box,
+    .modal-overlay > .modal-card,
+    .modal-overlay > .modal,
+    .modal > .modal-card {
+        max-height: calc(100dvh - 16px);
+        margin-top: 8px;
+        margin-bottom: 8px;
+        border-radius: 14px;
+    }
+
+    .modal-overlay > .modal-box > .modal-header,
+    .modal-overlay > .modal-box > .modal-footer {
+        flex: 0 0 auto;
+    }
+}

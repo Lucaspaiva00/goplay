@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Cadastrar Society – GoPlay</title>
+    <title>Cadastrar Empresa – GoPlay</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- CSS global -->
     <link rel="stylesheet" href="../css/goplay_home.css">
@@ -21,7 +21,7 @@
         <button id="menuBtn" class="menu-btn">
             <i class="fa fa-bars"></i>
         </button>
-        <h1 class="title">Cadastrar Society</h1>
+        <h1 class="title">Cadastrar Empresa</h1>
     </header>
 
     <!-- SIDEBAR PADRÃO -->
@@ -39,14 +39,14 @@
     <!-- CONTEÚDO -->
     <main class="content">
 
-        <h2 class="page-title">🏆 Cadastrar novo Society</h2>
+        <h2 class="page-title">🏢 Cadastrar nova Empresa</h2>
 
         <section class="card">
 
             <h3 class="section-title">Informações principais</h3>
-            <input id="nome" class="input" placeholder="Nome do Society">
+            <input id="nome" class="input" placeholder="Nome da Empresa">
             <textarea id="descricao" class="input textarea" placeholder="Descrição"></textarea>
-            <label class="label" for="imagem">Imagem do Society (opcional)</label>
+            <label class="label" for="imagem">Logo / imagem da Empresa (opcional)</label>
             <input id="imagem" class="input" type="file" accept="image/*">
 
             <h3 class="section-title">Contato</h3>
@@ -66,7 +66,14 @@
             <input id="estado" class="input" placeholder="Estado">
             <input id="cidade" class="input" placeholder="Cidade">
 
-            <button class="btn" onclick="salvarSociety()">Salvar Society</button>
+            <h3 class="section-title">Recebimentos via PIX</h3>
+            <input id="pixTitular" class="input" placeholder="Nome do titular do PIX">
+            <input id="pixChave" class="input" placeholder="Chave PIX (CPF/CNPJ, e-mail, telefone ou aleatória)">
+            <small style="display:block;margin:-4px 0 18px;color:#64748b;">
+                Esta será a chave exibida aos clientes nos pagamentos da sua empresa.
+            </small>
+
+            <button class="btn" onclick="salvarSociety()">Salvar Empresa</button>
 
         </section>
 

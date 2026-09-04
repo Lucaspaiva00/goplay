@@ -219,7 +219,7 @@ function renderInfo(c) {
         <div style="font-size:14px;line-height:1.7;">
 
             <div>
-                <b>Society:</b>
+                <b>Empresa:</b>
                 ${escapeHtml(String(societyNome))}
             </div>
 

@@ -27,7 +27,7 @@ async function carregarDashboard() {
         const society = societies?.[0];
 
         if (!society) {
-            console.warn("Nenhum society encontrado");
+            console.warn("Nenhuma empresa encontrada");
             return;
         }
 

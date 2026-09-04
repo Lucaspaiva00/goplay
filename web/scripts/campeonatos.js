@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const societyId = localStorage.getItem("societyId");
 
     if (!societyId) {
-        alert("Society não encontrada.");
+        alert("Empresa não encontrada.");
         return;
     }
 
@@ -66,7 +66,7 @@ async function carregarCampeonatos(societyId) {
 
                         <div>
                             <strong>Jogos:</strong>
-                            ${jogos}/${(c.maxTimes / 4) * 12}
+                            ${jogos}
                         </div>
 
                     </div>

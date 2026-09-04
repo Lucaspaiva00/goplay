@@ -68,7 +68,7 @@
                     <i class="fa-solid fa-users"></i> Times
                 </button>
                 <button class="nav-pill" data-target="sec-grupos">
-                    <i class="fa-solid fa-layer-group"></i> Grupos
+                    <i class="fa-solid fa-table-list"></i> Classificação
                 </button>
                 <button class="nav-pill" data-target="sec-jogos">
                     <i class="fa-solid fa-futbol"></i> Jogos
@@ -129,46 +129,22 @@
                     </div>
 
                     <div class="divider"></div>
-
-                    <div class="actions-row">
-                        <button class="btn btn-primary" id="btnGerarGrupos" style="display:none;">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> Gerar grupos
-                        </button>
-                    </div>
                 </section>
 
-                <!-- GRUPOS -->
-                <!-- GRUPOS -->
+                <!-- CLASSIFICAÇÃO -->
                 <section id="sec-grupos" class="section card">
 
                     <div class="card-head">
                         <h2 class="card-title">
-                            <i class="fa-solid fa-layer-group"></i> Grupos
+                            <i class="fa-solid fa-table-list"></i> Classificação
                         </h2>
 
                         <span class="chip" id="chipGrupos">
-                            0 grupo(s)
+                            Fase classificatória
                         </span>
                     </div>
 
-                    <div class="actions-row" style="margin-bottom:20px;">
-
-                        <button class="btn btn-primary" id="btnGerarGrupos">
-
-                            <i class="fa-solid fa-wand-magic-sparkles"></i>
-                            Gerar automático
-                        </button>
-
-                        <button class="btn btn-outline" id="btnAbrirManual">
-
-                            <i class="fa-solid fa-pen"></i>
-                            Montar manualmente
-                        </button>
-
-                    </div>
-
-                    <div id="manualGroupsWrap" style="display:none;">
-                    </div>
+                    <div id="manualGroupsWrap" style="display:none;"></div>
 
                     <div id="listaGrupos" class="list"></div>
 

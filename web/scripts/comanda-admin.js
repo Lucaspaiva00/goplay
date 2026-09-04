@@ -8,7 +8,7 @@ if (!usuarioLogado?.id) {
 }
 
 if (usuarioLogado.tipo !== "DONO_SOCIETY") {
-    alert("Acesso permitido apenas para dono do society.");
+    alert("Acesso permitido apenas para o dono da empresa.");
     window.location.href = "home.html";
 }
 
@@ -43,7 +43,7 @@ async function descobrirSocietyId() {
     const lista = await fetchJSON(`${BASE_URL}/society/owner/${usuarioLogado.id}`);
     const s = lista[0];
 
-    if (!s) throw new Error("Sem society");
+    if (!s) throw new Error("Sem empresa");
 
     societyId = s.id;
     localStorage.setItem("societyId", s.id);

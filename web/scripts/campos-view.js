@@ -41,7 +41,7 @@ function renderCampos(campos) {
     if (!wrap) return;
 
     if (!Array.isArray(campos) || campos.length === 0) {
-        wrap.innerHTML = `<div style="color:#6b7280;">Este society ainda não possui campos cadastrados.</div>`;
+        wrap.innerHTML = `<div style="color:#6b7280;">Esta empresa ainda não possui quadras cadastradas.</div>`;
         return;
     }
 
@@ -60,7 +60,7 @@ function renderCampos(campos) {
 
                 ${c.fotoUrl ? `
                     <div style="width:280px;max-width:100%;">
-                        <img src="${c.fotoUrl}" alt="Foto do campo" style="width:100%;border-radius:14px;object-fit:cover;border:1px solid #e5e7eb;" />
+                        <img src="${c.fotoUrl}" alt="Foto da quadra" style="width:100%;border-radius:14px;object-fit:cover;border:1px solid #e5e7eb;" />
                     </div>
                 ` : ""}
             </div>
@@ -75,9 +75,9 @@ async function listarCampos() {
     if (!societyId) {
         if (wrap) {
             wrap.innerHTML = `
-                <div style="color:#ef4444;font-weight:800;">Society não selecionado.</div>
+                <div style="color:#ef4444;font-weight:800;">Empresa não selecionada.</div>
                 <div style="margin-top:10px;color:#374151;">
-                    Volte em <b>Ver Societies</b> → abra o <b>Detalhe</b> → clique em <b>Ver Campos</b>.
+                    Volte em <b>Ver Empresas</b> → abra o <b>Detalhe</b> → clique em <b>Criar / Gerenciar Quadras</b>.
                 </div>
             `;
         }
@@ -97,7 +97,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error(e);
         const wrap = el("listaCampos");
         if (wrap) {
-            wrap.innerHTML = `<div style="color:#b91c1c;font-weight:800;">${e.message || "Erro ao carregar campos."}</div>`;
+            wrap.innerHTML = `<div style="color:#b91c1c;font-weight:800;">${e.message || "Erro ao carregar quadras."}</div>`;
         }
     }
 });

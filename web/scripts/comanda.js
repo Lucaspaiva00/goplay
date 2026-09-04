@@ -53,7 +53,7 @@ async function descobrirSocietyId() {
         return societyId;
     }
 
-    throw new Error("Nenhum society encontrado.");
+    throw new Error("Nenhuma empresa encontrada.");
 }
 
 async function descobrirTimeIdDoUsuario() {

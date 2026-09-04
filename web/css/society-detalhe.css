@@ -115,6 +115,9 @@
     background: #fff;
     border-radius: 18px;
     overflow: hidden;
+    max-height: calc(100dvh - 40px);
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
 }
 
@@ -142,6 +145,10 @@
 
 .modal-body {
     padding: 24px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+    flex: 1 1 auto;
 }
 
 .society-form-grid {

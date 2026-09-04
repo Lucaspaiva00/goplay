@@ -56,7 +56,7 @@ async function descobrirSocietiesDoUsuario(usuario) {
         const lista = await fetchJSON(`${BASE_URL}/society/owner/${usuario.id}`);
         return (lista || []).map(s => ({
             id: s.id,
-            nome: s.nome || `Society #${s.id}`
+            nome: s.nome || `Empresa #${s.id}`
         }));
     }
 
@@ -84,7 +84,7 @@ function preencherSelectSocieties(lista) {
     if (!sel) return;
 
     if (!sociedadesDisponiveis.length) {
-        sel.innerHTML = `<option value="">Nenhum society</option>`;
+        sel.innerHTML = `<option value="">Nenhuma empresa</option>`;
         return;
     }
 

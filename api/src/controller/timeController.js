@@ -88,7 +88,7 @@ const create = async (req, res) => {
             },
             include: {
                 dono: { select: { id: true, nome: true } },
-                society: { select: { id: true, nome: true } },
+                society: { select: { id: true, nome: true, pixChave: true, pixTitular: true } },
                 jogadores: { select: { id: true, nome: true } }
             }
         });
@@ -116,7 +116,7 @@ const list = async (req, res) => {
                         goleiro: true
                     }
                 },
-                society: { select: { id: true, nome: true } }
+                society: { select: { id: true, nome: true, pixChave: true, pixTitular: true } }
             },
             orderBy: { id: "desc" }
         });
@@ -150,7 +150,7 @@ const listByOwner = async (req, res) => {
                         goleiro: true
                     }
                 },
-                society: { select: { id: true, nome: true } }
+                society: { select: { id: true, nome: true, pixChave: true, pixTitular: true } }
             },
             orderBy: { id: "desc" }
         });
@@ -215,7 +215,7 @@ const details = async (req, res) => {
             where: { id: timeId },
             include: {
                 dono: { select: { id: true, nome: true, email: true } },
-                society: { select: { id: true, nome: true } },
+                society: { select: { id: true, nome: true, pixChave: true, pixTitular: true } },
                 jogadores: {
                     select: {
                         id: true,
@@ -315,7 +315,7 @@ const update = async (req, res) => {
             },
             include: {
                 dono: { select: { id: true, nome: true } },
-                society: { select: { id: true, nome: true } },
+                society: { select: { id: true, nome: true, pixChave: true, pixTitular: true } },
                 jogadores: { select: { id: true, nome: true } }
             }
         });
@@ -463,7 +463,7 @@ const getTimeByPlayer = async (req, res) => {
         const time = await prisma.time.findUnique({
             where: { id: jogador.timeRelacionadoId },
             include: {
-                society: { select: { id: true, nome: true } },
+                society: { select: { id: true, nome: true, pixChave: true, pixTitular: true } },
                 jogadores: {
                     select: {
                         id: true,

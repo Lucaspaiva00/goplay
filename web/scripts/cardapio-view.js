@@ -40,7 +40,7 @@ async function carregarCardapio() {
     const div = document.getElementById("listaCardapio");
 
     if (!societyId) {
-        div.innerHTML = "<p style='color:#ef4444;font-weight:800;'>Society não encontrado.</p>";
+        div.innerHTML = "<p style='color:#ef4444;font-weight:800;'>Empresa não encontrada.</p>";
         return;
     }
 
@@ -50,7 +50,7 @@ async function carregarCardapio() {
         const data = await fetchJSON(`${BASE_URL}/cardapio/society/${encodeURIComponent(societyId)}`);
 
         if (!Array.isArray(data) || data.length === 0) {
-            div.innerHTML = "<p>Este society ainda não possui itens no cardápio.</p>";
+            div.innerHTML = "<p>Esta empresa ainda não possui itens no cardápio.</p>";
             return;
         }
 

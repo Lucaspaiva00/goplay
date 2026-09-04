@@ -12,7 +12,7 @@ async function carregarSocieties() {
         const societies = await res.json();
 
         if (!Array.isArray(societies) || societies.length === 0) {
-            div.innerHTML = "<p>Nenhum society encontrado.</p>";
+            div.innerHTML = "<p>Nenhuma empresa encontrada.</p>";
             return;
         }
 
@@ -34,8 +34,8 @@ async function carregarSocieties() {
             </div>
         `).join("");
     } catch (error) {
-        console.error("Erro ao carregar societies:", error);
-        div.innerHTML = "<p>Erro ao carregar societies.</p>";
+        console.error("Erro ao carregar empresas:", error);
+        div.innerHTML = "<p>Erro ao carregar empresas.</p>";
     }
 }
 

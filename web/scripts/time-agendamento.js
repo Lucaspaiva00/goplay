@@ -36,7 +36,6 @@ let campoSelecionado = null;
 let horarioSelecionado = null;
 let recorrenteSelecionado = false;
 
-const PIX_CHAVE = "47.051.258/0001-58";
 
 async function carregarTimesDoDono() {
     const donoId = usuarioLogado.id;
@@ -78,7 +77,7 @@ async function carregarTimesDoDono() {
         renderResumo(time);
 
         if (!societyIdDoTime) {
-            el("campoId").innerHTML = `<option value="">Nenhum society vinculado ao time</option>`;
+            el("campoId").innerHTML = `<option value="">Nenhuma empresa vinculada ao time</option>`;
             return;
         }
 
@@ -91,20 +90,25 @@ function renderResumo(time) {
 
     const resumo = el("resumoTopo");
     el("chipTime").textContent = `Time: ${time?.nome || "-"}`;
-    el("chipSociety").textContent = `Society: ${time?.society?.nome || "-"}`;
+    el("chipSociety").textContent = `Empresa: ${time?.society?.nome || "-"}`;
+
+    const pixChave = String(time?.society?.pixChave || "").trim();
+    const pixTitular = String(time?.society?.pixTitular || "").trim();
+    if (el("pixChaveAgendamento")) el("pixChaveAgendamento").textContent = pixChave || "Não cadastrado";
+    if (el("pixTitularAgendamento")) el("pixTitularAgendamento").textContent = pixTitular || "-";
     resumo.style.display = "flex";
 }
 
 async function carregarCampos(societyId) {
     const select = el("campoId");
-    select.innerHTML = `<option value="">Carregando campos...</option>`;
+    select.innerHTML = `<option value="">Carregando quadras...</option>`;
 
     const campos = await fetchJSON(`${BASE_URL}/campos/society/${societyId}`);
 
     select.innerHTML = `<option value="">Selecione</option>`;
 
     if (!campos?.length) {
-        select.innerHTML = `<option value="">Nenhum campo cadastrado</option>`;
+        select.innerHTML = `<option value="">Nenhuma quadra cadastrada</option>`;
         return;
     }
 
@@ -154,8 +158,8 @@ async function buscarHorarios() {
     const data = el("data").value;
 
     if (!timeSelecionadoId) return alert("Selecione seu time.");
-    if (!societyIdDoTime) return alert("Não consegui identificar o society do time.");
-    if (!campoSelecionado) return alert("Selecione o campo.");
+    if (!societyIdDoTime) return alert("Não consegui identificar a empresa do time.");
+    if (!campoSelecionado) return alert("Selecione a quadra.");
     if (!data) return alert("Selecione a data.");
 
     const horarios = await fetchJSON(
@@ -177,9 +181,9 @@ async function criarAgendamento() {
         const data = el("data").value;
 
         if (!timeSelecionadoId) return alert("Selecione seu time.");
-        if (!societyIdDoTime) return alert("Não consegui identificar o society do time.");
+        if (!societyIdDoTime) return alert("Não consegui identificar a empresa do time.");
         if (!campoSelecionado || !data || !horarioSelecionado?.horaInicio) {
-            return alert("Selecione campo, data e horário.");
+            return alert("Selecione quadra, data e horário.");
         }
 
         const opt = el("campoId").selectedOptions?.[0];

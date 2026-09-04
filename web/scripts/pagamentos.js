@@ -1,5 +1,4 @@
 const BASE_URL = "https://goplay-dzlr.onrender.com";
-const PIX_KEY_PADRAO = "47.051.258/0001-58";
 
 function el(id) {
     return document.getElementById(id);
@@ -86,13 +85,34 @@ async function carregarPagamento(pagamentoId) {
     el("jogo").textContent = agendamentoTexto;
     el("descricao").textContent = p?.descricao || "-";
     el("valor").textContent = moneyBR(p?.valor);
-    el("pixKey").textContent = PIX_KEY_PADRAO;
+
+    const pixChave = String(p?.society?.pixChave || "").trim();
+    const pixTitular = String(p?.society?.pixTitular || "").trim();
+
+    el("pixKey").textContent = pixChave || "PIX não cadastrado pela empresa";
+
+    const pixTitularEl = el("pixTitular");
+    if (pixTitularEl) {
+        pixTitularEl.textContent = pixTitular ? `Titular: ${pixTitular}` : "";
+    }
+
+    const btnCopiar = el("btnCopiar");
+    if (btnCopiar) {
+        btnCopiar.disabled = !pixChave;
+        btnCopiar.title = pixChave ? "Copiar chave PIX" : "A empresa ainda não cadastrou uma chave PIX";
+    }
 
     return p;
 }
 
 async function copiarPix() {
-    const txt = (el("pixKey")?.textContent || PIX_KEY_PADRAO).trim();
+    const txt = (el("pixKey")?.textContent || "").trim();
+
+    if (!txt || txt === "PIX não cadastrado pela empresa") {
+        alert("A empresa ainda não cadastrou uma chave PIX.");
+        return;
+    }
+
     await navigator.clipboard.writeText(txt);
     alert("PIX copiado com sucesso.");
 }

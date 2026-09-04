@@ -34,7 +34,7 @@ async function carregarJogadores() {
     const div = document.getElementById("listaJogadores");
 
     if (!societyId) {
-        div.innerHTML = "<p style='color:#ef4444;font-weight:800;'>Erro: society não encontrado.</p>";
+        div.innerHTML = "<p style='color:#ef4444;font-weight:800;'>Erro: empresa não encontrada.</p>";
         return;
     }
 
@@ -45,7 +45,7 @@ async function carregarJogadores() {
         const jogadores = data?.societyPlayers || [];
 
         if (!Array.isArray(jogadores) || jogadores.length === 0) {
-            div.innerHTML = "<p>Nenhum jogador cadastrado neste society.</p>";
+            div.innerHTML = "<p>Nenhum jogador cadastrado nesta empresa.</p>";
             return;
         }
 

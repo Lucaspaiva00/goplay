@@ -48,7 +48,7 @@ async function carregarComandas() {
             societyId = lista[0]?.id;
 
             if (!societyId) {
-                throw new Error("Nenhum society encontrado.");
+                throw new Error("Nenhuma empresa encontrada.");
             }
 
             localStorage.setItem("societyId", societyId);

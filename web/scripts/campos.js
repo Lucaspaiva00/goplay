@@ -55,7 +55,7 @@ function renderCampos(campos) {
   const podeGerenciar = tipo === "DONO_SOCIETY";
 
   if (!Array.isArray(campos) || campos.length === 0) {
-    wrap.innerHTML = `<div class="empty-state">Nenhum campo cadastrado neste society.</div>`;
+    wrap.innerHTML = `<div class="empty-state">Nenhuma quadra cadastrada nesta empresa.</div>`;
     return;
   }
 
@@ -69,10 +69,10 @@ function renderCampos(campos) {
 
         ${podeGerenciar ? `
           <div class="campo-actions">
-            <button class="icon-btn" onclick="abrirModalEdicaoCampo(${c.id})" title="Editar campo">
+            <button class="icon-btn" onclick="abrirModalEdicaoCampo(${c.id})" title="Editar quadra">
               <i class="fa fa-pen"></i>
             </button>
-            <button class="icon-btn danger" onclick="excluirCampo(${c.id}, '${(c.nome || "").replace(/'/g, "\\'")}')" title="Excluir campo">
+            <button class="icon-btn danger" onclick="excluirCampo(${c.id}, '${(c.nome || "").replace(/'/g, "\\'")}')" title="Excluir quadra">
               <i class="fa fa-trash"></i>
             </button>
           </div>
@@ -87,7 +87,7 @@ function renderCampos(campos) {
       ${c.fotoUrl
       ? `
             <div class="campo-foto-wrap">
-              <img src="${c.fotoUrl}" alt="Foto do campo" class="campo-foto">
+              <img src="${c.fotoUrl}" alt="Foto da quadra" class="campo-foto">
             </div>
           `
       : ""
@@ -103,9 +103,9 @@ async function listarCampos() {
   if (!societyId) {
     if (wrap) {
       wrap.innerHTML = `
-        <div class="error-state">Society não selecionado.</div>
+        <div class="error-state">Empresa não selecionada.</div>
         <div class="helper-state">
-          Volte em <b>Meu Society</b> e entre novamente pelos detalhes do society.
+          Volte em <b>Minha Empresa</b> e entre novamente pelos detalhes da empresa.
         </div>
       `;
     }
@@ -123,7 +123,7 @@ window.salvarCampo = async function salvarCampo() {
     const societyId = getSocietyId();
 
     if (!societyId) {
-      alert("Society não selecionado. Volte no detalhe do society e clique em Ver Campos.");
+      alert("Empresa não selecionada. Volte no detalhe da empresa e clique em Criar / Gerenciar Quadras.");
       return;
     }
 
@@ -135,7 +135,7 @@ window.salvarCampo = async function salvarCampo() {
     const fotoFile = el("foto")?.files?.[0] || null;
 
     if (!nome) {
-      alert("Informe o nome do campo.");
+      alert("Informe o nome da quadra.");
       return;
     }
 
@@ -166,11 +166,11 @@ window.salvarCampo = async function salvarCampo() {
       if (el(id)) el(id).value = "";
     });
 
-    alert("Campo salvo com sucesso!");
+    alert("Quadra salva com sucesso!");
     await listarCampos();
   } catch (e) {
     console.error(e);
-    alert(e.message || "Erro ao salvar campo.");
+    alert(e.message || "Erro ao salvar quadra.");
   }
 };
 
@@ -190,7 +190,7 @@ window.abrirModalEdicaoCampo = async function abrirModalEdicaoCampo(campoId) {
     document.body.style.overflow = "hidden";
   } catch (e) {
     console.error(e);
-    alert(e.message || "Erro ao carregar campo.");
+    alert(e.message || "Erro ao carregar quadra.");
   }
 };
 
@@ -203,7 +203,7 @@ window.fecharModalCampo = function fecharModalCampo() {
 window.salvarEdicaoCampo = async function salvarEdicaoCampo() {
   try {
     if (!campoEmEdicao?.id) {
-      alert("Campo não encontrado.");
+      alert("Quadra não encontrada.");
       return;
     }
 
@@ -215,7 +215,7 @@ window.salvarEdicaoCampo = async function salvarEdicaoCampo() {
     const fotoFile = el("editFoto")?.files?.[0] || null;
 
     if (!nome) {
-      alert("Informe o nome do campo.");
+      alert("Informe o nome da quadra.");
       return;
     }
 
@@ -242,16 +242,16 @@ window.salvarEdicaoCampo = async function salvarEdicaoCampo() {
     });
 
     fecharModalCampo();
-    alert("Campo atualizado com sucesso!");
+    alert("Quadra atualizada com sucesso!");
     await listarCampos();
   } catch (e) {
     console.error(e);
-    alert(e.message || "Erro ao atualizar campo.");
+    alert(e.message || "Erro ao atualizar quadra.");
   }
 };
 
 window.excluirCampo = async function excluirCampo(campoId, nome) {
-  const confirmar = confirm(`Deseja realmente excluir o campo "${nome}"?`);
+  const confirmar = confirm(`Deseja realmente excluir a quadra "${nome}"?`);
   if (!confirmar) return;
 
   try {
@@ -259,11 +259,11 @@ window.excluirCampo = async function excluirCampo(campoId, nome) {
       method: "DELETE"
     });
 
-    alert("Campo excluído com sucesso!");
+    alert("Quadra excluída com sucesso!");
     await listarCampos();
   } catch (e) {
     console.error(e);
-    alert(e.message || "Erro ao excluir campo.");
+    alert(e.message || "Erro ao excluir quadra.");
   }
 };
 
@@ -281,6 +281,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     await listarCampos();
   } catch (e) {
     console.error(e);
-    alert(e.message || "Erro ao carregar campos.");
+    alert(e.message || "Erro ao carregar quadras.");
   }
 });

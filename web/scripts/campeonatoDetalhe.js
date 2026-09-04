@@ -90,8 +90,9 @@ function abrirSecao(idSecao) {
 }
 
 function esconderElementosAntigos() {
-    const btnGerarGrupos = document.getElementById("btnGerarGrupos");
-    if (btnGerarGrupos) btnGerarGrupos.style.display = "none";
+    document.querySelectorAll("#btnGerarGrupos").forEach((btn) => {
+      btn.style.display = "none";
+    });
 
     const btnGerarMataMata = document.getElementById("btnGerarMataMata");
     if (btnGerarMataMata) btnGerarMataMata.style.display = "none";
@@ -101,6 +102,12 @@ function esconderElementosAntigos() {
 
     const btnAbrirBracket = document.getElementById("btnAbrirBracket");
     if (btnAbrirBracket) btnAbrirBracket.style.display = "none";
+
+    const btnAbrirManual = document.getElementById("btnAbrirManual");
+    if (btnAbrirManual) btnAbrirManual.style.display = "none";
+
+    const manualGroupsWrap = document.getElementById("manualGroupsWrap");
+    if (manualGroupsWrap) manualGroupsWrap.style.display = "none";
 }
 
 function escapeHTML(str) {
@@ -357,7 +364,6 @@ async function carregarDetalhes(force = false) {
         renderRanking(c);
         renderAreaFinal(c);
         renderAreaGrupos(c);
-        renderManualGroupBuilder(c);
         ajustarAcoes(c);
 
     } catch (err) {
@@ -378,7 +384,6 @@ function renderCampeonatoInfo(c) {
 
     const totalTimes = c.times?.length || 0;
     const totalJogos = c.jogos?.length || 0;
-    const jogosEsperados = (c.maxTimes / 4) * 12;
 
     el.innerHTML = `
         <div class="item">
@@ -393,7 +398,7 @@ function renderCampeonatoInfo(c) {
 
         <div class="item">
             <strong>Jogos:</strong>
-            ${totalJogos}/${jogosEsperados}
+            ${totalJogos}
         </div>
 
         <div class="item">
@@ -413,7 +418,7 @@ function ajustarAcoes(c) {
     const btnGerarJogosGrupos = document.getElementById("btnGerarJogosGrupos");
 
     if (btnGerarJogosGrupos) {
-        if (totalTimes === c.maxTimes && totalJogos === 0 && (c.grupos?.length || 0) > 0) {
+        if (totalTimes === c.maxTimes && totalJogos === 0) {
             btnGerarJogosGrupos.style.display = "inline-flex";
             btnGerarJogosGrupos.innerHTML = `
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
@@ -458,7 +463,7 @@ function ensureNextStepCTA(c) {
     if (totalTimes < c.maxTimes) {
         wrap.innerHTML = `
             <div class="empty">
-                Adicione exatamente 4 times para liberar a geração da Liga Ida e Volta. 
+                Adicione os times até completar a quantidade escolhida para o campeonato.
                 <strong>${totalTimes}/${c.maxTimes}</strong>
             </div>
         `;
@@ -472,7 +477,7 @@ function ensureNextStepCTA(c) {
                     <i class="fa-solid fa-circle-play"></i> Próximo passo
                 </div>
                 <div class="muted" style="margin-top:4px;">
-                    Times completos. Gere os jogos da Liga Ida e Volta.
+                    Times completos. Gere a fase de ida e volta. Ao terminar, os 2 melhores vão automaticamente para a final.
                 </div>
             </div>
 
@@ -659,14 +664,14 @@ function renderAreaGrupos(c) {
     const grupos = c.grupos || [];
 
     if (chipGrupos) {
-        chipGrupos.textContent = `${grupos.length} grupo(s)`;
+        chipGrupos.textContent = grupos.length ? "Fase classificatória" : "Aguardando";
     }
 
     if (!grupos.length) {
 
         listaGrupos.innerHTML = `
             <div class="empty">
-                Nenhum grupo gerado ainda.
+                A fase classificatória será criada automaticamente ao gerar a liga.
             </div>
         `;
 
@@ -699,7 +704,7 @@ function renderAreaGrupos(c) {
                         font-weight:900;
                         color:#052845;
                     ">
-                        Grupo ${grupo.nome || String.fromCharCode(65 + index)}
+                        ${grupo.nome || "Classificação"}
                     </h3>
 
                     <span class="chip">
@@ -748,7 +753,7 @@ function renderAreaGrupos(c) {
                     font-size:14px;
                     color:#64748b;
                 ">
-                    Este grupo gera automaticamente 12 jogos ida e volta.
+                    ${times.length} time(s) em ida e volta. Total classificatório: <strong>${times.length * (times.length - 1)}</strong> jogo(s).
                 </div>
 
             </div>
@@ -761,25 +766,51 @@ function renderAreaFinal(c) {
     const finalInfo = document.getElementById("finalInfo");
     const chipFinal = document.getElementById("chipFinal");
 
-    if (chipFinal) {
-        chipFinal.textContent = c.status === "FINALIZADO" ? "Finalizado" : "Por pontos";
-    }
-
     if (!finalInfo) return;
 
+    const jogoFinal = (c.jogos || []).find((j) => j.tipoJogo === "MATA_MATA");
+
     if (c.status === "FINALIZADO") {
+        if (chipFinal) chipFinal.textContent = "Finalizado";
+
         finalInfo.innerHTML = `
             <div class="empty">
-                🏆 Campeonato finalizado. O campeão será definido pela liderança da tabela.
+                🏆 <strong>Campeão:</strong> ${escapeHTML(c?.campeao?.nome || "-")}
+                <br>
+                <strong>Vice-campeão:</strong> ${escapeHTML(c?.viceCampeao?.nome || "-")}
             </div>
         `;
         return;
     }
 
+    if (jogoFinal) {
+        if (chipFinal) chipFinal.textContent = "Final";
+
+        finalInfo.innerHTML = `
+            <div style="border:1px solid #e5e7eb;border-radius:16px;padding:18px;background:#fff;">
+                <div style="font-weight:900;color:#052845;margin-bottom:10px;">
+                    🏆 Final definida
+                </div>
+                <div style="font-size:18px;font-weight:900;text-align:center;">
+                    ${escapeHTML(jogoFinal?.timeA?.nome || "Time A")}
+                    <span style="margin:0 10px;">x</span>
+                    ${escapeHTML(jogoFinal?.timeB?.nome || "Time B")}
+                </div>
+                <div class="muted" style="margin-top:10px;text-align:center;">
+                    Finalize esse jogo na aba <strong>Jogos</strong> para definir o campeão.
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    if (chipFinal) chipFinal.textContent = "Top 2";
+
     finalInfo.innerHTML = `
         <div class="empty">
-            Este campeonato ainda está em formato de <strong>pontos corridos</strong>.
-            Após estabilizarmos a liga, podemos adicionar semifinal e final.
+            A fase classificatória é disputada em <strong>ida e volta</strong>.
+            Quando todos os jogos terminarem, os <strong>2 primeiros do ranking</strong>
+            avançam automaticamente para a final.
         </div>
     `;
 }
@@ -826,8 +857,7 @@ function renderJogos(c) {
         return (a.id || 0) - (b.id || 0);
     });
 
-    if (chip) chip.textContent =
-        `${jogos.length}/${(c.maxTimes / 4) * 12} jogo(s)`;
+    if (chip) chip.textContent = `${jogos.length} jogo(s)`;
 
     if (!jogosDiv) return;
 
@@ -872,7 +902,8 @@ function renderJogos(c) {
 
 function renderJogoCard(j) {
     const isVolta = j.tipoJogo === "VOLTA";
-    const badge = isVolta ? "🔁 Volta" : "➡️ Ida";
+    const isFinal = j.tipoJogo === "MATA_MATA";
+    const badge = isFinal ? "🏆 Final" : (isVolta ? "🔁 Volta" : "➡️ Ida");
 
     const timeA = j.timeA?.nome || "Time A";
     const timeB = j.timeB?.nome || "Time B";
@@ -1020,7 +1051,7 @@ function renderRanking(campeonato) {
 
         container.innerHTML = `
             <div class="empty-state">
-                Nenhum grupo gerado ainda.
+                A fase classificatória será criada automaticamente ao gerar a liga.
             </div>
         `;
 

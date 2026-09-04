@@ -49,7 +49,7 @@ function renderSocietyInfo(data) {
     el("societyInfo").innerHTML = `
       <div class="society-header-row">
         <div style="display:flex;gap:14px;align-items:flex-start;">
-            ${data.imagem ? `<img src="${data.imagem}" alt="Society" style="width:72px;height:72px;border-radius:12px;object-fit:cover;border:1px solid #e5e7eb;">` : ""}
+            ${data.imagem ? `<img src="${data.imagem}" alt="Empresa" style="width:72px;height:72px;border-radius:12px;object-fit:cover;border:1px solid #e5e7eb;">` : ""}
             <div>
                 <h3>${data.nome || "-"}</h3>
                 <p class="society-description">${data.descricao || "Sem descrição cadastrada."}</p>
@@ -57,7 +57,7 @@ function renderSocietyInfo(data) {
         </div>
 
         ${isDonoSociety ? `
-          <button class="icon-edit-btn" onclick="abrirEdicaoSociety()" title="Editar Society">
+          <button class="icon-edit-btn" onclick="abrirEdicaoSociety()" title="Editar Empresa">
             <i class="fa fa-pen"></i>
           </button>
         ` : ""}
@@ -68,6 +68,8 @@ function renderSocietyInfo(data) {
         <div><b>Telefone:</b> ${data.telefone || "-"}</div>
         <div><b>WhatsApp:</b> ${data.whatsapp || "-"}</div>
         <div><b>Email:</b> ${data.email || "-"}</div>
+        <div><b>PIX:</b> ${data.pixChave || "Não cadastrado"}</div>
+        <div><b>Titular do PIX:</b> ${data.pixTitular || "-"}</div>
         <div><b>Website:</b> ${data.website || "-"}</div>
         <div><b>Instagram:</b> ${data.instagram || "-"}</div>
         <div><b>Facebook:</b> ${data.facebook || "-"}</div>
@@ -78,7 +80,7 @@ function renderSocietyInfo(data) {
 
       <div class="society-stats">
         <div class="stat-box">
-            <span>Campos cadastrados</span>
+            <span>Quadras cadastradas</span>
             <strong>${(data.campos || []).length}</strong>
         </div>
         <div class="stat-box">
@@ -107,6 +109,8 @@ function preencherFormularioEdicao(data) {
     el("editEndereco").value = data.endereco || "";
     el("editCidade").value = data.cidade || "";
     el("editEstado").value = data.estado || "";
+    el("editPixTitular").value = data.pixTitular || "";
+    el("editPixChave").value = data.pixChave || "";
     if (el("editImagem")) el("editImagem").value = "";
 }
 
@@ -114,7 +118,7 @@ async function carregarSociety() {
     const societyId = getQueryParam("societyId");
 
     if (!societyId) {
-        alert("Society inválido.");
+        alert("Empresa inválida.");
         return;
     }
 
@@ -177,7 +181,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     } catch (e) {
         console.error(e);
-        el("societyInfo").innerHTML = "<p>Erro ao carregar society.</p>";
+        el("societyInfo").innerHTML = "<p>Erro ao carregar empresa.</p>";
     }
 });
 
@@ -186,12 +190,12 @@ function abrirEdicaoSociety() {
     const tipo = String(usuario?.tipo || "").trim().toUpperCase();
 
     if (tipo !== "DONO_SOCIETY") {
-        alert("Apenas o dono do society pode editar.");
+        alert("Apenas o dono da empresa pode editar.");
         return;
     }
 
     if (!societyAtual) {
-        alert("Society ainda não carregado.");
+        alert("Empresa ainda não carregada.");
         return;
     }
 
@@ -208,7 +212,7 @@ function cancelarEdicaoSociety() {
 async function salvarEdicaoSociety() {
     try {
         if (!societyAtual?.id) {
-            alert("Society inválido.");
+            alert("Empresa inválida.");
             return;
         }
 
@@ -226,11 +230,13 @@ async function salvarEdicaoSociety() {
             endereco: el("editEndereco").value.trim(),
             cidade: el("editCidade").value.trim(),
             estado: el("editEstado").value.trim(),
+            pixTitular: el("editPixTitular").value.trim(),
+            pixChave: el("editPixChave").value.trim(),
             imagem: societyAtual.imagem || null
         };
 
         if (!body.nome) {
-            alert("O nome do society é obrigatório.");
+            alert("O nome da empresa é obrigatório.");
             return;
         }
 
@@ -250,7 +256,7 @@ async function salvarEdicaoSociety() {
         const data = await res.json();
 
         if (!res.ok || data?.error) {
-            alert(data?.error || "Erro ao atualizar society.");
+            alert(data?.error || "Erro ao atualizar empresa.");
             return;
         }
 
@@ -261,10 +267,10 @@ async function salvarEdicaoSociety() {
 
         renderSocietyInfo(societyAtual);
         cancelarEdicaoSociety();
-        alert("Society atualizado com sucesso!");
+        alert("Empresa atualizada com sucesso!");
     } catch (error) {
         console.error(error);
-        alert("Erro ao atualizar society.");
+        alert("Erro ao atualizar empresa.");
     }
 }
 

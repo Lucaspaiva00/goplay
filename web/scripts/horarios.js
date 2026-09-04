@@ -100,7 +100,7 @@ async function carregarAgenda() {
         societyIdAtual = await descobrirSocietyId();
 
         if (!societyIdAtual) {
-            el("agendaGrid").innerHTML = `<div class="empty">Nenhum society encontrado.</div>`;
+            el("agendaGrid").innerHTML = `<div class="empty">Nenhuma empresa encontrada.</div>`;
             return;
         }
 
@@ -153,7 +153,7 @@ function montarGrid() {
                              draggable="true"
                              ondragstart="dragStart(event, ${ag.id})">
                             <div class="event-title">${ag.time?.nome || "Reservado"}</div>
-                            <div class="event-sub">${ag.campo?.nome || "Campo"} • ${status || "STATUS"}</div>
+                            <div class="event-sub">${ag.campo?.nome || "Quadra"} • ${status || "STATUS"}</div>
                         </div>
                     </div>
                 `;
@@ -206,7 +206,7 @@ function abrirModalOcupado(id) {
         <div><strong>Data:</strong> ${data ? new Date(data).toLocaleDateString("pt-BR") : "-"}</div>
         <div><strong>Horário:</strong> ${ag.horaInicio || "-"} - ${ag.horaFim || "-"}</div>
         <div><strong>Time:</strong> ${ag.time?.nome || "-"}</div>
-        <div><strong>Campo:</strong> ${ag.campo?.nome || "-"}</div>
+        <div><strong>Quadra:</strong> ${ag.campo?.nome || "-"}</div>
         <div><strong>Status:</strong> ${ag.status || "-"}</div>
     `;
 

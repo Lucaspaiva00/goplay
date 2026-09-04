@@ -32,8 +32,8 @@ function ajustarModoTela() {
     if (!usuario) return;
 
     if (usuario.tipo === "DONO_SOCIETY") {
-        if (pageTitle) pageTitle.textContent = "⚽ Times do Society";
-        if (pageSubtitle) pageSubtitle.textContent = "Visualize os times vinculados ao seu society.";
+        if (pageTitle) pageTitle.textContent = "⚽ Times da Empresa";
+        if (pageSubtitle) pageSubtitle.textContent = "Visualize os times vinculados à sua empresa.";
         if (blocoCriacao) blocoCriacao.style.display = "none";
         return;
     }
@@ -46,8 +46,8 @@ function ajustarModoTela() {
     }
 
     if (usuario.tipo === "PLAYER") {
-        if (pageTitle) pageTitle.textContent = "⚽ Times do Society";
-        if (pageSubtitle) pageSubtitle.textContent = "Veja os times cadastrados neste society.";
+        if (pageTitle) pageTitle.textContent = "⚽ Times da Empresa";
+        if (pageSubtitle) pageSubtitle.textContent = "Veja os times cadastrados nesta empresa.";
         if (blocoCriacao) blocoCriacao.style.display = "none";
         return;
     }
@@ -85,7 +85,7 @@ async function carregarSocietiesNoSelect() {
     }
 
     if (!Array.isArray(lista) || lista.length === 0) {
-        select.innerHTML = `<option value="">Nenhuma society encontrada</option>`;
+        select.innerHTML = `<option value="">Nenhuma empresa encontrada</option>`;
         return;
     }
 
@@ -144,7 +144,7 @@ function montarCardTime(t, usuario) {
     let subtitulo = "";
 
     if (isDonoTime && t?.society?.nome) {
-        subtitulo = `<small>Society: ${escapeHtml(t.society.nome)}</small>`;
+        subtitulo = `<small>Empresa: ${escapeHtml(t.society.nome)}</small>`;
     }
 
     const cidadeEstado = `${escapeHtml(t.cidade || "")}${t.estado ? ` - ${escapeHtml(t.estado)}` : ""}`;
@@ -200,7 +200,7 @@ async function carregarTimes() {
             const societyId = getQueryParam("societyId") || localStorage.getItem("societyId");
 
             if (!societyId) {
-                div.innerHTML = "<p>Nenhum society selecionado.</p>";
+                div.innerHTML = "<p>Nenhuma empresa selecionada.</p>";
                 return;
             }
 
@@ -239,7 +239,7 @@ async function salvarTime() {
     const societyId = document.getElementById("societyId")?.value;
 
     if (!societyId) {
-        alert("Nenhuma society selecionada/identificada. Selecione uma society.");
+        alert("Nenhuma empresa selecionada/identificada. Selecione uma empresa.");
         return;
     }
 

@@ -33,7 +33,7 @@ if (!window.menuLoaded) {
       .then((res) => res.json())
       .then((lista) => {
         if (!Array.isArray(lista) || lista.length === 0) {
-          alert("Você ainda não possui society cadastrado.");
+          alert("Você ainda não possui empresa cadastrada.");
           window.location.href = "society-create.html";
           return;
         }
@@ -44,7 +44,7 @@ if (!window.menuLoaded) {
         window.location.href = `society-detalhe.html?societyId=${meuSociety.id}`;
       })
       .catch(() => {
-        alert("Erro ao carregar seu society.");
+        alert("Erro ao carregar sua empresa.");
       });
   };
 
@@ -57,13 +57,13 @@ if (!window.menuLoaded) {
   if (usuarioLogado.tipo === "DONO_SOCIETY") {
     html += `
       <li onclick="abrirMeuSocietyMenu()">
-        <i class="fa fa-futbol"></i> Meu Society
+        <i class="fa fa-building"></i> Minha Empresa
       </li>
       <li onclick="location.href='comanda-admin.html'">
         <i class="fa fa-eye"></i> Comandas
       </li>
       <li onclick="location.href='society-create.html'">
-        <i class="fa fa-plus"></i> Cadastrar Society
+        <i class="fa fa-plus"></i> Cadastrar Empresa
       </li>
       <li onclick="location.href='campeonatos.html'">
         <i class="fa fa-trophy"></i> Campeonatos
@@ -80,7 +80,7 @@ if (!window.menuLoaded) {
   if (usuarioLogado.tipo === "DONO_TIME") {
     html += `
       <li onclick="location.href='societies.html'">
-        <i class="fa fa-eye"></i> Ver Societies
+        <i class="fa fa-eye"></i> Ver Empresas
       </li>
       <li onclick="location.href='campeonatos-view.html'">
         <i class="fa fa-trophy"></i> Campeonatos
@@ -110,7 +110,7 @@ if (!window.menuLoaded) {
   if (usuarioLogado.tipo === "PLAYER") {
     html += `
       <li onclick="location.href='societies.html'">
-        <i class="fa fa-eye"></i> Ver Societies
+        <i class="fa fa-eye"></i> Ver Empresas
       </li>
       <li onclick="location.href='comanda.html'">
         <i class="fa fa-eye"></i> Comandas

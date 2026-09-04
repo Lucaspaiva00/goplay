@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Campos – GoPlay</title>
+    <title>Quadras – GoPlay</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="../css/goplay_home.css">
@@ -18,7 +18,7 @@
         <button id="menuBtn" class="menu-btn">
             <i class="fa fa-bars"></i>
         </button>
-        <h1 class="title">Campos</h1>
+        <h1 class="title">Quadras</h1>
     </header>
 
     <!-- SIDEBAR -->
@@ -35,39 +35,39 @@
     <main class="content">
 
         <section class="card">
-            <h3 class="form-title">Novo Campo</h3>
+            <h3 class="form-title">Criar sua Quadra</h3>
 
-            <input id="nome" class="input" placeholder="Nome do campo">
+            <input id="nome" class="input" placeholder="Nome da quadra">
             <input id="valorAvulso" class="input" placeholder="Valor Avulso (opcional)">
             <input id="valorMensal" class="input" placeholder="Valor Mensal (opcional)">
             <input id="dimensoes" class="input" placeholder="Dimensões (ex: 30x50m)">
             <input id="estiloGramado" class="input" placeholder="Estilo do Gramado">
-            <label class="label" for="foto">Foto do campo</label>
+            <label class="label" for="foto">Foto da quadra</label>
             <input id="foto" class="input" type="file" accept="image/*">
 
-            <button class="btn btn-primary" onclick="salvarCampo()">Salvar Campo</button>
+            <button class="btn btn-primary" onclick="salvarCampo()">Salvar Quadra</button>
         </section>
 
-        <h2 class="page-title">🌱 Campos cadastrados</h2>
+        <h2 class="page-title">🏟️ Quadras cadastradas</h2>
 
         <section id="listaCampos" class="card">
-            Carregando campos...
+            Carregando quadras...
         </section>
 
     </main>
 
-    <!-- MODAL EDITAR CAMPO -->
+    <!-- MODAL EDITAR QUADRA -->
     <div id="editCampoModal" class="modal-overlay" style="display:none;">
         <div class="modal-box">
             <div class="modal-header">
-                <h3>Editar Campo</h3>
+                <h3>Editar Quadra</h3>
                 <button class="modal-close" onclick="fecharModalCampo()">
                     <i class="fa fa-times"></i>
                 </button>
             </div>
 
             <div class="modal-body">
-                <input id="editNome" class="input" placeholder="Nome do campo">
+                <input id="editNome" class="input" placeholder="Nome da quadra">
                 <input id="editValorAvulso" class="input" placeholder="Valor Avulso (opcional)">
                 <input id="editValorMensal" class="input" placeholder="Valor Mensal (opcional)">
                 <input id="editDimensoes" class="input" placeholder="Dimensões (ex: 30x50m)">

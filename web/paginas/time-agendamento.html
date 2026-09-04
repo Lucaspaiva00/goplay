@@ -166,12 +166,12 @@
             <i class="fa-solid fa-calendar-check"></i>
             <span>Agendar Horário</span>
         </div>
-        <div class="muted">Escolha o campo, a data e um horário de 1 hora.</div>
+        <div class="muted">Escolha a quadra, a data e um horário de 1 hora.</div>
 
         <div class="card">
             <div class="row-info" id="resumoTopo" style="display:none;">
                 <span class="chip" id="chipTime">Time: -</span>
-                <span class="chip" id="chipSociety">Society: -</span>
+                <span class="chip" id="chipSociety">Empresa: -</span>
             </div>
 
             <div class="grid-3" style="margin-top:12px;">
@@ -181,7 +181,7 @@
                 </div>
 
                 <div>
-                    <label>Campo</label>
+                    <label>Quadra</label>
                     <select id="campoId"></select>
                 </div>
 
@@ -217,8 +217,8 @@
             <!-- PIX -->
             <div class="pix-box">
                 <strong>Pagamento via PIX</strong><br>
-                CNPJ: <b>47.051.258/0001-58</b><br>
-                Nome: <b>Paiva Tech</b>
+                Chave: <b id="pixChaveAgendamento">Selecione uma empresa/time</b><br>
+                Titular: <b id="pixTitularAgendamento">-</b>
             </div>
 
             <div style="margin-top:14px;">

@@ -19,7 +19,7 @@ if (usuarioLogado.tipo === "PLAYER") {
       <h3>O que deseja fazer agora?</h3>
 
       <button class="btn green" onclick="location.href='societies.html'">
-        <i class="fa fa-eye"></i> Explorar Societies
+        <i class="fa fa-eye"></i> Explorar Empresas
       </button>
 
       <button class="btn navy" onclick="location.href='times-disponiveis.html'">
@@ -59,7 +59,7 @@ if (usuarioLogado.tipo === "DONO_TIME") {
       </button>
 
       <button class="btn navy" onclick="location.href='societies.html'">
-        <i class="fa fa-eye"></i> Explorar Societies
+        <i class="fa fa-eye"></i> Explorar Empresas
       </button>
     </section>
   `;
@@ -68,10 +68,10 @@ if (usuarioLogado.tipo === "DONO_TIME") {
 if (usuarioLogado.tipo === "DONO_SOCIETY") {
   html += `
     <section class="action-card">
-      <h3>Painel do Society</h3>
+      <h3>Painel da Empresa</h3>
 
       <button class="btn green" onclick="abrirMeuSociety()">
-        <i class="fa fa-futbol"></i> Ver meu Society
+        <i class="fa fa-building"></i> Ver minha Empresa
       </button>
 
       <button class="btn navy" onclick="location.href='society-dashboard.html'">
@@ -107,7 +107,7 @@ function abrirMeuSociety() {
     .then((res) => res.json())
     .then((lista) => {
       if (!Array.isArray(lista) || lista.length === 0) {
-        alert("Você ainda não possui society cadastrado.");
+        alert("Você ainda não possui empresa cadastrada.");
         window.location.href = "society-create.html";
         return;
       }
@@ -119,7 +119,7 @@ function abrirMeuSociety() {
       window.location.href = `society-detalhe.html?societyId=${society.id}`;
     })
     .catch(() => {
-      alert("Erro ao carregar seu society.");
+      alert("Erro ao carregar sua empresa.");
     });
 }
 

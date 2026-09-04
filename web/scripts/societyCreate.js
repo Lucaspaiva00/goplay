@@ -12,7 +12,7 @@ async function salvarSociety() {
 
     const nome = document.getElementById("nome").value.trim();
     if (!nome) {
-        alert("Informe o nome do Society.");
+        alert("Informe o nome da Empresa.");
         return;
     }
 
@@ -42,6 +42,8 @@ async function salvarSociety() {
         endereco: document.getElementById("endereco").value.trim(),
         estado: document.getElementById("estado").value.trim(),
         cidade: document.getElementById("cidade").value.trim(),
+        pixTitular: document.getElementById("pixTitular").value.trim(),
+        pixChave: document.getElementById("pixChave").value.trim(),
         imagem
     };
 
@@ -54,11 +56,11 @@ async function salvarSociety() {
             const json = await res.json().catch(() => ({}));
 
             if (!res.ok) {
-                alert(json.error || "Erro ao cadastrar society.");
+                alert(json.error || "Erro ao cadastrar empresa.");
                 return;
             }
 
-            alert("Society cadastrado com sucesso!");
+            alert("Empresa cadastrada com sucesso!");
 
             if (json.id) {
                 localStorage.setItem("societyId", json.id);
@@ -68,6 +70,6 @@ async function salvarSociety() {
         })
         .catch((err) => {
             console.error("Erro na requisição:", err);
-            alert("Erro ao cadastrar society (falha na comunicação com o servidor).");
+            alert("Erro ao cadastrar empresa (falha na comunicação com o servidor).");
         });
 }

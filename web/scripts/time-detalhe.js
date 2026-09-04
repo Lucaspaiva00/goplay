@@ -222,8 +222,8 @@ async function carregarAgendamentos(timeId, mostrarAcoes = false) {
                 <tr>
                   <th style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Data</th>
                   <th style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Horário</th>
-                  <th style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Society</th>
-                  <th style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Campo</th>
+                  <th style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Empresa</th>
+                  <th style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Quadra</th>
                   <th style="text-align:left;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Status</th>
                   <th style="text-align:right;padding:12px;border-bottom:1px solid #eef2f6;font-size:12px;opacity:.7;font-weight:900;">Ações</th>
                 </tr>
@@ -368,7 +368,7 @@ async function carregarTime(timeId) {
           <div style="text-align:left;">
             ${time.brasao ? `<img src="${escapeHtml(time.brasao)}" alt="Brasão" style="width:72px;height:72px;border-radius:12px;object-fit:cover;border:1px solid #e5e7eb;margin-bottom:12px;">` : ""}
             <p><strong>Nome:</strong> ${escapeHtml(time.nome)}</p>
-            <p><strong>Society:</strong> ${escapeHtml(time?.society?.nome || "-")}</p>
+            <p><strong>Empresa:</strong> ${escapeHtml(time?.society?.nome || "-")}</p>
             <p><strong>Cidade:</strong> ${escapeHtml(time.cidade || "-")} / ${escapeHtml(time.estado || "-")}</p>
             <p><strong>Modalidade:</strong> ${escapeHtml(time.modalidade || "-")}</p>
             <p><strong>Tipo de vínculo:</strong> ${pillTipo(time.tipoVinculo)}</p>

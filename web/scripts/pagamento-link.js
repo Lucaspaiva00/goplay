@@ -1,6 +1,5 @@
 // ✅ web/scripts/pagamento-link.js  (ARQUIVO TODO)
 const BASE_URL = "https://goplay-dzlr.onrender.com";
-const PIX_KEY = "47.051.258/0001-58";
 
 function el(id) { return document.getElementById(id); }
 
@@ -51,13 +50,34 @@ function render(p) {
 
     el("descricao").textContent = p?.descricao || "-";
     el("valor").textContent = moneyBR(p?.valor);
-    el("pixKey").textContent = PIX_KEY;
+
+    const pixChave = String(p?.society?.pixChave || "").trim();
+    const pixTitular = String(p?.society?.pixTitular || "").trim();
+
+    el("pixKey").textContent = pixChave || "PIX não cadastrado pela empresa";
+
+    const pixTitularEl = el("pixTitular");
+    if (pixTitularEl) {
+        pixTitularEl.textContent = pixTitular ? `Titular: ${pixTitular}` : "";
+    }
+
+    const btnCopiar = el("btnCopiar");
+    if (btnCopiar) {
+        btnCopiar.disabled = !pixChave;
+    }
 
     statusPill(p?.status);
 }
 
 async function copiarPix() {
-    await navigator.clipboard.writeText(PIX_KEY);
+    const pix = (el("pixKey")?.textContent || "").trim();
+
+    if (!pix || pix === "PIX não cadastrado pela empresa") {
+        alert("A empresa ainda não cadastrou uma chave PIX.");
+        return;
+    }
+
+    await navigator.clipboard.writeText(pix);
     alert("✅ Pix copiado!");
 }
 

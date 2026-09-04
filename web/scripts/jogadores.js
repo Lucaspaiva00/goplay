@@ -9,7 +9,7 @@ function carregarJogadores() {
 
     if (!societyId) {
         document.getElementById("listaJogadores").innerHTML =
-            "<p>Erro: society não encontrado.</p>";
+            "<p>Erro: empresa não encontrada.</p>";
         return;
     }
 
