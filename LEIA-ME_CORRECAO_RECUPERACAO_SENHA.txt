@@ -1,0 +1,22 @@
+GOPLAY - CORREÇÃO RECUPERAÇÃO DE SENHA - 08/09/2026
+
+Problema observado:
+- POST /forgot-password retornando 500 no envio de e-mail.
+
+Ajustes aplicados:
+- SMTP Gmail explícito (smtp.gmail.com).
+- Porta 465 com fallback automático para 587 em falhas de conexão.
+- EMAIL_PASS normalizado removendo espaços da senha de app do Google.
+- Validação clara de EMAIL_USER / EMAIL_PASS.
+- FRONTEND_URL normalizada para gerar o link correto em /paginas/reset-password.html.
+- Logs SMTP detalhados no Render sem imprimir credenciais.
+- Resposta HTTP 503 mais clara quando o serviço de e-mail falha.
+
+Variáveis esperadas no Render:
+DATABASE_URL
+EMAIL_USER
+EMAIL_PASS
+FRONTEND_URL
+JWT_SECRET
+
+Não existe migration nova nesta correção.

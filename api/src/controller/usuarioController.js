@@ -16,6 +16,86 @@ const sanitizeUser = (usuario) => {
 
 const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
 
+const getEmailConfig = () => {
+    const user = String(process.env.EMAIL_USER || "").trim();
+    // Senhas de app do Google costumam ser exibidas em blocos com espaços.
+    const pass = String(process.env.EMAIL_PASS || "").replace(/\s+/g, "");
+
+    if (!user || !pass) {
+        const err = new Error("EMAIL_USER ou EMAIL_PASS não configurados.");
+        err.code = "EMAIL_CONFIG_MISSING";
+        throw err;
+    }
+
+    return { user, pass };
+};
+
+const buildResetLink = (token) => {
+    let base = String(process.env.FRONTEND_URL || "https://ligagoplay.com.br").trim();
+    base = base.replace(/\/+$/, "");
+
+    // No GoPlay as telas públicas ficam em /paginas. Se FRONTEND_URL já
+    // vier com /paginas, não duplica o caminho.
+    if (!/\/paginas$/i.test(base)) {
+        base += "/paginas";
+    }
+
+    return `${base}/reset-password.html?token=${encodeURIComponent(token)}`;
+};
+
+const createMailTransport = (port = 465) => {
+    const { user, pass } = getEmailConfig();
+
+    return nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port,
+        secure: port === 465,
+        requireTLS: port !== 465,
+        auth: { user, pass },
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 30000
+    });
+};
+
+const sendResetEmail = async ({ usuario, resetLink }) => {
+    const { user } = getEmailConfig();
+    const mailOptions = {
+        from: `"GoPlay" <${user}>`,
+        to: usuario.email,
+        subject: "Redefinição de senha - GoPlay",
+        html: `
+            <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+                <h2>Redefinição de senha</h2>
+                <p>Olá, ${usuario.nome || "usuário"}.</p>
+                <p>Recebemos uma solicitação para redefinir sua senha.</p>
+                <p>Clique no botão abaixo para criar uma nova senha:</p>
+                <p>
+                    <a href="${resetLink}"
+                       style="display:inline-block;padding:12px 20px;background:#0d6efd;color:#fff;text-decoration:none;border-radius:6px;">
+                       Redefinir senha
+                    </a>
+                </p>
+                <p>Ou copie e cole este link no navegador:</p>
+                <p>${resetLink}</p>
+                <p>Este link expira em 30 minutos.</p>
+                <p>Se você não solicitou isso, pode ignorar este e-mail.</p>
+            </div>
+        `
+    };
+
+    try {
+        return await createMailTransport(465).sendMail(mailOptions);
+    } catch (error) {
+        // Se houver bloqueio/conexão no 465, tenta STARTTLS na porta 587.
+        const connectionErrors = new Set(["ETIMEDOUT", "ECONNECTION", "ECONNREFUSED", "ESOCKET"]);
+        if (!connectionErrors.has(error?.code)) {
+            throw error;
+        }
+        return await createMailTransport(587).sendMail(mailOptions);
+    }
+};
+
 /* ============================================
    CRIAR USUÁRIO
 ============================================ */
@@ -330,48 +410,31 @@ const forgotPassword = async (req, res) => {
             }
         });
 
-        const resetLink = `${process.env.FRONTEND_URL}/reset-password.html?token=${token}`;
+        const resetLink = buildResetLink(token);
 
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            }
-        });
-
-        await transporter.sendMail({
-            from: `"GoPlay" <${process.env.EMAIL_USER}>`,
-            to: usuario.email,
-            subject: "Redefinição de senha - GoPlay",
-            html: `
-                <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-                    <h2>Redefinição de senha</h2>
-                    <p>Olá, ${usuario.nome || "usuário"}.</p>
-                    <p>Recebemos uma solicitação para redefinir sua senha.</p>
-                    <p>Clique no botão abaixo para criar uma nova senha:</p>
-                    <p>
-                        <a href="${resetLink}" 
-                           style="display:inline-block;padding:12px 20px;background:#0d6efd;color:#fff;text-decoration:none;border-radius:6px;">
-                           Redefinir senha
-                        </a>
-                    </p>
-                    <p>Ou copie e cole este link no navegador:</p>
-                    <p>${resetLink}</p>
-                    <p>Este link expira em 30 minutos.</p>
-                    <p>Se você não solicitou isso, pode ignorar este e-mail.</p>
-                </div>
-            `
-        });
+        await sendResetEmail({ usuario, resetLink });
 
         return res.status(200).json({
             message: "Se o e-mail estiver cadastrado, você receberá as instruções para redefinir sua senha."
         });
 
     } catch (error) {
-        console.log("ERRO AO SOLICITAR RESET:", error);
-        return res.status(500).json({
-            error: "Erro ao solicitar redefinição de senha."
+        console.error("ERRO AO SOLICITAR RESET:", {
+            code: error?.code || null,
+            command: error?.command || null,
+            responseCode: error?.responseCode || null,
+            response: error?.response || null,
+            message: error?.message || String(error)
+        });
+
+        if (error?.code === "EMAIL_CONFIG_MISSING") {
+            return res.status(503).json({
+                error: "Serviço de e-mail não configurado."
+            });
+        }
+
+        return res.status(503).json({
+            error: "Não foi possível enviar o e-mail de recuperação. Tente novamente em alguns instantes."
         });
     }
 };
