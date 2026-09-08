@@ -1,6 +1,42 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
+function parseOptionalMoney(value, fieldName) {
+    if (value === undefined || value === null || value === "") return null;
+
+    if (typeof value === "number") {
+        if (!Number.isFinite(value) || value < 0) {
+            throw new Error(`${fieldName} inválido.`);
+        }
+        return value;
+    }
+
+    let raw = String(value).trim();
+    if (!raw) return null;
+
+    raw = raw.replace(/\s/g, "").replace(/R\$/gi, "");
+    const lastComma = raw.lastIndexOf(",");
+    const lastDot = raw.lastIndexOf(".");
+
+    if (lastComma > -1 && lastDot > -1) {
+        if (lastComma > lastDot) {
+            raw = raw.replace(/\./g, "").replace(",", ".");
+        } else {
+            raw = raw.replace(/,/g, "");
+        }
+    } else if (lastComma > -1) {
+        raw = raw.replace(/\./g, "").replace(",", ".");
+    }
+
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+        throw new Error(`${fieldName} inválido.`);
+    }
+
+    return parsed;
+}
+
+
 const create = async (req, res) => {
     try {
         const { societyId, nome, valorAvulso, valorMensal, dimensoes, gramado, fotoUrl } = req.body;
@@ -9,12 +45,15 @@ const create = async (req, res) => {
             return res.status(400).json({ error: "societyId e nome são obrigatórios." });
         }
 
+        const valorAvulsoNormalizado = parseOptionalMoney(valorAvulso, "Valor avulso");
+        const valorMensalNormalizado = parseOptionalMoney(valorMensal, "Valor mensal");
+
         const campo = await prisma.campo.create({
             data: {
                 societyId: Number(societyId),
                 nome: nome.trim(),
-                valorAvulso: valorAvulso !== undefined && valorAvulso !== "" ? Number(valorAvulso) : null,
-                valorMensal: valorMensal !== undefined && valorMensal !== "" ? Number(valorMensal) : null,
+                valorAvulso: valorAvulsoNormalizado,
+                valorMensal: valorMensalNormalizado,
                 dimensoes: dimensoes || null,
                 gramado: gramado || null,
                 fotoUrl: fotoUrl || null,
@@ -24,6 +63,10 @@ const create = async (req, res) => {
         return res.json(campo);
     } catch (e) {
         console.error(e);
+
+        if (e.message === "Valor avulso inválido." || e.message === "Valor mensal inválido.") {
+            return res.status(400).json({ error: e.message });
+        }
 
         if (e.code === "P2002") {
             return res.status(400).json({ error: "Já existe um campo com esse nome nesse society." });
@@ -85,12 +128,15 @@ const update = async (req, res) => {
             return res.status(400).json({ error: "O nome do campo é obrigatório." });
         }
 
+        const valorAvulsoNormalizado = parseOptionalMoney(valorAvulso, "Valor avulso");
+        const valorMensalNormalizado = parseOptionalMoney(valorMensal, "Valor mensal");
+
         const campoAtualizado = await prisma.campo.update({
             where: { id },
             data: {
                 nome: nome.trim(),
-                valorAvulso: valorAvulso !== undefined && valorAvulso !== "" ? Number(valorAvulso) : null,
-                valorMensal: valorMensal !== undefined && valorMensal !== "" ? Number(valorMensal) : null,
+                valorAvulso: valorAvulsoNormalizado,
+                valorMensal: valorMensalNormalizado,
                 dimensoes: dimensoes || null,
                 gramado: gramado || null,
                 fotoUrl: fotoUrl || null,
@@ -100,6 +146,10 @@ const update = async (req, res) => {
         return res.json(campoAtualizado);
     } catch (e) {
         console.error(e);
+
+        if (e.message === "Valor avulso inválido." || e.message === "Valor mensal inválido.") {
+            return res.status(400).json({ error: e.message });
+        }
 
         if (e.code === "P2002") {
             return res.status(400).json({ error: "Já existe um campo com esse nome nesse society." });

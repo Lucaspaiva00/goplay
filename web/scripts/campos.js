@@ -46,6 +46,44 @@ function formatMoney(v) {
   return `R$ ${n.toFixed(2).replace(".", ",")}`;
 }
 
+function parseMoneyInput(value) {
+  if (value === null || value === undefined) return null;
+
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  let raw = String(value).trim();
+  if (!raw) return null;
+
+  // Aceita formatos brasileiros e internacionais:
+  // 120,50 | 120.50 | 1.200,50 | 1,200.50
+  raw = raw.replace(/\s/g, "").replace(/R\$/gi, "");
+
+  const lastComma = raw.lastIndexOf(",");
+  const lastDot = raw.lastIndexOf(".");
+
+  if (lastComma > -1 && lastDot > -1) {
+    if (lastComma > lastDot) {
+      raw = raw.replace(/\./g, "").replace(",", ".");
+    } else {
+      raw = raw.replace(/,/g, "");
+    }
+  } else if (lastComma > -1) {
+    raw = raw.replace(/\./g, "").replace(",", ".");
+  }
+
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function moneyInputValue(value) {
+  if (value === null || value === undefined || value === "") return "";
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "";
+  return n.toFixed(2).replace(".", ",");
+}
+
 function renderCampos(campos) {
   const wrap = el("listaCampos");
   if (!wrap) return;
@@ -128,8 +166,10 @@ window.salvarCampo = async function salvarCampo() {
     }
 
     const nome = (el("nome")?.value || "").trim();
-    const valorAvulso = (el("valorAvulso")?.value || "").trim();
-    const valorMensal = (el("valorMensal")?.value || "").trim();
+    const valorAvulsoRaw = (el("valorAvulso")?.value || "").trim();
+    const valorMensalRaw = (el("valorMensal")?.value || "").trim();
+    const valorAvulso = parseMoneyInput(valorAvulsoRaw);
+    const valorMensal = parseMoneyInput(valorMensalRaw);
     const dimensoes = (el("dimensoes")?.value || "").trim();
     const estiloGramado = (el("estiloGramado")?.value || "").trim();
     const fotoFile = el("foto")?.files?.[0] || null;
@@ -144,11 +184,21 @@ window.salvarCampo = async function salvarCampo() {
       fotoUrl = await uploadImage(fotoFile);
     }
 
+    if (valorAvulsoRaw && valorAvulso === null) {
+      alert("Informe um valor avulso válido. Exemplo: 150,00");
+      return;
+    }
+
+    if (valorMensalRaw && valorMensal === null) {
+      alert("Informe um valor mensal válido. Exemplo: 800,00");
+      return;
+    }
+
     const payload = {
       societyId,
       nome,
-      valorAvulso: valorAvulso !== "" ? Number(valorAvulso) : null,
-      valorMensal: valorMensal !== "" ? Number(valorMensal) : null,
+      valorAvulso,
+      valorMensal,
       dimensoes: dimensoes || null,
       gramado: estiloGramado || null,
       fotoUrl
@@ -180,8 +230,8 @@ window.abrirModalEdicaoCampo = async function abrirModalEdicaoCampo(campoId) {
     campoEmEdicao = campo;
 
     el("editNome").value = campo.nome || "";
-    el("editValorAvulso").value = campo.valorAvulso ?? "";
-    el("editValorMensal").value = campo.valorMensal ?? "";
+    el("editValorAvulso").value = moneyInputValue(campo.valorAvulso);
+    el("editValorMensal").value = moneyInputValue(campo.valorMensal);
     el("editDimensoes").value = campo.dimensoes || "";
     el("editEstiloGramado").value = campo.gramado || "";
     if (el("editFoto")) el("editFoto").value = "";
@@ -208,8 +258,10 @@ window.salvarEdicaoCampo = async function salvarEdicaoCampo() {
     }
 
     const nome = (el("editNome")?.value || "").trim();
-    const valorAvulso = (el("editValorAvulso")?.value || "").trim();
-    const valorMensal = (el("editValorMensal")?.value || "").trim();
+    const valorAvulsoRaw = (el("editValorAvulso")?.value || "").trim();
+    const valorMensalRaw = (el("editValorMensal")?.value || "").trim();
+    const valorAvulso = parseMoneyInput(valorAvulsoRaw);
+    const valorMensal = parseMoneyInput(valorMensalRaw);
     const dimensoes = (el("editDimensoes")?.value || "").trim();
     const estiloGramado = (el("editEstiloGramado")?.value || "").trim();
     const fotoFile = el("editFoto")?.files?.[0] || null;
@@ -224,10 +276,20 @@ window.salvarEdicaoCampo = async function salvarEdicaoCampo() {
       fotoUrl = await uploadImage(fotoFile);
     }
 
+    if (valorAvulsoRaw && valorAvulso === null) {
+      alert("Informe um valor avulso válido. Exemplo: 150,00");
+      return;
+    }
+
+    if (valorMensalRaw && valorMensal === null) {
+      alert("Informe um valor mensal válido. Exemplo: 800,00");
+      return;
+    }
+
     const payload = {
       nome,
-      valorAvulso: valorAvulso !== "" ? Number(valorAvulso) : null,
-      valorMensal: valorMensal !== "" ? Number(valorMensal) : null,
+      valorAvulso,
+      valorMensal,
       dimensoes: dimensoes || null,
       gramado: estiloGramado || null,
       fotoUrl

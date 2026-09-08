@@ -1,0 +1,16 @@
+CORREÇÃO — PREÇOS DAS QUADRAS — 08/09/2026
+
+Problema corrigido:
+- Valores digitados com vírgula (ex.: 150,00) viravam NaN no frontend.
+- Ao serializar o JSON, NaN virava null.
+- O backend convertia null com Number(null), resultando em 0.
+- Por isso a listagem mostrava R$ 0,00 após cadastrar/editar.
+
+Correções:
+- Cadastro e edição aceitam 150, 150.00, 150,00, 1.200,50 e 1,200.50.
+- Backend também normaliza e valida valores monetários.
+- Valor inválido não vira mais zero silenciosamente.
+- Campos de preço foram ajustados para teclado decimal no celular.
+- Ao editar, os preços aparecem no formato brasileiro.
+
+Não há alteração de schema Prisma e não há migration nova.
