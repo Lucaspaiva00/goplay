@@ -33,7 +33,7 @@ async function renderHome(){
   if(usuarioLogado.tipo==="DONO_TIME"){
     html+=`<section id="proximoHorarioHome"></section><section class="action-card"><h3>Jogar e organizar</h3>
       ${empresa?`<div style="padding:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;margin-bottom:16px"><strong>📍 ${empresa.nome||"Empresa selecionada"}</strong><br><small>Você pode trocar de empresa no seletor do menu.</small></div>`:`<div style="padding:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;margin-bottom:16px">Selecione onde deseja jogar pelo menu ou em Explorar Empresas.</div>`}
-      <button class="btn green" onclick="location.href='time-agendamento.html'"><i class="fa fa-calendar"></i> Agendar Horário</button>
+      <button class="btn green" onclick="location.href='campos-view.html'"><i class="fa fa-futbol"></i> Ver Quadras e Reservar</button>
       <button class="btn navy" onclick="location.href='meus-horarios.html'"><i class="fa fa-thumbs-up"></i> Meus Horários / Peladas</button>
       <button class="btn navy" onclick="location.href='comanda.html'"><i class="fa fa-receipt"></i> Minha Comanda</button>
       <button class="btn navy" onclick="location.href='meus-agendamentos.html'"><i class="fa fa-list"></i> Meus Agendamentos</button>

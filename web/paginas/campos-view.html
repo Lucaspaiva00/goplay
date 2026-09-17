@@ -1,60 +1,96 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
-    <title>Quadras (Visualização) – GoPlay</title>
+    <title>Quadras e Reservas – GoPlay</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <link rel="stylesheet" href="../css/goplay_home.css">
     <link rel="stylesheet" href="../css/campos.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        .consulta-hint{opacity:.75;font-size:12px;margin-top:4px;line-height:1.45}
+        .quadra-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+        .reserva-box{margin-top:18px;border:1px solid #dce8ef;background:#f8fbfd;border-radius:18px;padding:18px}
+        .reserva-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+        .reserva-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
+        .reserva-grid label{display:block;font-size:12px;font-weight:900;color:#375264;margin-bottom:6px}
+        .reserva-grid select,.reserva-grid input{width:100%;padding:12px;border:1px solid #d8e2e8;border-radius:12px;background:#fff;color:#052845}
+        .reserva-slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:9px;margin-top:12px}
+        .reserva-slot{border:1px solid #cfe4d6;background:#ecfdf5;color:#065f46;padding:11px;border-radius:12px;font-weight:900;text-align:center;cursor:pointer}
+        .reserva-slot.ocupado{background:#f5f5f5;color:#9ca3af;border-color:#e5e7eb;cursor:not-allowed;text-decoration:line-through}
+        .reserva-slot.selected{outline:3px solid rgba(37,99,235,.22);border-color:#2563eb;background:#eff6ff;color:#1e3a8a}
+        .pix-reserva{margin-top:14px;padding:12px;border-radius:12px;background:#f0fdf4;border:1px solid #86efac;color:#166534;font-size:13px}
+        .reserva-status{margin-top:12px;padding:12px;border-radius:12px;background:#eef6fb;color:#052845}
+        .reserva-status.error{background:#fff1f2;color:#9f1239}
+        @media(max-width:700px){.reserva-grid{grid-template-columns:1fr}.campo-card{padding:14px!important}}
+    </style>
 </head>
-
 <body class="with-sidebar">
-
     <header class="topbar">
-        <button id="menuBtn" class="menu-btn">
-            <i class="fa fa-bars"></i>
-        </button>
-        <h1 class="title">Quadras da Empresa</h1>
+        <button id="menuBtn" class="menu-btn"><i class="fa fa-bars"></i></button>
+        <h1 class="title">Quadras e Reservas</h1>
     </header>
 
     <aside id="sidebar" class="sidebar">
-        <div class="logo-area">
-            <h2>GoPlay</h2>
-        </div>
+        <div class="logo-area"><h2>GoPlay</h2></div>
         <ul id="menuDynamic"></ul>
     </aside>
-
     <div id="overlay" class="overlay"></div>
 
     <main class="content">
-
-        <section class="card"
-            style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <section class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
             <div>
                 <h3 style="margin:0;"><i class="fa-solid fa-futbol"></i> <span id="quadrasEmpresaNome">Quadras da Empresa</span></h3>
-                <div style="opacity:.75;font-size:12px;margin-top:4px;">Consulta de estrutura e valores. Nenhuma opção administrativa é exibida aqui.</div>
+                <div class="consulta-hint">Escolha onde quer jogar. Para uma reserva avulsa, clique em <b>Reservar esta quadra</b>. Para jogar toda semana ou contratar mensalidade, use <b>Horário Fixo / Presenças</b> dentro do seu time.</div>
             </div>
-            <button class="btn" onclick="history.back()" style="max-width:220px;">
-                <i class="fa-solid fa-arrow-left"></i> Voltar
-            </button>
+            <button class="btn" onclick="history.back()" style="max-width:220px;"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
         </section>
 
-        <h2 class="page-title">🏟️ Quadras cadastradas</h2>
+        <h2 class="page-title">🏟️ Quadras disponíveis</h2>
+        <section id="listaCampos" class="card">Carregando quadras...</section>
 
-        <section id="listaCampos" class="card">
-            Carregando quadras...
+        <section id="reservaPanel" class="card" style="display:none;scroll-margin-top:90px;">
+            <div class="reserva-head">
+                <div>
+                    <h2 style="margin:0;color:#052845;"><i class="fa-solid fa-calendar-check"></i> Reserva avulsa</h2>
+                    <div class="consulta-hint" id="reservaQuadraResumo">Selecione uma quadra.</div>
+                </div>
+                <button class="btn" type="button" id="btnFecharReserva" style="max-width:150px;"><i class="fa-solid fa-xmark"></i> Fechar</button>
+            </div>
+
+            <div class="reserva-grid">
+                <div>
+                    <label>Data</label>
+                    <input type="date" id="reservaData">
+                </div>
+                <div>
+                    <label>Seu time</label>
+                    <select id="reservaTime"></select>
+                </div>
+            </div>
+
+            <button class="btn navy" id="btnBuscarReserva" type="button" style="margin-top:14px;width:100%;"><i class="fa-solid fa-magnifying-glass"></i> Buscar horários disponíveis</button>
+
+            <div id="reservaHorariosWrap" style="display:none;margin-top:18px;">
+                <h3 style="margin:0;color:#052845;">Horários</h3>
+                <div id="reservaHorarios" class="reserva-slots"></div>
+            </div>
+
+            <div id="reservaConfirmacao" style="display:none;">
+                <div class="pix-reserva">
+                    <strong>Pagamento via PIX</strong><br>
+                    Chave: <b id="reservaPixChave">-</b><br>
+                    Titular: <b id="reservaPixTitular">-</b>
+                </div>
+                <button class="btn green" id="btnConfirmarReserva" type="button" style="margin-top:12px;width:100%;"><i class="fa-solid fa-circle-check"></i> Reservar e gerar pagamento</button>
+            </div>
+            <div id="reservaMensagem" class="reserva-status" style="display:none;"></div>
         </section>
-
     </main>
 
-        <script src="../scripts/session.js"></script>
-<script src="../js/goplay_home.js"></script>
+    <script src="../scripts/session.js"></script>
+    <script src="../js/goplay_home.js"></script>
     <script src="../scripts/menu.js"></script>
-    <script src="../scripts/campos-view.js"></script>
-
+    <script src="../scripts/campos-view.js?v=20260917-2"></script>
 </body>
-
 </html>

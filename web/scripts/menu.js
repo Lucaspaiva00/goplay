@@ -40,7 +40,6 @@ if (!window.menuLoaded) {
       +item("fa-building","Explorar Empresas","location.href='societies.html'")
       +item("fa-futbol","Ver Quadras","navegarComEmpresa('campos-view.html')")
       +item("fa-users","Times da Empresa","navegarComEmpresa('times.html?view=empresa')")
-      +item("fa-calendar-check","Nova Reserva","location.href='time-agendamento.html'")
       +item("fa-receipt","Minha Comanda","location.href='comanda.html'")
       +item("fa-list","Minhas Reservas","location.href='meus-agendamentos.html'")
       +item("fa-money-bill","Meus Pagamentos","location.href='meus-pagamentos.html'");

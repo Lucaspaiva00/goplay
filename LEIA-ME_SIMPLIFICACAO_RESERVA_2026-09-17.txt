@@ -1,0 +1,11 @@
+GoPlay - Simplificação da Reserva Avulsa - 17/09/2026
+
+- Remove "Nova Reserva" do menu de jogador/dono do time.
+- Reserva avulsa passa a acontecer dentro de Ver Quadras.
+- Cada quadra possui botão "Reservar esta quadra".
+- No mesmo ambiente o usuário escolhe data, time e horário disponível e gera o pagamento.
+- Horário Fixo / Presenças continua exclusivo para recorrência semanal/mensal.
+- Minhas Reservas continua como acompanhamento de reservas e pagamentos.
+- Links antigos para time-agendamento.html são redirecionados automaticamente para campos-view.html.
+- A agenda administrativa deixa de enviar o dono da empresa para a antiga tela de reserva do time.
+- Não há migration de banco nesta alteração.

@@ -193,11 +193,8 @@ function abrirModalLivre(data, hora) {
         <div><strong>Status:</strong> Livre</div>
     `;
 
-    el("btnAcaoModal").style.display = "block";
-    el("btnAcaoModal").textContent = "Agendar horário";
-    el("btnAcaoModal").onclick = () => {
-        location.href = `time-agendamento.html?data=${encodeURIComponent(data)}&hora=${encodeURIComponent(hora)}`;
-    };
+    el("btnAcaoModal").style.display = "none";
+    el("btnAcaoModal").onclick = null;
 
     abrirModal();
 }

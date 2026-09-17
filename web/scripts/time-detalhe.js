@@ -456,7 +456,7 @@ async function init() {
 
     if (btnAgendar) {
         btnAgendar.onclick = () => {
-            location.href = `time-agendamento.html?timeId=${timeId}`;
+            location.href = `campos-view.html?timeId=${timeId}`;
         };
     }
 
