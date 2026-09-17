@@ -663,3 +663,21 @@
     .history-head { align-items:flex-start; flex-direction:column; }
 }
 .badge.fechamento_solicitado{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}.comanda-history-item .badge.fechamento_solicitado{background:#fff7ed;color:#9a3412}
+
+/* Estado seguro quando ainda não existe comanda ativa */
+.btn-open-comanda:disabled,
+.btn-fechar:disabled,
+.produto-card button:disabled {
+    opacity: .58;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.produto-card button.produto-bloqueado {
+    background: #e8eef5;
+    color: #64748b;
+}
+
+[hidden] {
+    display: none !important;
+}

@@ -173,6 +173,31 @@ async function buscarComandaAbertaDoUsuario() {
     }
 }
 
+function renderCardapioProdutos() {
+    const wrap = el("listaProdutos");
+    if (!wrap) return;
+    const produtos = Array.isArray(window.__PRODUTOS_COMANDA__) ? window.__PRODUTOS_COMANDA__ : [];
+    if (!produtos.length) {
+        wrap.innerHTML = `<div class="empty-state">Esta empresa ainda não possui itens no cardápio.</div>`;
+        return;
+    }
+
+    const status = String(comandaAtual?.status || "").toUpperCase();
+    const podeAdicionar = status === "ABERTA";
+    const textoBloqueio = status === "FECHAMENTO_SOLICITADO"
+        ? "Fechamento solicitado"
+        : "Abra uma comanda para adicionar";
+
+    wrap.innerHTML = produtos.map(p => `
+        <div class="produto-card">
+            <h4>${escapeHtml(p.nome)}</h4>
+            <strong>${money(p.preco)}</strong>
+            ${podeAdicionar
+                ? `<button type="button" onclick="abrirModalProduto(${p.id})"><i class="fa-solid fa-plus"></i> Adicionar</button>`
+                : `<button type="button" class="produto-bloqueado" disabled><i class="fa-solid fa-lock"></i> ${textoBloqueio}</button>`}
+        </div>`).join("");
+}
+
 async function carregarCardapio() {
     const wrap = el("listaProdutos");
     if (!wrap) return;
@@ -182,16 +207,7 @@ async function carregarCardapio() {
     try {
         const produtos = await fetchJSON(`${BASE_URL}/cardapio/society/${societyId}`);
         window.__PRODUTOS_COMANDA__ = Array.isArray(produtos) ? produtos : [];
-        if (!window.__PRODUTOS_COMANDA__.length) {
-            wrap.innerHTML = `<div class="empty-state">Esta empresa ainda não possui itens no cardápio.</div>`;
-            return;
-        }
-        wrap.innerHTML = window.__PRODUTOS_COMANDA__.map(p => `
-            <div class="produto-card">
-                <h4>${escapeHtml(p.nome)}</h4>
-                <strong>${money(p.preco)}</strong>
-                <button type="button" onclick="abrirModalProduto(${p.id})"><i class="fa-solid fa-plus"></i> Adicionar</button>
-            </div>`).join("");
+        renderCardapioProdutos();
     } catch (e) {
         wrap.innerHTML = `<div class="empty-state">${escapeHtml(e.message || "Erro ao carregar cardápio.")}</div>`;
     }
@@ -268,8 +284,20 @@ function renderSemComanda() {
     if (el("totalComandaHero")) el("totalComandaHero").textContent = money(0);
     if (el("totalComanda")) el("totalComanda").textContent = money(0);
     if (el("itensComanda")) el("itensComanda").innerHTML = `<div class="empty-state">${societyId ? "Abra uma comanda para iniciar o consumo." : "Selecione uma empresa primeiro."}</div>`;
-    if (el("btnFecharComanda")) el("btnFecharComanda").disabled = true;
-    if (el("btnAbrirComanda")) el("btnAbrirComanda").disabled = !societyId;
+
+    const btnFechar = el("btnFecharComanda");
+    if (btnFechar) {
+        btnFechar.disabled = true;
+        btnFechar.hidden = true;
+    }
+
+    const btnAbrir = el("btnAbrirComanda");
+    if (btnAbrir) {
+        btnAbrir.hidden = false;
+        btnAbrir.disabled = !societyId;
+    }
+
+    renderCardapioProdutos();
 }
 
 function renderComanda() {
@@ -288,11 +316,22 @@ function renderComanda() {
                 <div style="text-align:right"><strong>${money(i.total)}</strong>${status === "ABERTA" ? `<br><button type="button" onclick="removerItem(${i.id})" style="margin-top:6px;border:0;background:transparent;color:#b91c1c;cursor:pointer;font-weight:800">Remover</button>` : ""}</div>
             </div>`).join("") : `<div class="empty-state">Nenhum item consumido ainda.</div>`;
     }
-    if (el("btnAbrirComanda")) el("btnAbrirComanda").disabled = ["ABERTA","FECHAMENTO_SOLICITADO"].includes(status);
-    if (el("btnFecharComanda")) {
-        el("btnFecharComanda").disabled = status !== "ABERTA";
-        el("btnFecharComanda").textContent = status === "FECHAMENTO_SOLICITADO" ? "Fechamento solicitado" : "Solicitar fechamento";
+    const btnAbrir = el("btnAbrirComanda");
+    if (btnAbrir) {
+        btnAbrir.hidden = ["ABERTA","FECHAMENTO_SOLICITADO"].includes(status);
+        btnAbrir.disabled = ["ABERTA","FECHAMENTO_SOLICITADO"].includes(status);
     }
+
+    const btnFechar = el("btnFecharComanda");
+    if (btnFechar) {
+        btnFechar.hidden = !["ABERTA","FECHAMENTO_SOLICITADO"].includes(status);
+        btnFechar.disabled = status !== "ABERTA";
+        btnFechar.innerHTML = status === "FECHAMENTO_SOLICITADO"
+            ? `<i class="fa fa-clock"></i> Fechamento solicitado`
+            : `<i class="fa fa-paper-plane"></i> Solicitar fechamento`;
+    }
+
+    renderCardapioProdutos();
 }
 
 async function carregarHistorico() {

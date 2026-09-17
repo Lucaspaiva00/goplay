@@ -1,0 +1,9 @@
+GoPlay — correção do estado vazio da Minha Comanda
+
+- Oculta "Solicitar fechamento" quando não existe comanda ativa.
+- Mantém "Abrir Comanda" como ação principal no estado vazio.
+- Cardápio pode ser consultado, mas os botões de adicionar ficam bloqueados até abrir a comanda.
+- Após abrir, os produtos são liberados imediatamente.
+- Após solicitar fechamento, novos itens ficam bloqueados e o botão indica "Fechamento solicitado".
+- Adicionado cache bust no script comanda.js.
+- Não há migration de banco nesta correção.
