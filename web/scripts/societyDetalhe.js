@@ -65,6 +65,25 @@ function renderSocietyInfo(data) {
     const tipo = String(usuario?.tipo || "").trim().toUpperCase();
     const isDonoSociety = tipo === "DONO_SOCIETY" && Number(data?.usuarioId) === Number(usuario?.id);
 
+    const detalhesPublicos = `
+        <div><b>Cidade:</b> ${data.cidade || "-"} / ${data.estado || "-"}</div>
+        <div><b>Telefone:</b> ${data.telefone || "-"}</div>
+        <div><b>WhatsApp:</b> ${data.whatsapp || "-"}</div>
+        <div><b>Email:</b> ${data.email || "-"}</div>
+        <div><b>Website:</b> ${data.website || "-"}</div>
+        <div><b>Instagram:</b> ${data.instagram || "-"}</div>
+        <div><b>Endereço:</b> ${data.endereco || "-"}</div>
+        <div><b>CEP:</b> ${data.cep || "-"}</div>
+        ${htmlHorarios(data)}
+    `;
+
+    const detalhesPrivados = isDonoSociety ? `
+        <div><b>PIX:</b> ${data.pixChave || "Não cadastrado"}</div>
+        <div><b>Titular do PIX:</b> ${data.pixTitular || "-"}</div>
+        <div><b>Facebook:</b> ${data.facebook || "-"}</div>
+        <div><b>YouTube:</b> ${data.youtube || "-"}</div>
+    ` : "";
+
     el("societyInfo").innerHTML = `
       <div class="society-header-row">
         <div style="display:flex;gap:14px;align-items:flex-start;">
@@ -74,47 +93,24 @@ function renderSocietyInfo(data) {
                 <p class="society-description">${data.descricao || "Sem descrição cadastrada."}</p>
             </div>
         </div>
-
-        ${isDonoSociety ? `
-          <button class="icon-edit-btn" onclick="abrirEdicaoSociety()" title="Editar Empresa">
-            <i class="fa fa-pen"></i>
-          </button>
-        ` : ""}
+        ${isDonoSociety ? `<button class="icon-edit-btn" onclick="abrirEdicaoSociety()" title="Editar Empresa"><i class="fa fa-pen"></i></button>` : ""}
       </div>
 
       <div class="society-details-grid">
-        <div><b>Cidade:</b> ${data.cidade || "-"} / ${data.estado || "-"}</div>
-        <div><b>Telefone:</b> ${data.telefone || "-"}</div>
-        <div><b>WhatsApp:</b> ${data.whatsapp || "-"}</div>
-        <div><b>Email:</b> ${data.email || "-"}</div>
-        <div><b>PIX:</b> ${data.pixChave || "Não cadastrado"}</div>
-        <div><b>Titular do PIX:</b> ${data.pixTitular || "-"}</div>
-        <div><b>Website:</b> ${data.website || "-"}</div>
-        <div><b>Instagram:</b> ${data.instagram || "-"}</div>
-        <div><b>Facebook:</b> ${data.facebook || "-"}</div>
-        <div><b>YouTube:</b> ${data.youtube || "-"}</div>
-        <div><b>Endereço:</b> ${data.endereco || "-"}</div>
-        <div><b>CEP:</b> ${data.cep || "-"}</div>
-        ${htmlHorarios(data)}
+        ${detalhesPublicos}
+        ${detalhesPrivados}
       </div>
 
       <div class="society-stats">
-        <div class="stat-box">
-            <span>Quadras cadastradas</span>
-            <strong>${(data.campos || []).length}</strong>
-        </div>
-        <div class="stat-box">
-            <span>Itens no cardápio</span>
-            <strong>${(data.cardapio || []).length}</strong>
-        </div>
-        <div class="stat-box">
-            <span>Times cadastrados</span>
-            <strong>${(data.times || []).length}</strong>
-        </div>
+        <div class="stat-box"><span>Quadras</span><strong>${(data.campos || []).length}</strong></div>
+        <div class="stat-box"><span>Times</span><strong>${(data.times || []).filter(t => !t.statusVinculo || String(t.statusVinculo).toUpperCase() === "APROVADO").length}</strong></div>
+        ${isDonoSociety ? `<div class="stat-box"><span>Itens no cardápio</span><strong>${(data.cardapio || []).length}</strong></div>` : ""}
       </div>
     `;
-}
 
+    const note = el("publicProfileNote");
+    if (note) note.style.display = isDonoSociety ? "none" : "block";
+}
 function preencherFormularioEdicao(data) {
     el("editNome").value = data.nome || "";
     el("editDescricao").value = data.descricao || "";
@@ -170,36 +166,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
         await carregarSociety();
-
-        const tipo = String(usuarioLogado.tipo || "").trim().toUpperCase();
-        const isDonoSociety = tipo === "DONO_SOCIETY" && Number(societyAtual?.usuarioId) === Number(usuarioLogado.id);
-        const isDonoTime = tipo === "DONO_TIME";
-        const isPlayer = tipo === "PLAYER";
-
-        const btnPag = el("btnPagamentos");
-
-        if (isPlayer) {
-            hideButton(btnPag);
-        } else if (isDonoTime) {
-            if (btnPag) btnPag.textContent = "Meus Pagamentos";
-        } else if (isDonoSociety) {
-            if (btnPag) btnPag.textContent = "Pagamentos";
-        } else {
-            lockButton(btnPag, "Ação não disponível para este perfil.");
-        }
-
-        const aviso = el("avisoPermissao");
-        if (!isDonoSociety && aviso) {
-            aviso.style.display = "block";
-            aviso.textContent = "Você está em modo visualização (sem permissões de gerenciamento).";
-        }
-
         const modalOverlay = el("editModalOverlay");
         if (modalOverlay) {
             modalOverlay.addEventListener("click", (e) => {
-                if (e.target === modalOverlay) {
-                    cancelarEdicaoSociety();
-                }
+                if (e.target === modalOverlay) cancelarEdicaoSociety();
             });
         }
     } catch (e) {
@@ -296,48 +266,4 @@ async function salvarEdicaoSociety() {
         console.error(error);
         alert("Erro ao atualizar empresa.");
     }
-}
-
-function irCampos() {
-    const u = getUsuarioLogado();
-    const tipo = String(u?.tipo || "").toUpperCase();
-    const societyId = localStorage.getItem("societyId");
-
-    if (tipo === "DONO_SOCIETY") {
-        return (location.href = "campos.html");
-    }
-
-    return (location.href = `campos-view.html?societyId=${encodeURIComponent(societyId || "")}`);
-}
-
-function irCardapio() {
-    const u = getUsuarioLogado();
-    const tipo = String(u?.tipo || "").toUpperCase();
-    const societyId = localStorage.getItem("societyId");
-
-    if (tipo === "DONO_SOCIETY") {
-        return (location.href = "cardapio.html");
-    }
-
-    return (location.href = `cardapio-view.html?societyId=${encodeURIComponent(societyId || "")}`);
-}
-
-function irTimes() {
-    const societyId = localStorage.getItem("societyId") || getQueryParam("societyId") || "";
-    location.href = `times.html?societyId=${encodeURIComponent(societyId)}`;
-}
-
-function irPagamentos() {
-    const u = getUsuarioLogado();
-    const tipo = String(u?.tipo || "").toUpperCase();
-
-    if (tipo === "DONO_SOCIETY") {
-        return (location.href = "recebimentos.html");
-    }
-
-    if (tipo === "DONO_TIME") {
-        return (location.href = "meus-pagamentos.html");
-    }
-
-    alert("Ação não disponível para este perfil.");
 }

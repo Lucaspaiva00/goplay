@@ -11,6 +11,10 @@ function getQueryParam(name) {
     return new URLSearchParams(window.location.search).get(name);
 }
 
+function isCompanyBrowseMode() {
+    return String(getQueryParam("view") || "").toLowerCase() === "empresa";
+}
+
 function escapeHtml(value) {
     return String(value ?? "")
         .replaceAll("&", "&amp;")
@@ -52,9 +56,16 @@ function ajustarModoTela() {
         return;
     }
     if (usuario.tipo === "DONO_TIME") {
-        if (pageTitle) pageTitle.textContent = "⚽ Meus Times";
-        if (pageSubtitle) pageSubtitle.textContent = "Cadastre, gerencie o elenco e organize a rotina semanal dos seus times.";
-        if (blocoCriacao) blocoCriacao.style.display = "block";
+        if (isCompanyBrowseMode()) {
+            const nomeEmpresa = window.GOPLAY_EMPRESA_ATUAL?.nome || localStorage.getItem("societyContextName") || "empresa selecionada";
+            if (pageTitle) pageTitle.textContent = "⚽ Times desta Empresa";
+            if (pageSubtitle) pageSubtitle.textContent = `Visualização dos times aprovados em ${nomeEmpresa}. A gestão continua restrita ao dono de cada time.`;
+            if (blocoCriacao) blocoCriacao.style.display = "none";
+        } else {
+            if (pageTitle) pageTitle.textContent = "⚽ Meus Times";
+            if (pageSubtitle) pageSubtitle.textContent = "Cadastre, gerencie o elenco e organize a rotina semanal dos seus times.";
+            if (blocoCriacao) blocoCriacao.style.display = "block";
+        }
         return;
     }
     if (usuario.tipo === "PLAYER") {
@@ -73,7 +84,7 @@ async function carregarSocietiesNoSelect() {
     const blocoCriacao = document.getElementById("blocoCriacaoTime");
     if (!select) return;
     if (!usuario?.id) return;
-    if (usuario.tipo !== "DONO_TIME") {
+    if (usuario.tipo !== "DONO_TIME" || isCompanyBrowseMode()) {
         if (blocoCriacao) blocoCriacao.style.display = "none";
         return;
     }
@@ -135,13 +146,17 @@ function montarCardTime(t, usuario) {
     const isPlayer = usuario?.tipo === "PLAYER";
     const isDonoSociety = usuario?.tipo === "DONO_SOCIETY";
     const isDonoTime = usuario?.tipo === "DONO_TIME";
+    const browseCompany = isDonoTime && isCompanyBrowseMode();
     const cidadeEstado = `${escapeHtml(t.cidade || "")}${t.estado ? ` - ${escapeHtml(t.estado)}` : ""}`;
     const jogadores = Array.isArray(t.jogadores) ? t.jogadores.length : 0;
     const subtitulo = t?.society?.nome ? `<small>Empresa: ${escapeHtml(t.society.nome)}</small>` : "";
     let action = `<button class="btn" onclick="verDetalhes(${t.id})">Ver detalhes</button>`;
     if (isPlayer) action = `${playerAction(t)} <button class="btn" style="background:#eef4f8;color:#052845" onclick="verDetalhes(${t.id})">Ver time</button>`;
-    if (isDonoSociety) action = `<button class="btn" onclick="verDetalhes(${t.id})">Gerenciar visualização</button>`;
-    if (isDonoTime) action = `<button class="btn" onclick="verDetalhes(${t.id})">Gerenciar time</button>`;
+    if (isDonoSociety) action = `<button class="btn" onclick="verDetalhes(${t.id})">Gerenciar vínculo</button>`;
+    if (isDonoTime) action = browseCompany
+        ? `<button class="btn" onclick="verDetalhes(${t.id})">Ver time</button>`
+        : `<button class="btn" onclick="verDetalhes(${t.id})">Gerenciar time</button>`;
+    const badges = (isPlayer || browseCompany) ? "" : `${pillTipo(t.tipoVinculo)} ${pillStatus(t.statusVinculo)}`;
 
     return `<div class="time-card">
         <div class="time-card-top" style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;">
@@ -154,7 +169,7 @@ function montarCardTime(t, usuario) {
                     ${t.modalidade ? `<small>Modalidade: ${escapeHtml(t.modalidade)}</small>` : ""}
                 </div>
             </div>
-            <div class="time-card-badges" style="display:flex;gap:8px;flex-wrap:wrap;">${pillTipo(t.tipoVinculo)} ${pillStatus(t.statusVinculo)}</div>
+            <div class="time-card-badges" style="display:flex;gap:8px;flex-wrap:wrap;">${badges}</div>
         </div>
         <div class="time-card-actions" style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">${action}</div>
     </div>`;
@@ -167,14 +182,17 @@ async function carregarTimes() {
 
     try {
         let data = [];
-        if (usuario.tipo === "DONO_SOCIETY" || usuario.tipo === "PLAYER") {
+        if (usuario.tipo === "DONO_SOCIETY" || usuario.tipo === "PLAYER" || (usuario.tipo === "DONO_TIME" && isCompanyBrowseMode())) {
             const societyId = currentSocietyId();
             if (!societyId) {
-                div.innerHTML = `<div style="padding:18px"><strong>Selecione uma empresa primeiro.</strong><p style="color:#6b7280">Vá em Explorar Empresas, escolha o Society/Arena e depois abra Times.</p><button class="btn" onclick="location.href='societies.html'">Explorar Empresas</button></div>`;
+                div.innerHTML = `<div style="padding:18px"><strong>Selecione uma empresa primeiro.</strong><p style="color:#6b7280">Use Explorar Empresas ou o seletor de Empresa atual e depois abra Times da Empresa.</p><button class="btn" onclick="location.href='societies.html'">Explorar Empresas</button></div>`;
                 return;
             }
             localStorage.setItem("societyId", String(societyId));
             data = await fetchJSON(`${BASE_URL}/time/society/${societyId}`);
+            if (usuario.tipo === "PLAYER" || (usuario.tipo === "DONO_TIME" && isCompanyBrowseMode())) {
+                data = (Array.isArray(data) ? data : []).filter(t => String(t.statusVinculo || "").toUpperCase() === "APROVADO");
+            }
             if (usuario.tipo === "PLAYER") {
                 const [reqs, current] = await Promise.all([
                     fetchJSON(`${BASE_URL}/time/solicitacoes/minhas`).catch(() => []),
@@ -182,7 +200,6 @@ async function carregarTimes() {
                 ]);
                 solicitacoesJogador = Array.isArray(reqs) ? reqs : [];
                 timeAtualJogador = current?.time || null;
-                data = (Array.isArray(data) ? data : []).filter(t => t.statusVinculo === "APROVADO");
             }
         } else if (usuario.tipo === "DONO_TIME") {
             data = await fetchJSON(`${BASE_URL}/time/dono/${usuario.id}`);
@@ -192,8 +209,8 @@ async function carregarTimes() {
         }
 
         if (!Array.isArray(data) || !data.length) {
-            div.innerHTML = usuario.tipo === "PLAYER"
-                ? `<div style="padding:18px"><strong>Nenhum time aprovado nesta empresa ainda.</strong><p style="color:#6b7280">Quando um time for aprovado pelo Society, ele aparecerá aqui para você solicitar entrada.</p></div>`
+            div.innerHTML = (usuario.tipo === "PLAYER" || (usuario.tipo === "DONO_TIME" && isCompanyBrowseMode()))
+                ? `<div style="padding:18px"><strong>Nenhum time aprovado nesta empresa ainda.</strong><p style="color:#6b7280">Os times aprovados pela empresa aparecerão aqui.</p></div>`
                 : "<p>Nenhum time cadastrado ainda.</p>";
             return;
         }

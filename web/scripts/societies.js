@@ -26,7 +26,7 @@ async function carregarSocieties() {
                         </div>
                     </div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
-                        <button class="btn-details" onclick="selecionarEmpresa(${s.id}, '${String(s.nome||'Empresa').replace(/'/g,"\\'")}')">Usar esta empresa</button>
+                        <button class="btn-details" onclick="selecionarEmpresa(${s.id}, '${String(s.nome||'Empresa').replace(/'/g,"\\'")}')">Selecionar empresa</button>
                         <button class="btn-details" onclick="verDetalhes(${s.id})">Ver detalhes</button>
                     </div>
                 </div>

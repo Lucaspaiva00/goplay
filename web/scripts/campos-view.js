@@ -76,15 +76,16 @@ async function listarCampos() {
         if (wrap) {
             wrap.innerHTML = `
                 <div style="color:#ef4444;font-weight:800;">Empresa não selecionada.</div>
-                <div style="margin-top:10px;color:#374151;">
-                    Volte em <b>Ver Empresas</b> → abra o <b>Detalhe</b> → clique em <b>Criar / Gerenciar Quadras</b>.
-                </div>
+                <div style="margin-top:10px;color:#374151;">Use <b>Explorar Empresas</b> ou o seletor <b>Empresa atual</b> para escolher onde deseja consultar as quadras.</div>
             `;
         }
         return;
     }
 
     localStorage.setItem("societyId", societyId);
+    const nome = localStorage.getItem("societyContextName") || "Empresa selecionada";
+    const title = el("quadrasEmpresaNome");
+    if (title) title.textContent = nome;
 
     const campos = await fetchJSON(`${BASE_URL}/campos/society/${encodeURIComponent(societyId)}`);
     renderCampos(campos);

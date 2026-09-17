@@ -503,10 +503,12 @@ async function carregarTime(timeId) {
             acoesDonoTime.style.display = isDonoDesteTime ? "block" : "none";
         }
 
+        const podeVerAgendamentos = isDonoDesteTime || isDonoSociety || isMembro;
         if (blocoAgendamentos) {
-            blocoAgendamentos.style.display = (isDonoTime || isDonoSociety || isPlayer) ? "block" : "none";
+            blocoAgendamentos.style.display = podeVerAgendamentos ? "block" : "none";
         }
 
+        const podeVerDadosVinculo = isDonoDesteTime || isDonoSociety;
         infoEl.innerHTML = `
           <div style="text-align:left;">
             ${time.brasao ? `<img src="${escapeHtml(time.brasao)}" alt="Brasão" style="width:72px;height:72px;border-radius:12px;object-fit:cover;border:1px solid #e5e7eb;margin-bottom:12px;">` : ""}
@@ -514,11 +516,13 @@ async function carregarTime(timeId) {
             <p><strong>Empresa:</strong> ${escapeHtml(time?.society?.nome || "-")}</p>
             <p><strong>Cidade:</strong> ${escapeHtml(time.cidade || "-")} / ${escapeHtml(time.estado || "-")}</p>
             <p><strong>Modalidade:</strong> ${escapeHtml(time.modalidade || "-")}</p>
-            <p><strong>Tipo de vínculo:</strong> ${pillTipo(time.tipoVinculo)}</p>
-            <p><strong>Status:</strong> ${pillStatus(time.statusVinculo)}</p>
-            <p><strong>Mensalidade:</strong> ${time.valorMensalidade ? `R$ ${Number(time.valorMensalidade).toFixed(2).replace(".", ",")}` : "-"}</p>
-            <p><strong>Vencimento:</strong> ${time.diaVencimento || "-"}</p>
-            <p><strong>Observação:</strong> ${escapeHtml(time.observacaoVinculo || "-")}</p>
+            ${podeVerDadosVinculo ? `
+              <p><strong>Tipo de vínculo:</strong> ${pillTipo(time.tipoVinculo)}</p>
+              <p><strong>Status:</strong> ${pillStatus(time.statusVinculo)}</p>
+              <p><strong>Mensalidade:</strong> ${time.valorMensalidade ? `R$ ${Number(time.valorMensalidade).toFixed(2).replace(".", ",")}` : "-"}</p>
+              <p><strong>Vencimento:</strong> ${time.diaVencimento || "-"}</p>
+              <p><strong>Observação:</strong> ${escapeHtml(time.observacaoVinculo || "-")}</p>
+            ` : ""}
           </div>
         `;
 
@@ -555,7 +559,7 @@ async function carregarTime(timeId) {
         if (isDonoDesteTime) await carregarSolicitacoesEntrada(timeId);
         if (isPlayer) await carregarSolicitacaoDoJogador(timeId, isMembro);
 
-        await carregarAgendamentos(timeId, isDonoDesteTime);
+        if (podeVerAgendamentos) await carregarAgendamentos(timeId, isDonoDesteTime);
     } catch (err) {
         console.error(err);
         infoEl.innerHTML = `<p style="color:#b91c1c;"><strong>Erro:</strong> ${escapeHtml(err.message)}</p>`;

@@ -1,0 +1,11 @@
+GOPLAY — Ajuste de perfis e navegação
+
+- Perfil de Empresa para PLAYER/DONO_TIME virou somente informativo.
+- Removidos atalhos de cardápio, pagamentos e gerenciamento de quadras do perfil da empresa.
+- Cardápio do cliente permanece dentro de Minha Comanda.
+- Quadras ganharam área própria de consulta, sem ações administrativas.
+- DONO_TIME ganhou "Times da Empresa" em modo somente leitura; "Meus Times" continua sendo a área de gestão dos times que ele possui.
+- PLAYER continua podendo solicitar entrada em time aprovado, mas não recebe controles administrativos.
+- Detalhes financeiros/vínculo de um time não são mais exibidos para usuários externos ao vínculo.
+- Agendamentos de um time só aparecem para dono daquele time, dono da empresa ou jogador membro.
+- Nenhuma migration de banco de dados é necessária.
