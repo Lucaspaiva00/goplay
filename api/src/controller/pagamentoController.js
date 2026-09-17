@@ -69,6 +69,13 @@ const createPagamentoAgendamento = async (req, res) => {
         const forma = String(req.body.forma || "PIX").trim();
         const recorrente = !!req.body.recorrente;
 
+        if (req.actor?.kind !== "USER" || req.actor.tipo !== "DONO_TIME") {
+            return res.status(403).json({ error: "Somente o dono do time pode gerar o pagamento da reserva." });
+        }
+        if (Number(usuarioId) !== Number(req.actor.id)) {
+            return res.status(403).json({ error: "O pagamento deve ser gerado para o dono do time autenticado." });
+        }
+
         if (!usuarioId || !societyId || !timeId || !campoId || !agendamentoId) {
             return res.status(400).json({ error: "Dados incompletos." });
         }
@@ -95,6 +102,9 @@ const createPagamentoAgendamento = async (req, res) => {
 
         if (!time) {
             return res.status(404).json({ error: "Time não encontrado." });
+        }
+        if (Number(time.donoId) !== Number(req.actor.id)) {
+            return res.status(403).json({ error: "Você só pode gerar pagamento para um time que administra." });
         }
 
         const campo = await prisma.campo.findUnique({

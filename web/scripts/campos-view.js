@@ -14,7 +14,7 @@ let times=[];
 let campoSelecionado=null;
 let horarioSelecionado=null;
 let horaPreferida=q("hora");
-const podeReservar=["PLAYER","DONO_TIME"].includes(usuarioLogado.tipo);
+const podeReservar=usuarioLogado.tipo==="DONO_TIME";
 
 function getSocietyId(){
   const fromUrl=Number(q("societyId")||0);
@@ -37,15 +37,11 @@ async function carregarEmpresa(){
 async function carregarTimes(){
   if(!podeReservar) return [];
   try{
-    if(usuarioLogado.tipo==="DONO_TIME") times=await api(`${BASE_URL}/time/dono/${usuarioLogado.id}`);
-    else {
-      const p=await api(`${BASE_URL}/time/details/by-player/${usuarioLogado.id}`);
-      times=p?.time?[p.time]:[];
-    }
+    times=await api(`${BASE_URL}/time/dono/${usuarioLogado.id}`);
   }catch{ times=[]; }
   const select=el("reservaTime");
   if(!times.length){
-    select.innerHTML='<option value="">Você precisa estar em um time para reservar</option>';
+    select.innerHTML='<option value="">Você precisa administrar um time para reservar</option>';
     select.disabled=true;
     return times;
   }

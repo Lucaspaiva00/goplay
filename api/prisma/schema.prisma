@@ -484,6 +484,7 @@ model Agendamento {
   organizador Usuario? @relation(fields: [organizadorId], references: [id], onDelete: SetNull)
 
   presencas PresencaHorario[]
+  presencaNotificadaEm DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -2,6 +2,7 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { notifyUsuario, notifyStaff } = require("../notifications");
 const { configForDate, validateInterval, buildSlots, timeToMinutes, endToMinutes } = require("../businessHours");
+const { ensureTeamPresences } = require("../presenceNotifications");
 
 /* =========================
    HELPERS
@@ -50,6 +51,10 @@ const create = async (req, res) => {
       return res.status(400).json({ error: "Dados incompletos." });
     }
 
+    if (req.actor?.kind !== "USER" || req.actor.tipo !== "DONO_TIME") {
+      return res.status(403).json({ error: "Somente o dono do time pode solicitar uma reserva." });
+    }
+
     const data = parseDateOnly(dataStr);
 
     const campo = await prisma.campo.findUnique({
@@ -66,6 +71,9 @@ const create = async (req, res) => {
 
     if (!time) {
       return res.status(404).json({ error: "Time não encontrado." });
+    }
+    if (Number(time.donoId) !== Number(req.actor.id)) {
+      return res.status(403).json({ error: "Você só pode reservar em nome de um time que administra." });
     }
 
     // O time pode reservar em qualquer empresa.
@@ -101,8 +109,15 @@ const create = async (req, res) => {
     }
 
     const agendamento = await prisma.agendamento.create({
-      data: { societyId, campoId, timeId, data, horaInicio, horaFim, valor: campo.valorAvulso, status: "PENDENTE" },
+      data: { societyId, campoId, timeId, data, horaInicio, horaFim, valor: campo.valorAvulso, status: "PENDENTE", organizadorId: req.actor.id },
     });
+
+    const jogadores = await ensureTeamPresences(agendamento.id, timeId);
+    for (const usuarioId of jogadores) {
+      await notifyUsuario(prisma, usuarioId, `Você vai jogar? • ${time.nome}`, `${new Date(data).toLocaleDateString("pt-BR")} às ${horaInicio}, ${campo.nome}. Confirme 👍 ou 👎.`, `confirmar-presenca.html?agendamentoId=${agendamento.id}`);
+    }
+    await prisma.agendamento.update({ where:{id:agendamento.id}, data:{presencaNotificadaEm:new Date()} });
+
     await notifyUsuario(prisma, time.donoId, "Reserva criada", `Reserva em ${dataStr} às ${horaInicio} aguardando confirmação/pagamento.`);
     await notifyStaff(prisma, societyId, "Nova reserva", `${time.nome} reservou ${campo.nome} para ${dataStr} às ${horaInicio}.`, ["ADMIN","CAIXA","RECEPCAO"]);
     return res.status(201).json(agendamento);

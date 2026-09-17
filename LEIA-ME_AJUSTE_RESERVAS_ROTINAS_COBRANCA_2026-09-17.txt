@@ -1,0 +1,42 @@
+GOPLAY — AJUSTE DE RESERVAS, ROTINAS, PRESENÇAS E COBRANÇA
+Data: 17/09/2026
+
+1. SOMENTE DONO DO TIME RESERVA
+- Reserva avulsa e horário fixo agora são ações exclusivas do perfil DONO_TIME.
+- O backend valida que o usuário autenticado é realmente dono do time escolhido.
+- PLAYER continua consultando quadras, mas não vê ação de reserva.
+
+2. PRESENÇA PARA TODO O ELENCO
+- Reserva avulsa: ao criar, todos os jogadores do time recebem uma única confirmação 👍/👎.
+- Reserva recorrente: cada ocorrência possui sua própria lista de presença.
+- O servidor envia a confirmação semanal quando a ocorrência entra na janela de 7 dias.
+- As próximas semanas não são disparadas todas de uma vez.
+- O dono pode usar "Lembrar pendentes".
+- Novo jogador aprovado no time também recebe a próxima enquete se ela já tiver sido disparada.
+
+3. VÁRIAS ROTINAS PARA QUEM TEM VÁRIOS TIMES
+- Horário Fixo / Presenças ganhou botão "+ Nova rotina".
+- O dono seleciona qual dos times que administra receberá a rotina.
+- Cada time continua com uma rotina própria; times já configurados não aparecem como disponíveis para nova criação.
+
+4. COBRANÇA EXPLÍCITA
+- Ao solicitar horário recorrente, o dono precisa escolher explicitamente:
+  a) Por jogo; ou
+  b) Mensal.
+- O valor não é digitado pelo usuário: vem diretamente do cadastro da quadra.
+- Por jogo usa valorAvulso.
+- Mensal usa valorMensal.
+- Se o preço correspondente não estiver configurado, a opção é bloqueada.
+
+5. COBRANÇAS RECORRENTES
+- Mensal: uma cobrança mensal é criada para o dono do time, sem cobrar o valor mensal em cada jogo semanal.
+- Por jogo sem rateio: a cobrança do próximo jogo é gerada quando ele entra na janela semanal.
+- Por jogo com rateio: o dono pode dividir o valor entre os jogadores confirmados.
+
+6. MIGRATION
+20260917193000_reservas_time_presenca_cobranca
+- adiciona Agendamento.presencaNotificadaEm para impedir notificações duplicadas.
+
+7. CONFIGURAÇÃO OPCIONAL
+PRESENCA_LEAD_DAYS pode ser definida no Render para alterar a antecedência da enquete semanal.
+Padrão: 7 dias.

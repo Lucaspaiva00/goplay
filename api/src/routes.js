@@ -136,7 +136,7 @@ router.post("/convite", conviteController.convidar);
 ===================================================== */
 
 router.get("/agendamentos/disponiveis", agendamentoController.horariosDisponiveis);
-router.post("/agendamentos", agendamentoController.create);
+router.post("/agendamentos", authenticate, agendamentoController.create);
 router.get("/agendamentos/time/:timeId", agendamentoController.listByTime);
 router.get("/agendamentos/society/:societyId", ...requireSocietyRoles(["ADMIN","CAIXA","RECEPCAO"], req => req.params.societyId), agendamentoController.listBySociety);
 router.post("/agendamentos/:id/cancelar", authenticate, agendamentoController.cancelar);
@@ -168,7 +168,7 @@ router.post("/encontros-horario/:id/rateio", authenticate, horarioFixoController
    PAGAMENTOS
 ===================================================== */
 
-router.post("/pagamentos/agendamento", pagamentoController.createPagamentoAgendamento);
+router.post("/pagamentos/agendamento", authenticate, pagamentoController.createPagamentoAgendamento);
 router.post("/pagamentos/mensalidade", pagamentoController.createMensalidade);
 router.post("/pagamentos/:id/confirmar", authenticate, pagamentoController.confirmarPagamento);
 router.post("/pagamentos/:id/cancelar", authenticate, pagamentoController.cancelarPagamento);

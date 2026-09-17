@@ -3,6 +3,7 @@ const prisma = new PrismaClient();
 const { notifyUsuario, notifyStaff } = require('../notifications');
 const { configForDate, validateInterval, timeToMinutes, endToMinutes } = require('../businessHours');
 const { emitHorario } = require('../horarioRealtime');
+const { dispatchDuePresenceNotifications, ensureMonthlyPayment } = require('../presenceNotifications');
 
 const id = v => { const n = Number(v); return Number.isFinite(n) ? n : null; };
 const dateOnly = s => { const [y,m,d] = String(s||'').split('-').map(Number); return y&&m&&d ? new Date(y,m-1,d) : null; };
@@ -42,9 +43,10 @@ async function ensureOrganizerMember(tx, group) {
 
 async function createGroup(req,res){
   try{
-    if(req.actor?.kind!=='USER') return res.status(403).json({error:'Apenas usuários podem organizar um horário fixo.'});
+    if(req.actor?.kind!=='USER' || req.actor.tipo!=='DONO_TIME') return res.status(403).json({error:'Somente o dono do time pode criar uma rotina de reservas.'});
 
     const timeId=id(req.body.timeId);
+    if(!timeId) return res.status(400).json({error:'Selecione um dos seus times para criar a rotina.'});
     let societyId=id(req.body.societyId);
     let nome=String(req.body.nome||'').trim();
     const maxJogadores=Math.max(2,Math.min(100,Number(req.body.maxJogadores||20)));
@@ -195,46 +197,67 @@ async function validateFixedConflicts(hf){
 
 async function generateFixedOccurrences(hf, group){
   const validation=await validateFixedConflicts(hf); if(!validation.ok) throw Object.assign(new Error(validation.error),{status:409});
-  const members=await prisma.grupoHorarioMembro.findMany({where:{grupoId:group.id,ativo:true},select:{usuarioId:true}});
-  const ids=[...new Set([group.organizadorId,...members.map(m=>m.usuarioId)])];
+  let playerIds=[];
+  if(group.timeId){
+    playerIds=(await prisma.usuario.findMany({where:{timeRelacionadoId:group.timeId},select:{id:true}})).map(x=>x.id);
+  }else{
+    // Compatibilidade com rotinas antigas que ainda não estão ligadas a um time.
+    playerIds=(await prisma.grupoHorarioMembro.findMany({where:{grupoId:group.id,ativo:true},select:{usuarioId:true}})).map(x=>x.usuarioId);
+  }
+  const ids=[...new Set(playerIds)];
   const apps=await prisma.$transaction(async tx=>{
     await ensureOrganizerMember(tx,group);
     const out=[];
     for(const dt of validation.dates){
-      const ag=await tx.agendamento.create({data:{societyId:group.societyId,campoId:hf.campoId,timeId:group.timeId||null,data:dt,horaInicio:hf.horaInicio,horaFim:hf.horaFim,valor:hf.tipoCobranca==='MENSAL'?Number(hf.valorMensal||0):Number(hf.valorPorJogo||0),status:'CONFIRMADO',grupoHorarioId:group.id,horarioFixoId:hf.id,organizadorId:group.organizadorId}});
+      const ag=await tx.agendamento.create({data:{
+        societyId:group.societyId,campoId:hf.campoId,timeId:group.timeId||null,data:dt,
+        horaInicio:hf.horaInicio,horaFim:hf.horaFim,
+        // Mensalidade é cobrada uma vez por mês; não em cada ocorrência semanal.
+        valor:hf.tipoCobranca==='MENSAL'?0:Number(hf.valorPorJogo||0),
+        status:'CONFIRMADO',grupoHorarioId:group.id,horarioFixoId:hf.id,organizadorId:group.organizadorId
+      }});
       if(ids.length) await tx.presencaHorario.createMany({data:ids.map(usuarioId=>({agendamentoId:ag.id,usuarioId})),skipDuplicates:true});
       out.push(ag);
     }
     await tx.horarioFixo.update({where:{id:hf.id},data:{status:'APROVADO'}});
     return out;
   });
-  return {apps,members};
+  return {apps,playerIds:ids};
 }
 
 async function createFixed(req,res){
   try{
     const groupId=id(req.params.id); const group=await prisma.grupoHorario.findUnique({where:{id:groupId},include:{society:true}});
     if(!group) return res.status(404).json({error:'Grupo não encontrado.'});
-    if(!(await actorCanManageGroup(req.actor,group))) return res.status(403).json({error:'Sem permissão para solicitar horário fixo.'});
+    if(req.actor?.kind!=='USER' || req.actor.tipo!=='DONO_TIME' || Number(group.organizadorId)!==Number(req.actor.id) || !group.timeId) return res.status(403).json({error:'Somente o dono do time pode solicitar o horário fixo.'});
+    const owned=await prisma.time.findFirst({where:{id:group.timeId,donoId:req.actor.id},select:{id:true}});
+    if(!owned) return res.status(403).json({error:'Esta rotina não pertence a um time administrado por você.'});
+    const existingFixed=await prisma.horarioFixo.findFirst({where:{grupoId:groupId,ativo:true,status:{in:['PENDENTE','APROVADO']}}});
+    if(existingFixed) return res.status(409).json({error:'Este time já possui um horário fixo ativo nesta rotina.'});
     const campoId=id(req.body.campoId); const campo=await prisma.campo.findUnique({where:{id:campoId}});
     if(!campo||campo.societyId!==group.societyId) return res.status(400).json({error:'Quadra inválida para esta empresa.'});
     const diaSemana=Number(req.body.diaSemana), horaInicio=String(req.body.horaInicio||'').slice(0,5), horaFim=String(req.body.horaFim||'').slice(0,5);
     const start=dateOnly(req.body.dataInicio), end=req.body.dataFim?dateOnly(req.body.dataFim):null, semanas=Math.max(1,Math.min(52,Number(req.body.semanas||12)));
     if(!Number.isInteger(diaSemana)||diaSemana<0||diaSemana>6||!/^\d{2}:\d{2}$/.test(horaInicio)||!/^\d{2}:\d{2}$/.test(horaFim)||!start) return res.status(400).json({error:'Dados do horário fixo inválidos.'});
-    const tipo=String(req.body.tipoCobranca||'POR_JOGO')==='MENSAL'?'MENSAL':'POR_JOGO';
-    const valorPorJogo=Number(req.body.valorPorJogo ?? campo.valorAvulso ?? 0)||null, valorMensal=Number(req.body.valorMensal ?? campo.valorMensal ?? 0)||null;
-    if(tipo==='POR_JOGO'&&(!valorPorJogo||valorPorJogo<=0)) return res.status(400).json({error:'Informe o valor por jogo.'});
-    if(tipo==='MENSAL'&&(!valorMensal||valorMensal<=0)) return res.status(400).json({error:'Informe o valor mensal.'});
-    const autoApprove=await actorIsCompanyManager(req.actor,group.societyId);
-    const hf=await prisma.horarioFixo.create({data:{grupoId:groupId,societyId:group.societyId,campoId,organizadorId:group.organizadorId,diaSemana,horaInicio,horaFim,dataInicio:start,dataFim:end,tipoCobranca:tipo,status:autoApprove?'APROVADO':'PENDENTE',quantidadeSemanas:semanas,valorPorJogo,valorMensal,dividirValor:req.body.dividirValor!==false,ativo:true}});
+    const tipoRaw=String(req.body.tipoCobranca||'').toUpperCase();
+    if(!['POR_JOGO','MENSAL'].includes(tipoRaw)) return res.status(400).json({error:'Escolha se a cobrança será por jogo ou mensal.'});
+    const tipo=tipoRaw;
+    // O preço sempre vem da quadra cadastrada pela empresa; o cliente não pode informar outro valor.
+    const valorPorJogo=Number(campo.valorAvulso||0)||null;
+    const valorMensal=Number(campo.valorMensal||0)||null;
+    if(tipo==='POR_JOGO'&&(!valorPorJogo||valorPorJogo<=0)) return res.status(400).json({error:'Esta quadra não possui valor avulso configurado.'});
+    if(tipo==='MENSAL'&&(!valorMensal||valorMensal<=0)) return res.status(400).json({error:'Esta quadra não possui valor mensal configurado.'});
+    const autoApprove=false;
+    const hf=await prisma.horarioFixo.create({data:{grupoId:groupId,societyId:group.societyId,campoId,organizadorId:group.organizadorId,diaSemana,horaInicio,horaFim,dataInicio:start,dataFim:end,tipoCobranca:tipo,status:'PENDENTE',quantidadeSemanas:semanas,valorPorJogo,valorMensal,dividirValor:tipo==='POR_JOGO'&&req.body.dividirValor!==false,ativo:true}});
     if(!autoApprove){
       const current=await validateFixedConflicts(hf); if(!current.ok){await prisma.horarioFixo.update({where:{id:hf.id},data:{status:'RECUSADO',ativo:false}});return res.status(409).json({error:current.error});}
-      if(Number(group.society.usuarioId)!==Number(group.organizadorId)) await notifyUsuario(prisma,group.society.usuarioId,'Solicitação de horário fixo',`${group.nome} solicitou ${horaInicio}-${horaFim} por ${semanas} semana(s).`,`horario-grupo.html?grupoId=${groupId}`);
+      if(Number(group.society.usuarioId)!==Number(group.organizadorId)) await notifyUsuario(prisma,group.society.usuarioId,'Solicitação de horário fixo',`${group.nome} solicitou ${horaInicio}-${horaFim} por ${semanas} semana(s), cobrança ${tipo==='MENSAL'?`mensal de R$ ${valorMensal.toFixed(2).replace('.',',')}`:`por jogo de R$ ${valorPorJogo.toFixed(2).replace('.',',')}`}.`,`horario-grupo.html?grupoId=${groupId}`);
       await notifyStaff(prisma,group.societyId,'Aprovar horário fixo',`${group.nome} solicitou ${horaInicio}-${horaFim}.`,['ADMIN','RECEPCAO'],`horario-grupo.html?grupoId=${groupId}`);
       return res.status(201).json({horarioFixo:hf,agendamentos:[],pendenteAprovacao:true});
     }
     const generated=await generateFixedOccurrences(hf,group); const first=generated.apps[0];
-    for(const m of generated.members){ if(m.usuarioId!==group.organizadorId) await notifyUsuario(prisma,m.usuarioId,`Novo jogo: ${group.nome}`,`${ptDate(first.data)} às ${horaInicio} em ${group.society.nome}. Confirme se você vai.`,`confirmar-presenca.html?agendamentoId=${first.id}`); }
+    if(hf.tipoCobranca==='MENSAL'&&first) await ensureMonthlyPayment({...first,horarioFixo:hf,grupoHorario:group});
+    await dispatchDuePresenceNotifications();
     await notifyStaff(prisma,group.societyId,'Novo horário fixo',`${group.nome}: ${generated.apps.length} ocorrências reservadas.`,['ADMIN','RECEPCAO'],`horario-grupo.html?grupoId=${groupId}`);
     res.status(201).json({horarioFixo:{...hf,status:'APROVADO'},agendamentos:generated.apps,pendenteAprovacao:false});
   }catch(e){console.error(e);res.status(e.status||500).json({error:e.message||'Erro ao criar horário fixo.'});}
@@ -247,8 +270,10 @@ async function approveFixed(req,res){
     if(hf.status==='APROVADO') return res.status(400).json({error:'Horário já aprovado.'});
     if(hf.status==='RECUSADO') return res.status(400).json({error:'Horário recusado. Crie uma nova solicitação.'});
     const generated=await generateFixedOccurrences(hf,hf.grupo); const first=generated.apps[0];
-    await notifyUsuario(prisma,hf.organizadorId,'Horário fixo aprovado',`${hf.grupo.nome} foi aprovado. Primeiro encontro: ${ptDate(first.data)} às ${hf.horaInicio}.`,`confirmar-presenca.html?agendamentoId=${first.id}`);
-    for(const m of generated.members){ if(m.usuarioId!==hf.organizadorId) await notifyUsuario(prisma,m.usuarioId,`Novo jogo: ${hf.grupo.nome}`,`${ptDate(first.data)} às ${hf.horaInicio}. Confirme sua presença.`,`confirmar-presenca.html?agendamentoId=${first.id}`); }
+    await notifyUsuario(prisma,hf.organizadorId,'Horário fixo aprovado',`${hf.grupo.nome} foi aprovado. Primeiro encontro: ${ptDate(first.data)} às ${hf.horaInicio}.`,`horario-grupo.html?grupoId=${hf.grupoId}`);
+    if(hf.tipoCobranca==='MENSAL'&&first) await ensureMonthlyPayment({...first,horarioFixo:hf,grupoHorario:hf.grupo});
+    // Envia apenas a ocorrência que entrou na janela semanal; as próximas serão notificadas automaticamente.
+    await dispatchDuePresenceNotifications();
     res.json({ok:true,agendamentos:generated.apps});
   }catch(e){console.error(e);res.status(e.status||500).json({error:e.message||'Erro ao aprovar horário.'});}
 }
@@ -264,17 +289,55 @@ async function rejectFixed(req,res){
   }catch(e){console.error(e);res.status(500).json({error:'Erro ao recusar horário.'});}
 }
 
+async function occurrenceAccess(actor, ag){
+  if(!actor||!ag) return {see:false,manage:false};
+  if(actor.kind==='STAFF'){
+    const same=Number(actor.societyId)===Number(ag.societyId);
+    return {see:same&&['ADMIN','RECEPCAO','CAIXA'].includes(actor.funcao),manage:same&&['ADMIN','RECEPCAO'].includes(actor.funcao)};
+  }
+  if(actor.kind!=='USER') return {see:false,manage:false};
+  if(actor.tipo==='DONO_SOCIETY'){
+    const owns=!!(await prisma.society.findFirst({where:{id:ag.societyId,usuarioId:actor.id},select:{id:true}}));
+    if(owns) return {see:true,manage:true};
+  }
+  if(ag.grupoHorarioId){
+    const group=ag.grupoHorario || await prisma.grupoHorario.findUnique({where:{id:ag.grupoHorarioId}});
+    if(group && Number(group.organizadorId)===Number(actor.id)) return {see:true,manage:true};
+    const member=await prisma.grupoHorarioMembro.findFirst({where:{grupoId:ag.grupoHorarioId,usuarioId:actor.id,ativo:true},select:{id:true}});
+    if(member) return {see:true,manage:false};
+  }
+  if(ag.timeId){
+    const time=ag.time || await prisma.time.findUnique({where:{id:ag.timeId},select:{donoId:true}});
+    if(time && Number(time.donoId)===Number(actor.id)) return {see:true,manage:true};
+    const player=await prisma.usuario.findFirst({where:{id:actor.id,timeRelacionadoId:ag.timeId},select:{id:true}});
+    if(player) return {see:true,manage:false};
+  }
+  return {see:false,manage:false};
+}
+
 async function detailOccurrence(req,res){
   try{
     const agendamentoId=id(req.params.id);
-    const ag=await prisma.agendamento.findUnique({where:{id:agendamentoId},include:{society:{select:{id:true,nome:true,pixChave:true,pixTitular:true,usuarioId:true}},campo:true,grupoHorario:{include:{organizador:{select:{id:true,nome:true,fotoUrl:true}},membros:{where:{ativo:true},select:{usuarioId:true}}}},horarioFixo:true,presencas:{include:{usuario:{select:{id:true,nome:true,fotoUrl:true,posicaoCampo:true}}},orderBy:{usuario:{nome:'asc'}}}}});
-    if(!ag||!ag.grupoHorarioId) return res.status(404).json({error:'Encontro de horário fixo não encontrado.'});
-    const access=await actorCanSeeGroup(req.actor,ag.grupoHorarioId); if(!access.ok) return res.status(403).json({error:'Sem acesso a este encontro.'});
+    const ag=await prisma.agendamento.findUnique({where:{id:agendamentoId},include:{
+      society:{select:{id:true,nome:true,pixChave:true,pixTitular:true,usuarioId:true}},campo:true,
+      time:{select:{id:true,nome:true,donoId:true}},
+      grupoHorario:{include:{organizador:{select:{id:true,nome:true,fotoUrl:true}},membros:{where:{ativo:true},select:{usuarioId:true}}}},
+      horarioFixo:true,
+      organizador:{select:{id:true,nome:true,fotoUrl:true}},
+      presencas:{include:{usuario:{select:{id:true,nome:true,fotoUrl:true,posicaoCampo:true}}},orderBy:{usuario:{nome:'asc'}}}
+    }});
+    if(!ag) return res.status(404).json({error:'Jogo/reserva não encontrado.'});
+    const access=await occurrenceAccess(req.actor,ag); if(!access.see) return res.status(403).json({error:'Sem acesso a este jogo.'});
     const counts={vou:ag.presencas.filter(p=>p.status==='VOU').length,naoVou:ag.presencas.filter(p=>p.status==='NAO_VOU').length,pendentes:ag.presencas.filter(p=>p.status==='PENDENTE').length,total:ag.presencas.length};
-    const share=ag.horarioFixo?.dividirValor&&counts.vou?Number(ag.valor||0)/counts.vou:null;
+    const isMonthly=ag.horarioFixo?.tipoCobranca==='MENSAL';
+    const share=!isMonthly&&ag.horarioFixo?.dividirValor&&counts.vou?Number(ag.valor||0)/counts.vou:null;
     const my=req.actor.kind==='USER'?ag.presencas.find(p=>p.usuarioId===req.actor.id)||null:null;
-    res.json({...ag,resumoPresenca:counts,valorPorConfirmado:share,minhaPresenca:my,podeGerenciar:await actorCanManageGroup(req.actor,access.group)});
-  }catch(e){console.error(e);res.status(500).json({error:'Erro ao carregar encontro.'});}
+    const organizer=ag.grupoHorario?.organizador || ag.organizador || (ag.time?await prisma.usuario.findUnique({where:{id:ag.time.donoId},select:{id:true,nome:true,fotoUrl:true}}):null);
+    res.json({...ag,resumoPresenca:counts,valorPorConfirmado:share,minhaPresenca:my,podeGerenciar:access.manage,
+      nomeJogo:ag.grupoHorario?.nome||ag.time?.nome||'Jogo',organizadorExibicao:organizer,
+      tipoCobranca:ag.horarioFixo?.tipoCobranca||'POR_JOGO',valorCobranca:isMonthly?Number(ag.horarioFixo?.valorMensal||0):Number(ag.valor||0)
+    });
+  }catch(e){console.error(e);res.status(500).json({error:'Erro ao carregar jogo.'});}
 }
 
 async function recalcShare(agendamentoId){
@@ -288,39 +351,43 @@ async function respond(req,res){
   try{
     if(req.actor.kind!=='USER') return res.status(403).json({error:'Somente jogadores respondem presença.'});
     const agendamentoId=id(req.params.id); const status=String(req.body.status||'').toUpperCase(); if(!['VOU','NAO_VOU'].includes(status)) return res.status(400).json({error:'Resposta inválida.'});
-    const ag=await prisma.agendamento.findUnique({where:{id:agendamentoId},include:{grupoHorario:{include:{society:true}},campo:true}}); if(!ag?.grupoHorario) return res.status(404).json({error:'Horário não encontrado.'});
-    const member=await prisma.grupoHorarioMembro.findFirst({where:{grupoId:ag.grupoHorarioId,usuarioId:req.actor.id,ativo:true}}); if(!member) return res.status(403).json({error:'Você não faz parte deste grupo.'});
-    const p=await prisma.presencaHorario.upsert({where:{agendamentoId_usuarioId:{agendamentoId,usuarioId:req.actor.id}},create:{agendamentoId,usuarioId:req.actor.id,status,respondidoEm:new Date()},update:{status,respondidoEm:new Date()}});
+    const ag=await prisma.agendamento.findUnique({where:{id:agendamentoId},include:{grupoHorario:{include:{society:true}},time:true,society:true,campo:true}}); if(!ag) return res.status(404).json({error:'Jogo não encontrado.'});
+    const existing=await prisma.presencaHorario.findUnique({where:{agendamentoId_usuarioId:{agendamentoId,usuarioId:req.actor.id}}});
+    if(!existing) return res.status(403).json({error:'Você não faz parte do elenco desta reserva.'});
+    const p=await prisma.presencaHorario.update({where:{id:existing.id},data:{status,respondidoEm:new Date()}});
     await recalcShare(agendamentoId);
     const text=status==='VOU'?'👍 vai jogar':'👎 não vai jogar';
-    if(ag.grupoHorario.organizadorId!==req.actor.id) await notifyUsuario(prisma,ag.grupoHorario.organizadorId,`${req.actor.nome} respondeu`,`${req.actor.nome} ${text} em ${ptDate(ag.data)} às ${ag.horaInicio}.`,`confirmar-presenca.html?agendamentoId=${agendamentoId}`);
-    if(ag.grupoHorario.society.usuarioId!==req.actor.id&&ag.grupoHorario.society.usuarioId!==ag.grupoHorario.organizadorId) await notifyUsuario(prisma,ag.grupoHorario.society.usuarioId,'Presença atualizada',`${req.actor.nome} ${text} em ${ag.grupoHorario.nome}.`,`confirmar-presenca.html?agendamentoId=${agendamentoId}`);
-    await notifyStaff(prisma,ag.societyId,'Presença atualizada',`${req.actor.nome} ${text} em ${ag.grupoHorario.nome}.`,['ADMIN','RECEPCAO'],`confirmar-presenca.html?agendamentoId=${agendamentoId}`);
+    const ownerId=ag.grupoHorario?.organizadorId||ag.time?.donoId||ag.organizadorId;
+    if(ownerId&&Number(ownerId)!==Number(req.actor.id)) await notifyUsuario(prisma,ownerId,`${req.actor.nome} respondeu`,`${req.actor.nome} ${text} em ${ptDate(ag.data)} às ${ag.horaInicio}.`,`confirmar-presenca.html?agendamentoId=${agendamentoId}`);
+    if(ag.society?.usuarioId&&Number(ag.society.usuarioId)!==Number(req.actor.id)&&Number(ag.society.usuarioId)!==Number(ownerId)) await notifyUsuario(prisma,ag.society.usuarioId,'Presença atualizada',`${req.actor.nome} ${text} em ${ag.grupoHorario?.nome||ag.time?.nome||'uma reserva'}.`,`confirmar-presenca.html?agendamentoId=${agendamentoId}`);
+    await notifyStaff(prisma,ag.societyId,'Presença atualizada',`${req.actor.nome} ${text} em ${ag.grupoHorario?.nome||ag.time?.nome||'uma reserva'}.`,['ADMIN','RECEPCAO'],`confirmar-presenca.html?agendamentoId=${agendamentoId}`);
     emitHorario(agendamentoId,{tipo:'PRESENCA'}); res.json(p);
   }catch(e){console.error(e);res.status(500).json({error:'Erro ao registrar presença.'});}
 }
 
 async function remindPending(req,res){
   try{
-    const agendamentoId=id(req.params.id); const ag=await prisma.agendamento.findUnique({where:{id:agendamentoId},include:{grupoHorario:true,presencas:{where:{status:'PENDENTE'},select:{usuarioId:true}}}}); if(!ag?.grupoHorario)return res.status(404).json({error:'Horário não encontrado.'});
-    if(!(await actorCanManageGroup(req.actor,ag.grupoHorario))) return res.status(403).json({error:'Sem permissão.'});
-    for(const p of ag.presencas) await notifyUsuario(prisma,p.usuarioId,`Confirme presença: ${ag.grupoHorario.nome}`,`${ptDate(ag.data)} às ${ag.horaInicio}. Você vai jogar?`,`confirmar-presenca.html?agendamentoId=${agendamentoId}`);
+    const agendamentoId=id(req.params.id); const ag=await prisma.agendamento.findUnique({where:{id:agendamentoId},include:{grupoHorario:true,time:true,presencas:{where:{status:'PENDENTE'},select:{usuarioId:true}}}}); if(!ag)return res.status(404).json({error:'Jogo não encontrado.'});
+    const access=await occurrenceAccess(req.actor,ag); if(!access.manage) return res.status(403).json({error:'Somente o dono do time ou a empresa pode enviar lembretes.'});
+    const nome=ag.grupoHorario?.nome||ag.time?.nome||'Seu jogo';
+    for(const p of ag.presencas) await notifyUsuario(prisma,p.usuarioId,`Confirme presença: ${nome}`,`${ptDate(ag.data)} às ${ag.horaInicio}. Você vai jogar?`,`confirmar-presenca.html?agendamentoId=${agendamentoId}`);
     res.json({ok:true,enviados:ag.presencas.length});
   }catch(e){console.error(e);res.status(500).json({error:'Erro ao enviar lembretes.'});}
 }
 
 async function generateSplit(req,res){
   try{
-    const agendamentoId=id(req.params.id); const ag=await prisma.agendamento.findUnique({where:{id:agendamentoId},include:{grupoHorario:true,horarioFixo:true,presencas:{where:{status:'VOU'},include:{usuario:true}},society:true,campo:true}}); if(!ag?.grupoHorario)return res.status(404).json({error:'Horário não encontrado.'});
-    if(!(await actorCanManageGroup(req.actor,ag.grupoHorario))) return res.status(403).json({error:'Sem permissão.'});
+    const agendamentoId=id(req.params.id); const ag=await prisma.agendamento.findUnique({where:{id:agendamentoId},include:{grupoHorario:true,time:true,horarioFixo:true,presencas:{where:{status:'VOU'},include:{usuario:true}},society:true,campo:true}}); if(!ag)return res.status(404).json({error:'Jogo não encontrado.'});
+    const access=await occurrenceAccess(req.actor,ag); if(!access.manage)return res.status(403).json({error:'Sem permissão.'});
+    if(ag.horarioFixo?.tipoCobranca==='MENSAL') return res.status(400).json({error:'Este horário é mensalista. A cobrança mensal é gerada para o dono do time, não por jogo.'});
     if(!ag.presencas.length)return res.status(400).json({error:'Nenhum jogador confirmou presença.'});
-    const each=Number(ag.valor||0)/ag.presencas.length; const descBase=`Rateio ${ag.grupoHorario.nome} - ${keyDate(new Date(ag.data))} - agendamento ${ag.id}`;
+    const each=Number(ag.valor||0)/ag.presencas.length; const nome=ag.grupoHorario?.nome||ag.time?.nome||'Jogo'; const descBase=`Rateio ${nome} - ${keyDate(new Date(ag.data))} - agendamento ${ag.id}`;
     let created=0;
     for(const p of ag.presencas){
       await prisma.presencaHorario.update({where:{id:p.id},data:{valorRateio:each}});
       let payment=await prisma.pagamento.findFirst({where:{usuarioId:p.usuarioId,societyId:ag.societyId,descricao:descBase,status:{not:'CANCELADO'}}});
       if(!payment){ payment=await prisma.pagamento.create({data:{usuarioId:p.usuarioId,societyId:ag.societyId,campoId:ag.campoId,tipo:'AVULSO',valor:each,forma:'PIX',status:'PENDENTE',descricao:descBase}}); created++; }
-      await notifyUsuario(prisma,p.usuarioId,'Valor do jogo dividido',`${ag.grupoHorario.nome}: sua parte ficou em R$ ${each.toFixed(2).replace('.',',')}.`,`pagamentos.html?pagamentoId=${payment.id}`);
+      await notifyUsuario(prisma,p.usuarioId,'Valor do jogo dividido',`${nome}: sua parte ficou em R$ ${each.toFixed(2).replace('.',',')}.`,`pagamentos.html?pagamentoId=${payment.id}`);
     }
     emitHorario(agendamentoId,{tipo:'RATEIO'}); res.json({ok:true,valorPorPessoa:each,cobrancasCriadas:created});
   }catch(e){console.error(e);res.status(500).json({error:'Erro ao gerar rateio.'});}

@@ -536,6 +536,21 @@ const responderSolicitacao = async (req, res) => {
             });
 
             await notifyUsuario(prisma, solicitacao.usuarioId, "Entrada no time aprovada", `Sua solicitação para entrar no ${solicitacao.time.nome} foi aprovada.`, `meu-time.html`);
+
+            // Se a enquete da próxima ocorrência já foi disparada, o novo jogador também recebe a confirmação.
+            const rotina = await prisma.grupoHorario.findUnique({
+                where: { timeId: solicitacao.timeId },
+                select: { id: true, nome: true }
+            });
+            if (rotina) {
+                const proximo = await prisma.agendamento.findFirst({
+                    where: { grupoHorarioId: rotina.id, data: { gte: new Date() }, status: { not: "CANCELADO" }, presencaNotificadaEm: { not: null } },
+                    orderBy: [{ data: "asc" }, { horaInicio: "asc" }]
+                });
+                if (proximo) {
+                    await notifyUsuario(prisma, solicitacao.usuarioId, `Você vai jogar? • ${solicitacao.time.nome}`, `${new Date(proximo.data).toLocaleDateString("pt-BR")} às ${proximo.horaInicio}. Confirme 👍 ou 👎.`, `confirmar-presenca.html?agendamentoId=${proximo.id}`);
+                }
+            }
             return res.json({ ok: true, status: "APROVADA" });
         }
 
