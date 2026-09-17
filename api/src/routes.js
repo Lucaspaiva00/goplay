@@ -86,18 +86,24 @@ router.delete("/society/:societyId/player/:usuarioId", societyPlayerController.r
 
 router.post("/time", timeController.create);
 router.get("/time", timeController.list);
+router.get("/time/solicitacoes/minhas", authenticate, timeController.minhasSolicitacoes);
 router.get("/time/dono/:donoId", timeController.listByOwner);
 router.get("/time/society/:societyId", timeController.listBySociety);
 router.get("/time/details/by-player/:usuarioId", timeController.getTimeByPlayer);
+router.get("/time/:timeId/solicitacoes", authenticate, timeController.solicitacoesDoTime);
+router.post("/time/:timeId/solicitar-entrada", authenticate, timeController.solicitarEntrada);
+router.post("/time/solicitacoes/:id/responder", authenticate, timeController.responderSolicitacao);
+router.post("/time/solicitacoes/:id/cancelar", authenticate, timeController.cancelarSolicitacao);
+router.post("/time/:timeId/jogadores/:usuarioId/remover", authenticate, timeController.removerJogador);
 router.get("/time/:timeId", timeController.details);
 router.put("/time/:timeId", timeController.update);
 router.delete("/time/:timeId", timeController.remove);
-router.post("/time/entrar", timeController.join);
-router.post("/time/sair", timeController.leave);
-router.put("/time/:timeId/vinculo", timeController.updateVinculo);
-router.post("/time/:timeId/aprovar", timeController.aprovar);
-router.post("/time/:timeId/recusar", timeController.recusar);
-router.post("/time/:timeId/inativar", timeController.inativar);
+router.post("/time/entrar", authenticate, timeController.join);
+router.post("/time/sair", authenticate, timeController.leave);
+router.put("/time/:timeId/vinculo", ...requireEntitySocietyRoles(["ADMIN"], "time", "timeId"), timeController.updateVinculo);
+router.post("/time/:timeId/aprovar", ...requireEntitySocietyRoles(["ADMIN"], "time", "timeId"), timeController.aprovar);
+router.post("/time/:timeId/recusar", ...requireEntitySocietyRoles(["ADMIN"], "time", "timeId"), timeController.recusar);
+router.post("/time/:timeId/inativar", ...requireEntitySocietyRoles(["ADMIN"], "time", "timeId"), timeController.inativar);
 
 /* =====================================================
    CARDÁPIO

@@ -60,6 +60,33 @@
             </div>
         </section>
 
+        <section class="action-card" id="blocoSolicitacaoJogador" style="display:none;">
+            <h3 style="margin-bottom:10px;">🙋 Entrada no time</h3>
+            <p id="statusSolicitacaoJogador" style="color:#64748b;margin-bottom:12px;">Você ainda não solicitou entrada.</p>
+            <button class="btn navy" id="btnSolicitarEntradaTime">Solicitar entrada</button>
+        </section>
+
+        <section class="action-card" id="blocoSolicitacoesEntrada" style="display:none;">
+            <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+                <div>
+                    <h3 style="margin-bottom:6px;">📥 Solicitações para entrar</h3>
+                    <p style="color:#64748b;margin:0;">Aprove ou recuse jogadores que querem fazer parte do elenco.</p>
+                </div>
+                <span id="chipSolicitacoesEntrada" style="font-size:12px;padding:6px 10px;border-radius:999px;background:#eef6fb;color:#052845;font-weight:900;">0 pendentes</span>
+            </div>
+            <div id="listaSolicitacoesEntrada" style="margin-top:14px;">Carregando...</div>
+        </section>
+
+        <section class="action-card" id="blocoRotinaTime" style="display:none;">
+            <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                <div>
+                    <h3 style="margin-bottom:6px;">🔁 Rotina e presença do time</h3>
+                    <p id="textoRotinaTime" style="color:#64748b;margin:0;">O horário recorrente e a enquete 👍/👎 ficam vinculados ao elenco deste time.</p>
+                </div>
+                <div id="acoesRotinaTime" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+            </div>
+        </section>
+
         <section class="action-card" id="blocoAgendamentos">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                 <h3 style="margin-bottom:12px;">📅 Próximos Agendamentos do Time</h3>

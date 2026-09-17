@@ -1,0 +1,20 @@
+GOPLAY — AJUSTE DE TIMES, SOLICITAÇÕES DE ENTRADA E ROTINA
+Data: 17/09/2026
+
+Principais mudanças:
+1. Jogador vê os times APROVADOS da empresa/Society selecionada.
+2. Jogador não entra diretamente: envia solicitação de entrada.
+3. Dono do time recebe notificação e aprova ou recusa no detalhe do time.
+4. Ao aprovar, o jogador entra no elenco; outras solicitações pendentes são canceladas.
+5. A rotina semanal deixa de ser um "grupo paralelo" e passa a ser vinculada ao Time.
+6. O dono cria a "Rotina do Time" pelo detalhe do time.
+7. Jogadores aprovados entram automaticamente na rotina e nas futuras confirmações de presença.
+8. Ao sair/remover do time, o jogador sai das presenças futuras da rotina.
+9. Perfis/menu foram renomeados para reduzir a confusão entre Time e Grupo.
+10. Grupos antigos continuam legíveis para compatibilidade; novos fluxos de time usam rotina vinculada.
+
+Migration nova:
+20260917183000_solicitacoes_time_rotina
+
+Após deploy no Render (Shell já dentro de /api):
+npx prisma migrate deploy && npx prisma generate

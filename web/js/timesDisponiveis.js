@@ -80,7 +80,7 @@ function renderTimes(lista) {
 
             <div style="margin-top:14px;">
                 <button class="time-btn" onclick="entrarNoTime(${Number(t.id)})">
-                    Entrar no time
+                    Solicitar entrada
                 </button>
             </div>
         </div>
@@ -93,8 +93,15 @@ async function carregarTimesDisponiveis() {
     try {
         div.innerHTML = `<div class="card">Carregando times...</div>`;
 
-        const times = await fetchJSON(`${BASE_URL}/time`);
-        todosTimes = Array.isArray(times) ? times : [];
+        const societyId = Number(new URLSearchParams(location.search).get("societyId") || localStorage.getItem("societyId") || 0);
+        if (!societyId) {
+            todosTimes = [];
+            renderTimes([]);
+            div.insertAdjacentHTML("afterbegin", `<div class="card"><p>Selecione uma empresa em <b>Explorar Empresas</b> antes de procurar um time.</p></div>`);
+            return;
+        }
+        const times = await fetchJSON(`${BASE_URL}/time/society/${societyId}`);
+        todosTimes = (Array.isArray(times) ? times : []).filter(t => t.statusVinculo === "APROVADO");
         renderTimes(todosTimes);
     } catch (error) {
         console.error(error);
@@ -133,19 +140,13 @@ async function entrarNoTime(timeId) {
     }
 
     try {
-        const json = await fetchJSON(`${BASE_URL}/time/entrar`, {
+        const json = await fetchJSON(`${BASE_URL}/time/${timeId}/solicitar-entrada`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ usuarioId: usuario.id, timeId })
+            body: "{}"
         });
-
-        if (json.error) {
-            alert(json.error);
-            return;
-        }
-
-        alert("Você entrou no time com sucesso!");
-        window.location.href = "meu-time.html";
+        alert(json?.message || "Solicitação enviada ao dono do time.");
+        await carregarTimesDisponiveis();
     } catch (error) {
         console.error(error);
         alert(error.message || "Erro ao entrar no time.");

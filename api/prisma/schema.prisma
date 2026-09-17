@@ -170,6 +170,13 @@ enum StatusConviteJogadorCampeonato {
   RECUSADO
 }
 
+enum StatusSolicitacaoTime {
+  PENDENTE
+  APROVADA
+  RECUSADA
+  CANCELADA
+}
+
 model Usuario {
   id           Int       @id @default(autoincrement())
   nome         String
@@ -220,6 +227,7 @@ model Usuario {
   presencasHorario PresencaHorario[]
   agendamentosOrganizados Agendamento[]
   convitesCampeonatoJogador ConviteCampeonatoJogador[]
+  solicitacoesEntradaTime SolicitacaoEntradaTime[]
   disponivelParaConvites Boolean @default(false)
 
   @@index([timeRelacionadoId])
@@ -397,6 +405,8 @@ model Time {
   pagamentos        Pagamento[]
   comandas          Comanda[]
   convitesCampeonato ConviteCampeonatoTime[]
+  solicitacoesEntrada SolicitacaoEntradaTime[]
+  rotinaHorario GrupoHorario?
 
   @@unique([societyId, nome])
   @@index([societyId])
@@ -520,6 +530,9 @@ model Notificacao {
 model GrupoHorario {
   id Int @id @default(autoincrement())
 
+  timeId Int? @unique
+  time Time? @relation(fields: [timeId], references: [id], onDelete: SetNull)
+
   societyId Int
   society Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
 
@@ -538,9 +551,30 @@ model GrupoHorario {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([timeId])
   @@index([societyId])
   @@index([organizadorId])
   @@index([ativo])
+}
+
+model SolicitacaoEntradaTime {
+  id Int @id @default(autoincrement())
+
+  timeId Int
+  time Time @relation(fields: [timeId], references: [id], onDelete: Cascade)
+
+  usuarioId Int
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  status StatusSolicitacaoTime @default(PENDENTE)
+  solicitadoEm DateTime @default(now())
+  respondidoEm DateTime?
+  updatedAt DateTime @updatedAt
+
+  @@unique([timeId, usuarioId])
+  @@index([timeId])
+  @@index([usuarioId])
+  @@index([status])
 }
 
 model GrupoHorarioMembro {

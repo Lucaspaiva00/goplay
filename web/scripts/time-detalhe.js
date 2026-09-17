@@ -184,6 +184,147 @@ async function inativarTime(timeId) {
     }
 }
 
+async function solicitarEntradaTime(timeId) {
+    if (!confirm("Enviar solicitação para entrar neste time? O dono precisa aprovar antes de você entrar.")) return;
+    try {
+        const d = await fetchJSON(`${BASE_URL}/time/${timeId}/solicitar-entrada`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "{}"
+        });
+        alert(d?.message || "Solicitação enviada ao dono do time.");
+        await carregarTime(timeId);
+    } catch (e) {
+        alert(e.message || "Erro ao solicitar entrada.");
+    }
+}
+
+async function carregarSolicitacaoDoJogador(timeId, isMembro) {
+    const box = document.getElementById("blocoSolicitacaoJogador");
+    const statusEl = document.getElementById("statusSolicitacaoJogador");
+    const btn = document.getElementById("btnSolicitarEntradaTime");
+    if (!box) return;
+    box.style.display = "block";
+
+    if (isMembro) {
+        if (statusEl) statusEl.innerHTML = "<strong>✓ Você já faz parte deste time.</strong>";
+        if (btn) btn.style.display = "none";
+        return;
+    }
+
+    try {
+        const rows = await fetchJSON(`${BASE_URL}/time/solicitacoes/minhas`);
+        const req = (Array.isArray(rows) ? rows : []).find(x => Number(x.timeId) === Number(timeId));
+        if (req?.status === "PENDENTE") {
+            if (statusEl) statusEl.textContent = "Sua solicitação está aguardando o dono do time.";
+            if (btn) { btn.disabled = true; btn.textContent = "⏳ Solicitação enviada"; btn.style.opacity = ".65"; }
+        } else {
+            if (statusEl) statusEl.textContent = req?.status === "RECUSADA"
+                ? "Sua solicitação anterior não foi aprovada. Você pode solicitar novamente."
+                : "Você ainda não faz parte deste time. Envie uma solicitação ao dono.";
+            if (btn) {
+                btn.style.display = "inline-flex";
+                btn.disabled = false;
+                btn.style.opacity = "1";
+                btn.textContent = req?.status === "RECUSADA" ? "Solicitar novamente" : "Solicitar entrada";
+                btn.onclick = () => solicitarEntradaTime(timeId);
+            }
+        }
+    } catch (e) {
+        if (statusEl) statusEl.textContent = e.message;
+    }
+}
+
+async function carregarSolicitacoesEntrada(timeId) {
+    const box = document.getElementById("blocoSolicitacoesEntrada");
+    const list = document.getElementById("listaSolicitacoesEntrada");
+    const chip = document.getElementById("chipSolicitacoesEntrada");
+    if (!box || !list) return;
+    box.style.display = "block";
+    try {
+        const rows = await fetchJSON(`${BASE_URL}/time/${timeId}/solicitacoes`);
+        const data = Array.isArray(rows) ? rows : [];
+        if (chip) chip.textContent = `${data.length} pendente${data.length === 1 ? "" : "s"}`;
+        if (!data.length) {
+            list.innerHTML = `<div style="color:#64748b;padding:10px 0;">Nenhuma solicitação pendente.</div>`;
+            return;
+        }
+        list.innerHTML = data.map(s => `
+            <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #e8eef3;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    ${s.usuario?.fotoUrl ? `<img src="${escapeHtml(s.usuario.fotoUrl)}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;">` : `<div style="width:42px;height:42px;border-radius:50%;background:#e5e7eb;display:grid;place-items:center;font-weight:900;">${escapeHtml((s.usuario?.nome || "?")[0])}</div>`}
+                    <div><strong>${escapeHtml(s.usuario?.nome || "Jogador")}</strong><div style="color:#64748b;font-size:13px;">${escapeHtml(s.usuario?.posicaoCampo || s.usuario?.email || "Jogador")}</div></div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn green" onclick="responderSolicitacaoTime(${s.id}, 'APROVADA')">✓ Aprovar</button>
+                    <button class="btn navy" onclick="responderSolicitacaoTime(${s.id}, 'RECUSADA')">Recusar</button>
+                </div>
+            </div>`).join("");
+    } catch (e) {
+        list.innerHTML = `<div style="color:#b91c1c;">${escapeHtml(e.message)}</div>`;
+    }
+}
+
+async function responderSolicitacaoTime(id, status) {
+    const aceitar = status === "APROVADA";
+    if (!confirm(aceitar ? "Aprovar este jogador e adicioná-lo ao elenco?" : "Recusar esta solicitação?")) return;
+    try {
+        await fetchJSON(`${BASE_URL}/time/solicitacoes/${id}/responder`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status })
+        });
+        await carregarTime(getParam("timeId"));
+    } catch (e) { alert(e.message || "Erro ao responder solicitação."); }
+}
+
+async function criarRotinaDoTime(time) {
+    if (!confirm(`Criar a rotina recorrente do ${time.nome}? O elenco atual será usado nas confirmações 👍/👎.`)) return;
+    try {
+        const group = await fetchJSON(`${BASE_URL}/grupos-horario`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                timeId: Number(time.id),
+                societyId: Number(time.society?.id || 0),
+                nome: `${time.nome} • Rotina`,
+                descricao: `Horário recorrente e confirmações do ${time.nome}.`,
+                maxJogadores: Math.max(20, (time.jogadores || []).length + 5)
+            })
+        });
+        location.href = `horario-grupo.html?grupoId=${group.id}`;
+    } catch (e) {
+        if (e.message?.includes("já possui")) {
+            await carregarTime(time.id);
+        } else alert(e.message || "Erro ao criar rotina do time.");
+    }
+}
+
+function renderRotinaTime(time, podeGerenciar, isMembro) {
+    const box = document.getElementById("blocoRotinaTime");
+    const actions = document.getElementById("acoesRotinaTime");
+    const text = document.getElementById("textoRotinaTime");
+    if (!box || !actions) return;
+    const rotina = time.rotinaHorario;
+    const podeVer = podeGerenciar || isMembro;
+    box.style.display = podeVer ? "block" : "none";
+    if (!podeVer) return;
+
+    if (rotina?.id) {
+        if (text) text.textContent = "A lista de jogadores vem do elenco do time. Aqui ficam o horário recorrente e a enquete semanal 👍/👎.";
+        actions.innerHTML = `<button class="btn green" onclick="location.href='horario-grupo.html?grupoId=${rotina.id}'"><i class="fa fa-thumbs-up"></i> Abrir rotina e presenças</button>`;
+    } else if (podeGerenciar) {
+        if (text) text.textContent = "Crie uma única rotina vinculada a este time. Os jogadores aprovados entram automaticamente nas confirmações semanais.";
+        actions.innerHTML = `<button class="btn green" id="btnCriarRotinaTime"><i class="fa fa-rotate"></i> Criar rotina do time</button>`;
+        document.getElementById("btnCriarRotinaTime").onclick = () => criarRotinaDoTime(time);
+    } else {
+        if (text) text.textContent = "O dono do time ainda não configurou a rotina semanal.";
+        actions.innerHTML = "";
+    }
+}
+
+window.responderSolicitacaoTime = responderSolicitacaoTime;
+
 async function carregarAgendamentos(timeId, mostrarAcoes = false) {
     const wrap = document.getElementById("listaAgendamentos");
     const chip = document.getElementById("chipAgendamentos");
@@ -344,9 +485,11 @@ async function carregarTime(timeId) {
         const time = await fetchJSON(`${BASE_URL}/time/${timeId}`);
 
         const tipoUsuario = String(usuario?.tipo || "").toUpperCase();
-        const isDonoSociety = tipoUsuario === "DONO_SOCIETY";
+        const isDonoSociety = tipoUsuario === "DONO_SOCIETY" && Number(time?.society?.usuarioId) === Number(usuario?.id);
         const isDonoTime = tipoUsuario === "DONO_TIME";
         const isPlayer = tipoUsuario === "PLAYER";
+        const isDonoDesteTime = isDonoTime && Number(time?.dono?.id) === Number(usuario?.id);
+        const isMembro = isPlayer && (time.jogadores || []).some(j => Number(j.id) === Number(usuario?.id));
 
         const acoesVinculo = document.getElementById("acoesVinculoSociety");
         const acoesDonoTime = document.getElementById("acoesDonoTime");
@@ -357,7 +500,7 @@ async function carregarTime(timeId) {
         }
 
         if (acoesDonoTime) {
-            acoesDonoTime.style.display = isDonoTime ? "block" : "none";
+            acoesDonoTime.style.display = isDonoDesteTime ? "block" : "none";
         }
 
         if (blocoAgendamentos) {
@@ -391,19 +534,28 @@ async function carregarTime(timeId) {
                     ${j.fotoUrl
                         ? `<img src="${escapeHtml(j.fotoUrl)}" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">`
                         : `<div style="width:36px;height:36px;border-radius:50%;background:#e5e7eb;display:flex;align-items:center;justify-content:center;color:#6b7280;font-size:14px;">${escapeHtml((j.nome || "?").charAt(0))}</div>`}
-                    <div>
+                    <div style="flex:1;">
                       <strong>${escapeHtml(j.nome)}</strong><br/>
                       <span style="color:#6b7280;font-size:13px;">
                         ${escapeHtml(j.posicaoCampo || "—")} ${j.goleiro ? "• Goleiro" : ""}
                       </span>
                     </div>
+                    ${isDonoDesteTime ? `<button class="btn navy" style="padding:7px 10px;font-size:12px" onclick="removerJogadorDoTime(${time.id}, ${j.id})">Remover</button>` : ""}
                   </div>
                 `).join("")}
               </div>
             `;
         }
 
-        await carregarAgendamentos(timeId, isDonoTime);
+        renderRotinaTime(time, isDonoDesteTime, isMembro);
+        const reqBox = document.getElementById("blocoSolicitacoesEntrada");
+        const playerBox = document.getElementById("blocoSolicitacaoJogador");
+        if (reqBox) reqBox.style.display = isDonoDesteTime ? "block" : "none";
+        if (playerBox) playerBox.style.display = isPlayer ? "block" : "none";
+        if (isDonoDesteTime) await carregarSolicitacoesEntrada(timeId);
+        if (isPlayer) await carregarSolicitacaoDoJogador(timeId, isMembro);
+
+        await carregarAgendamentos(timeId, isDonoDesteTime);
     } catch (err) {
         console.error(err);
         infoEl.innerHTML = `<p style="color:#b91c1c;"><strong>Erro:</strong> ${escapeHtml(err.message)}</p>`;
@@ -411,5 +563,14 @@ async function carregarTime(timeId) {
     }
 }
 
+async function removerJogadorDoTime(timeId, usuarioId) {
+    if (!confirm("Remover este jogador do time? Ele também sairá das próximas confirmações da rotina.")) return;
+    try {
+        await fetchJSON(`${BASE_URL}/time/${timeId}/jogadores/${usuarioId}/remover`, { method: "POST" });
+        await carregarTime(timeId);
+    } catch (e) { alert(e.message || "Erro ao remover jogador."); }
+}
+
+window.removerJogadorDoTime = removerJogadorDoTime;
 window.cancelarAgendamento = cancelarAgendamento;
 window.abrirPagamentoPorLink = abrirPagamentoPorLink;

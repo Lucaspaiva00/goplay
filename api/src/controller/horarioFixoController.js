@@ -43,17 +43,47 @@ async function ensureOrganizerMember(tx, group) {
 async function createGroup(req,res){
   try{
     if(req.actor?.kind!=='USER') return res.status(403).json({error:'Apenas usuários podem organizar um horário fixo.'});
-    const societyId=id(req.body.societyId); const nome=String(req.body.nome||'').trim();
+
+    const timeId=id(req.body.timeId);
+    let societyId=id(req.body.societyId);
+    let nome=String(req.body.nome||'').trim();
     const maxJogadores=Math.max(2,Math.min(100,Number(req.body.maxJogadores||20)));
+    let time=null;
+
+    if(timeId){
+      time=await prisma.time.findUnique({
+        where:{id:timeId},
+        include:{society:{select:{id:true,nome:true,usuarioId:true}},jogadores:{select:{id:true}}}
+      });
+      if(!time) return res.status(404).json({error:'Time não encontrado.'});
+      if(Number(time.donoId)!==Number(req.actor.id)) return res.status(403).json({error:'Apenas o dono do time pode criar a rotina recorrente dele.'});
+      const existing=await prisma.grupoHorario.findUnique({where:{timeId}});
+      if(existing) return res.status(409).json({error:'Este time já possui uma rotina de horário.',grupoId:existing.id});
+      societyId=time.societyId;
+      if(!nome) nome=`Rotina • ${time.nome}`;
+    }
+
     if(!societyId||!nome) return res.status(400).json({error:'Empresa e nome do grupo são obrigatórios.'});
-    const society=await prisma.society.findUnique({where:{id:societyId},select:{id:true,nome:true,usuarioId:true}});
+    const society=time?.society||await prisma.society.findUnique({where:{id:societyId},select:{id:true,nome:true,usuarioId:true}});
     if(!society) return res.status(404).json({error:'Empresa não encontrada.'});
+
     const group=await prisma.$transaction(async tx=>{
-      const g=await tx.grupoHorario.create({data:{societyId,organizadorId:req.actor.id,nome,descricao:req.body.descricao?String(req.body.descricao).trim():null,maxJogadores}});
-      await ensureOrganizerMember(tx,g); return g;
+      const g=await tx.grupoHorario.create({data:{timeId:timeId||null,societyId,organizadorId:req.actor.id,nome,descricao:req.body.descricao?String(req.body.descricao).trim():null,maxJogadores}});
+      await ensureOrganizerMember(tx,g);
+      if(time){
+        for(const jogador of time.jogadores){
+          await tx.grupoHorarioMembro.upsert({
+            where:{grupoId_usuarioId:{grupoId:g.id,usuarioId:jogador.id}},
+            create:{grupoId:g.id,usuarioId:jogador.id,ativo:true},
+            update:{ativo:true}
+          });
+        }
+      }
+      return g;
     });
-    await notifyUsuario(prisma,req.actor.id,'Grupo de jogo criado',`${nome} foi criado em ${society.nome}.`,`horario-grupo.html?grupoId=${group.id}`);
-    if(Number(society.usuarioId)!==Number(req.actor.id)) await notifyUsuario(prisma,society.usuarioId,'Novo grupo recorrente',`${req.actor.nome} criou o grupo ${nome} na sua empresa.`,`horario-grupo.html?grupoId=${group.id}`);
+
+    await notifyUsuario(prisma,req.actor.id,time?'Rotina do time criada':'Grupo de jogo criado',`${nome} foi criado em ${society.nome}.`,`horario-grupo.html?grupoId=${group.id}`);
+    if(Number(society.usuarioId)!==Number(req.actor.id)) await notifyUsuario(prisma,society.usuarioId,time?'Nova rotina de time':'Novo grupo recorrente',`${req.actor.nome} criou ${nome} na sua empresa.`,`horario-grupo.html?grupoId=${group.id}`);
     res.status(201).json(group);
   }catch(e){console.error(e);res.status(500).json({error:'Erro ao criar grupo de horário.'});}
 }
@@ -63,7 +93,7 @@ async function myGroups(req,res){
     if(req.actor.kind!=='USER') return res.json([]);
     const rows=await prisma.grupoHorario.findMany({
       where:{ativo:true,OR:[{organizadorId:req.actor.id},{membros:{some:{usuarioId:req.actor.id,ativo:true}}}]},
-      include:{society:{select:{id:true,nome:true,imagem:true,cidade:true}},membros:{where:{ativo:true},select:{id:true}},horariosFixos:{where:{ativo:true},include:{campo:{select:{id:true,nome:true}}},orderBy:{createdAt:'desc'}}},
+      include:{society:{select:{id:true,nome:true,imagem:true,cidade:true}},time:{select:{id:true,nome:true,brasao:true}},membros:{where:{ativo:true},select:{id:true}},horariosFixos:{where:{ativo:true},include:{campo:{select:{id:true,nome:true}}},orderBy:{createdAt:'desc'}}},
       orderBy:{updatedAt:'desc'}
     });
     const now=new Date();
@@ -76,7 +106,7 @@ async function myGroups(req,res){
 async function listSociety(req,res){
   try{
     const societyId=id(req.params.societyId);
-    const groups=await prisma.grupoHorario.findMany({where:{societyId,ativo:true},include:{organizador:{select:{id:true,nome:true,fotoUrl:true}},membros:{where:{ativo:true},select:{id:true}},horariosFixos:{where:{ativo:true},include:{campo:{select:{id:true,nome:true}}}}},orderBy:{nome:'asc'}});
+    const groups=await prisma.grupoHorario.findMany({where:{societyId,ativo:true},include:{time:{select:{id:true,nome:true,brasao:true}},organizador:{select:{id:true,nome:true,fotoUrl:true}},membros:{where:{ativo:true},select:{id:true}},horariosFixos:{where:{ativo:true},include:{campo:{select:{id:true,nome:true}}}}},orderBy:{nome:'asc'}});
     const now=new Date(); const gids=groups.map(g=>g.id);
     const apps=gids.length?await prisma.agendamento.findMany({where:{grupoHorarioId:{in:gids},data:{gte:new Date(now.getFullYear(),now.getMonth(),now.getDate())},status:{not:'CANCELADO'}},include:{presencas:true,campo:true},orderBy:[{data:'asc'},{horaInicio:'asc'}]}):[];
     res.json(groups.map(g=>({...g,proximo:apps.find(a=>a.grupoHorarioId===g.id)||null})));
@@ -88,7 +118,7 @@ async function readGroup(req,res){
     const groupId=id(req.params.id); const access=await actorCanSeeGroup(req.actor,groupId);
     if(!access.group) return res.status(404).json({error:'Grupo não encontrado.'});
     if(!access.ok) return res.status(403).json({error:'Você não possui acesso a este grupo.'});
-    const group=await prisma.grupoHorario.findUnique({where:{id:groupId},include:{society:{select:{id:true,nome:true,pixChave:true,pixTitular:true}},organizador:{select:{id:true,nome:true,email:true,fotoUrl:true}},membros:{where:{ativo:true},include:{usuario:{select:{id:true,nome:true,email:true,fotoUrl:true,posicaoCampo:true,disponivelParaConvites:true}}},orderBy:{convidadoEm:'asc'}},horariosFixos:{where:{ativo:true},include:{campo:true},orderBy:{createdAt:'desc'}}}});
+    const group=await prisma.grupoHorario.findUnique({where:{id:groupId},include:{society:{select:{id:true,nome:true,pixChave:true,pixTitular:true}},time:{select:{id:true,nome:true,brasao:true,donoId:true}},organizador:{select:{id:true,nome:true,email:true,fotoUrl:true}},membros:{where:{ativo:true},include:{usuario:{select:{id:true,nome:true,email:true,fotoUrl:true,posicaoCampo:true,disponivelParaConvites:true}}},orderBy:{convidadoEm:'asc'}},horariosFixos:{where:{ativo:true},include:{campo:true},orderBy:{createdAt:'desc'}}}});
     const apps=await prisma.agendamento.findMany({where:{grupoHorarioId:groupId,status:{not:'CANCELADO'}},include:{campo:true,presencas:{include:{usuario:{select:{id:true,nome:true,fotoUrl:true}}}}},orderBy:[{data:'asc'},{horaInicio:'asc'}],take:30});
     res.json({...group,agendamentos:apps,podeGerenciar:await actorCanManageGroup(req.actor,access.group),podeAprovarHorario:await actorIsCompanyManager(req.actor,group.societyId)});
   }catch(e){console.error(e);res.status(500).json({error:'Erro ao carregar grupo.'});}
@@ -99,6 +129,7 @@ async function inviteMember(req,res){
     const groupId=id(req.params.id); const group=await prisma.grupoHorario.findUnique({where:{id:groupId},include:{society:true}});
     if(!group) return res.status(404).json({error:'Grupo não encontrado.'});
     if(!(await actorCanManageGroup(req.actor,group))) return res.status(403).json({error:'Somente o organizador ou a empresa pode convidar.'});
+    if(group.timeId) return res.status(400).json({error:'Esta rotina usa o elenco do time. O jogador deve solicitar entrada pelo perfil do time e o dono precisa aprovar.'});
     let user=null; const userId=id(req.body.usuarioId); const email=String(req.body.email||'').trim().toLowerCase();
     if(userId) user=await prisma.usuario.findUnique({where:{id:userId}}); else if(email) user=await prisma.usuario.findUnique({where:{email}});
     if(!user) return res.status(404).json({error:'Jogador não encontrado. Ele precisa ter uma conta GoPlay.'});
@@ -122,6 +153,7 @@ async function removeMember(req,res){
     const groupId=id(req.params.id), userId=id(req.params.userId); const group=await prisma.grupoHorario.findUnique({where:{id:groupId}});
     if(!group) return res.status(404).json({error:'Grupo não encontrado.'});
     if(!(await actorCanManageGroup(req.actor,group))) return res.status(403).json({error:'Sem permissão.'});
+    if(group.timeId) return res.status(400).json({error:'O elenco desta rotina é controlado pelo time. Remova o jogador no perfil do time.'});
     if(userId===group.organizadorId) return res.status(400).json({error:'O organizador não pode ser removido do próprio grupo.'});
     await prisma.grupoHorarioMembro.updateMany({where:{grupoId,usuarioId:userId},data:{ativo:false}});
     const future=await prisma.agendamento.findMany({where:{grupoHorarioId:groupId,data:{gte:new Date()}},select:{id:true}});
