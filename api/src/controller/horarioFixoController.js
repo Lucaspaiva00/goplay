@@ -133,11 +133,11 @@ async function inviteMember(req,res){
     let user=null; const userId=id(req.body.usuarioId); const email=String(req.body.email||'').trim().toLowerCase();
     if(userId) user=await prisma.usuario.findUnique({where:{id:userId}}); else if(email) user=await prisma.usuario.findUnique({where:{email}});
     if(!user) return res.status(404).json({error:'Jogador não encontrado. Ele precisa ter uma conta GoPlay.'});
-    const activeCount=await prisma.grupoHorarioMembro.count({where:{grupoId,ativo:true}});
-    const existing=await prisma.grupoHorarioMembro.findUnique({where:{grupoId_usuarioId:{grupoId,usuarioId:user.id}}});
+    const activeCount=await prisma.grupoHorarioMembro.count({where:{grupoId:groupId,ativo:true}});
+    const existing=await prisma.grupoHorarioMembro.findUnique({where:{grupoId_usuarioId:{grupoId:groupId,usuarioId:user.id}}});
     if(!existing && activeCount>=group.maxJogadores) return res.status(400).json({error:'O grupo já atingiu o limite de jogadores.'});
     await prisma.$transaction(async tx=>{
-      await tx.grupoHorarioMembro.upsert({where:{grupoId_usuarioId:{grupoId,usuarioId:user.id}},create:{grupoId,usuarioId:user.id,ativo:true},update:{ativo:true}});
+      await tx.grupoHorarioMembro.upsert({where:{grupoId_usuarioId:{grupoId:groupId,usuarioId:user.id}},create:{grupoId:groupId,usuarioId:user.id,ativo:true},update:{ativo:true}});
       const future=await tx.agendamento.findMany({where:{grupoHorarioId:groupId,data:{gte:new Date()},status:{not:'CANCELADO'}},select:{id:true}});
       for(const a of future) await tx.presencaHorario.upsert({where:{agendamentoId_usuarioId:{agendamentoId:a.id,usuarioId:user.id}},create:{agendamentoId:a.id,usuarioId:user.id},update:{}});
     });
@@ -155,7 +155,7 @@ async function removeMember(req,res){
     if(!(await actorCanManageGroup(req.actor,group))) return res.status(403).json({error:'Sem permissão.'});
     if(group.timeId) return res.status(400).json({error:'O elenco desta rotina é controlado pelo time. Remova o jogador no perfil do time.'});
     if(userId===group.organizadorId) return res.status(400).json({error:'O organizador não pode ser removido do próprio grupo.'});
-    await prisma.grupoHorarioMembro.updateMany({where:{grupoId,usuarioId:userId},data:{ativo:false}});
+    await prisma.grupoHorarioMembro.updateMany({where:{grupoId:groupId,usuarioId:userId},data:{ativo:false}});
     const future=await prisma.agendamento.findMany({where:{grupoHorarioId:groupId,data:{gte:new Date()}},select:{id:true}});
     if(future.length) await prisma.presencaHorario.deleteMany({where:{usuarioId:userId,agendamentoId:{in:future.map(x=>x.id)}}});
     res.json({ok:true});
@@ -226,7 +226,7 @@ async function createFixed(req,res){
     if(tipo==='POR_JOGO'&&(!valorPorJogo||valorPorJogo<=0)) return res.status(400).json({error:'Informe o valor por jogo.'});
     if(tipo==='MENSAL'&&(!valorMensal||valorMensal<=0)) return res.status(400).json({error:'Informe o valor mensal.'});
     const autoApprove=await actorIsCompanyManager(req.actor,group.societyId);
-    const hf=await prisma.horarioFixo.create({data:{grupoId,societyId:group.societyId,campoId,organizadorId:group.organizadorId,diaSemana,horaInicio,horaFim,dataInicio:start,dataFim:end,tipoCobranca:tipo,status:autoApprove?'APROVADO':'PENDENTE',quantidadeSemanas:semanas,valorPorJogo,valorMensal,dividirValor:req.body.dividirValor!==false,ativo:true}});
+    const hf=await prisma.horarioFixo.create({data:{grupoId:groupId,societyId:group.societyId,campoId,organizadorId:group.organizadorId,diaSemana,horaInicio,horaFim,dataInicio:start,dataFim:end,tipoCobranca:tipo,status:autoApprove?'APROVADO':'PENDENTE',quantidadeSemanas:semanas,valorPorJogo,valorMensal,dividirValor:req.body.dividirValor!==false,ativo:true}});
     if(!autoApprove){
       const current=await validateFixedConflicts(hf); if(!current.ok){await prisma.horarioFixo.update({where:{id:hf.id},data:{status:'RECUSADO',ativo:false}});return res.status(409).json({error:current.error});}
       if(Number(group.society.usuarioId)!==Number(group.organizadorId)) await notifyUsuario(prisma,group.society.usuarioId,'Solicitação de horário fixo',`${group.nome} solicitou ${horaInicio}-${horaFim} por ${semanas} semana(s).`,`horario-grupo.html?grupoId=${groupId}`);
@@ -348,7 +348,7 @@ async function availablePlayers(req,res){
   try{
     const groupId=id(req.params.id); const group=await prisma.grupoHorario.findUnique({where:{id:groupId}}); if(!group)return res.status(404).json({error:'Grupo não encontrado.'});
     if(!(await actorCanManageGroup(req.actor,group)))return res.status(403).json({error:'Sem permissão.'});
-    const memberIds=(await prisma.grupoHorarioMembro.findMany({where:{grupoId,ativo:true},select:{usuarioId:true}})).map(x=>x.usuarioId);
+    const memberIds=(await prisma.grupoHorarioMembro.findMany({where:{grupoId:groupId,ativo:true},select:{usuarioId:true}})).map(x=>x.usuarioId);
     const q=String(req.query.q||'').trim(); const users=await prisma.usuario.findMany({where:{disponivelParaConvites:true,id:{notIn:memberIds},...(q?{OR:[{nome:{contains:q,mode:'insensitive'}},{email:{contains:q,mode:'insensitive'}}]}:{})},select:{id:true,nome:true,email:true,fotoUrl:true,posicaoCampo:true},orderBy:{nome:'asc'},take:50}); res.json(users);
   }catch(e){console.error(e);res.status(500).json({error:'Erro ao buscar jogadores disponíveis.'});}
 }

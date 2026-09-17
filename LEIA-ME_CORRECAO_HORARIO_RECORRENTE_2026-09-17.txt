@@ -1,0 +1,12 @@
+CORRECAO HORARIO RECORRENTE - 17/09/2026
+
+Causa real:
+- horarioFixoController.js criava a variável `groupId`, mas em vários objetos Prisma usava o identificador inexistente `grupoId` por shorthand.
+- Isso gerava ReferenceError no backend ao solicitar horário fixo e também afetava convite/remoção/busca de jogadores em fluxos relacionados.
+
+Correções:
+- grupoId: groupId explicitado em todos os pontos incorretos do controller.
+- variável global legada groupId definida no frontend por compatibilidade.
+- cache-busting no horario-grupo.js para impedir navegador de reutilizar JS antigo.
+
+Não há alteração de schema ou migration.
