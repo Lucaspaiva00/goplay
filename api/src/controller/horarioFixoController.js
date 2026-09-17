@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { notifyUsuario, notifyStaff } = require('../notifications');
+const { configForDate, validateInterval, timeToMinutes, endToMinutes } = require('../businessHours');
 const { emitHorario } = require('../horarioRealtime');
 
 const id = v => { const n = Number(v); return Number.isFinite(n) ? n : null; };
@@ -132,7 +133,7 @@ async function removeMember(req,res){
 function nextWeekday(start, weekday){
   const d=new Date(start); d.setHours(0,0,0,0); const diff=(weekday-d.getDay()+7)%7; d.setDate(d.getDate()+diff); return d;
 }
-function overlaps(aStart,aEnd,bStart,bEnd){ return aStart < bEnd && aEnd > bStart; }
+function overlaps(aStart,aEnd,bStart,bEnd){ const ai=timeToMinutes(aStart),af=endToMinutes(aEnd),bi=timeToMinutes(bStart),bf=endToMinutes(bEnd); return [ai,af,bi,bf].every(v=>v!==null) && ai < bf && af > bi; }
 
 async function actorIsCompanyManager(actor, societyId){
   societyId=Number(societyId);
@@ -150,6 +151,11 @@ function datesFromFixed(hf){
 async function validateFixedConflicts(hf){
   const dates=datesFromFixed(hf);
   if(!dates.length) return {ok:false,error:'Nenhuma data foi gerada para o período informado.',dates};
+  const society=await prisma.society.findUnique({where:{id:hf.societyId},include:{horariosFuncionamento:true}});
+  for(const dt of dates){
+    const v=validateInterval(configForDate(society?.horariosFuncionamento,dt),hf.horaInicio,hf.horaFim);
+    if(!v.ok) return {ok:false,error:`${ptDate(dt)}: ${v.error}`,dates};
+  }
   const conflicts=await prisma.agendamento.findMany({where:{campoId:hf.campoId,data:{in:dates},status:{not:'CANCELADO'}},select:{id:true,data:true,horaInicio:true,horaFim:true}});
   const bad=conflicts.find(c=>overlaps(hf.horaInicio,hf.horaFim,c.horaInicio,c.horaFim));
   return bad?{ok:false,error:`Conflito em ${ptDate(bad.data)} (${bad.horaInicio}-${bad.horaFim}).`,dates}:{ok:true,dates};
@@ -183,7 +189,6 @@ async function createFixed(req,res){
     const diaSemana=Number(req.body.diaSemana), horaInicio=String(req.body.horaInicio||'').slice(0,5), horaFim=String(req.body.horaFim||'').slice(0,5);
     const start=dateOnly(req.body.dataInicio), end=req.body.dataFim?dateOnly(req.body.dataFim):null, semanas=Math.max(1,Math.min(52,Number(req.body.semanas||12)));
     if(!Number.isInteger(diaSemana)||diaSemana<0||diaSemana>6||!/^\d{2}:\d{2}$/.test(horaInicio)||!/^\d{2}:\d{2}$/.test(horaFim)||!start) return res.status(400).json({error:'Dados do horário fixo inválidos.'});
-    if(horaFim<=horaInicio) return res.status(400).json({error:'Horário final deve ser maior que o inicial.'});
     const tipo=String(req.body.tipoCobranca||'POR_JOGO')==='MENSAL'?'MENSAL':'POR_JOGO';
     const valorPorJogo=Number(req.body.valorPorJogo ?? campo.valorAvulso ?? 0)||null, valorMensal=Number(req.body.valorMensal ?? campo.valorMensal ?? 0)||null;
     if(tipo==='POR_JOGO'&&(!valorPorJogo||valorPorJogo<=0)) return res.status(400).json({error:'Informe o valor por jogo.'});

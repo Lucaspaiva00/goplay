@@ -549,39 +549,29 @@ function ensureNextStepCTA(c) {
 
 function renderTimes(c) {
     const div = document.getElementById("listaTimes");
-    const total = c.times?.length || 0;
+    const inscritos = c.times || [];
+    const pendentes = (c.convitesTimes || []).filter(x => x.status === "PENDENTE");
+    const totalConfirmados = inscritos.length;
+    const totalReservado = totalConfirmados + pendentes.length;
 
     const chip = document.getElementById("chipTimes");
-    if (chip) chip.textContent = `${total}/${c.maxTimes} time(s)`
+    if (chip) chip.textContent = `${totalConfirmados}/${c.maxTimes} confirmado(s)${pendentes.length?` • ${pendentes.length} aguardando`:''}`;
 
     const btnAdd = document.getElementById("btnAddTime");
     const btnCriar = document.getElementById("btnCriarEAddTime");
     const select = document.getElementById("timeId");
     const inputNovo = document.getElementById("novoTimeNome");
-
-    const lotado = total >= c.maxTimes || (c.jogos?.length || 0) > 0;
-
+    const lotado = totalReservado >= c.maxTimes || (c.jogos?.length || 0) > 0;
     if (btnAdd) btnAdd.disabled = lotado;
-    if (btnCriar) btnCriar.disabled = lotado;
+    if (btnCriar) btnCriar.disabled = totalConfirmados >= c.maxTimes || (c.jogos?.length || 0) > 0;
     if (select) select.disabled = lotado;
-    if (inputNovo) inputNovo.disabled = lotado;
-
+    if (inputNovo) inputNovo.disabled = totalConfirmados >= c.maxTimes || (c.jogos?.length || 0) > 0;
     if (!div) return;
-
-    if (!total) {
-        div.innerHTML = `<div class="empty">Nenhum time adicionado ainda.</div>`;
-        return;
-    }
-
-    div.innerHTML = (c.times || []).map((t, index) => `
-        <div class="item">
-            <div>
-                <strong>${index + 1}. ${escapeHTML(t?.time?.nome ?? "Time")}</strong>
-                <div class="muted" style="font-size:12px;">Inscrito na liga</div>
-            </div>
-            <span class="chip">OK</span>
-        </div>
-    `).join("");
+    const rows=[];
+    inscritos.forEach((t,index)=>{const inv=(c.convitesTimes||[]).find(x=>Number(x.timeId)===Number(t?.time?.id??t?.timeId)&&x.status==='ACEITO');const totalJog=inv?.jogadores?.length||0;const okJog=(inv?.jogadores||[]).filter(j=>j.status==='ACEITO').length;rows.push(`<div class="item"><div><strong>${index+1}. ${escapeHTML(t?.time?.nome ?? "Time")}</strong><div class="muted" style="font-size:12px;">Participação confirmada${totalJog?` • Jogadores: ${okJog}/${totalJog} confirmados`:''}</div></div><span class="chip">CONFIRMADO</span></div>`);});
+    pendentes.forEach(x=>rows.push(`<div class="item"><div><strong>${escapeHTML(x.time?.nome || 'Time')}</strong><div class="muted" style="font-size:12px;">Convite enviado ao dono do time</div></div><span class="chip" style="background:#fff7ed;color:#9a3412">AGUARDANDO</span></div>`));
+    (c.convitesTimes||[]).filter(x=>x.status==='RECUSADO').forEach(x=>rows.push(`<div class="item" style="opacity:.65"><div><strong>${escapeHTML(x.time?.nome||'Time')}</strong><div class="muted" style="font-size:12px;">Convite recusado</div></div><span class="chip">RECUSADO</span></div>`));
+    div.innerHTML = rows.length ? rows.join('') : `<div class="empty">Nenhum time adicionado ou convidado ainda.</div>`;
 }
 
 async function carregarSelectTimes() {
@@ -594,11 +584,10 @@ async function carregarSelectTimes() {
 
         const times = await safeFetchJSON(`${BASE_URL}/time/society/${societyId}`);
 
-        const inscritos = new Set(
-            (campeonatoAtual?.times || [])
-                .map((t) => Number(t?.time?.id ?? t?.timeId))
-                .filter(Boolean)
-        );
+        const inscritos = new Set([
+            ...(campeonatoAtual?.times || []).map(t => Number(t?.time?.id ?? t?.timeId)),
+            ...(campeonatoAtual?.convitesTimes || []).filter(c=>c.status==='PENDENTE'||c.status==='ACEITO').map(c=>Number(c.timeId))
+        ].filter(Boolean));
 
         select.innerHTML = `<option value="">Selecione...</option>`;
 
@@ -634,12 +623,12 @@ async function addTime() {
             return;
         }
 
-        await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/add-time`, {
+        const retorno = await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/add-time`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ timeId: Number(timeId) }),
         });
-
+        if (retorno?.convite) alert("Convite enviado ao dono do time. A vaga ficará aguardando a resposta.");
         await carregarDetalhes(true);
 
     } catch (err) {
@@ -690,7 +679,7 @@ async function criarEAdicionarTime() {
         await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}/add-time`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ timeId: Number(novoTime.id) }),
+            body: JSON.stringify({ timeId: Number(novoTime.id), imediato: true }),
         });
 
         input.value = "";

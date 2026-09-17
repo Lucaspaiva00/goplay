@@ -37,10 +37,10 @@ if (!window.menuLoaded) {
   }
   if(usuarioLogado.tipo==="DONO_TIME"){
     html+=section("JOGAR")+item("fa-building","Explorar Empresas","location.href='societies.html'")+item("fa-calendar-check","Agendar Horário","location.href='time-agendamento.html'")+item("fa-thumbs-up","Meus Horários","location.href='meus-horarios.html'")+item("fa-receipt","Minha Comanda","location.href='comanda.html'")+item("fa-list","Meus Agendamentos","location.href='meus-agendamentos.html'")+item("fa-money-bill","Meus Pagamentos","location.href='meus-pagamentos.html'");
-    html+=section("MEU TIME")+item("fa-users","Meus Times","location.href='times.html'")+item("fa-trophy","Campeonatos","location.href='campeonatos-view.html'");
+    html+=section("MEU TIME")+item("fa-users","Meus Times","location.href='times.html'")+item("fa-trophy","Campeonatos","location.href='campeonatos-view.html'")+item("fa-envelope-open-text","Convites de campeonato","location.href='convites-campeonato.html'");
   }
   if(usuarioLogado.tipo==="PLAYER"){
-    html+=section("JOGAR")+item("fa-building","Explorar Empresas","location.href='societies.html'")+item("fa-thumbs-up","Meus Horários","location.href='meus-horarios.html'")+item("fa-receipt","Minha Comanda","location.href='comanda.html'")+item("fa-trophy","Campeonatos","location.href='campeonatos-view.html'");
+    html+=section("JOGAR")+item("fa-building","Explorar Empresas","location.href='societies.html'")+item("fa-thumbs-up","Meus Horários","location.href='meus-horarios.html'")+item("fa-receipt","Minha Comanda","location.href='comanda.html'")+item("fa-trophy","Campeonatos","location.href='campeonatos-view.html'")+item("fa-envelope-open-text","Convites de campeonato","location.href='convites-campeonato.html'");
     html+=section("TIME")+item("fa-users","Times","location.href='times.html'")+item("fa-user-friends","Meu Time","location.href='meu-time.html'");
   }
   html+=section("CONTA");

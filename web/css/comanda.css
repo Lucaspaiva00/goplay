@@ -662,3 +662,4 @@
     .btn-trocar-empresa { width:100%; }
     .history-head { align-items:flex-start; flex-direction:column; }
 }
+.badge.fechamento_solicitado{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}.comanda-history-item .badge.fechamento_solicitado{background:#fff7ed;color:#9a3412}

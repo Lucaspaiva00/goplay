@@ -50,7 +50,7 @@ async function carregarDashboard(){
     const totalSlots=Math.max(1,(society.campos?.length||1)*5*30);const ocupacao=Math.min(100,reservasMes/totalSlots*100);
     safeText("receitaTotal",money(total));safeText("receitaMes",money(mesTotal));safeText("receitaHoje",money(hojeTotal));safeText("pendente",money(pendente));safeText("ticket",money(ticket));safeText("ocupacao",`${ocupacao.toFixed(1)}%`);
     safeText("reservasHoje",(agendamentos||[]).filter(a=>sameLocalDay(a.data)&&a.status!=="CANCELADO").length);
-    safeText("comandasAbertas",(comandas||[]).filter(c=>c.status==="ABERTA").length);
+    safeText("comandasAbertas",(comandas||[]).filter(c=>["ABERTA","FECHAMENTO_SOLICITADO"].includes(c.status)).length);
     safeText("pagamentosPendentes",(pagamentos||[]).filter(p=>p.status==="PENDENTE").length);
     safeText("campeonatosAtivos",(campeonatos||[]).filter(c=>c.status==="EM_ANDAMENTO"||c.status==="INSCRICOES_ABERTAS").length);
 
@@ -63,7 +63,7 @@ async function carregarDashboard(){
     charts.push(new Chart(document.getElementById("chartBarra"),{type:"bar",data:{labels:Object.keys(horas),datasets:[{label:"Agendamentos",data:Object.values(horas)}]}}));
     const ranking={};pagos.forEach(p=>{const t=p.time?.nome||"Sem time";ranking[t]=(ranking[t]||0)+Number(p.valor||0);});
     document.getElementById("rankingTimes").innerHTML=Object.entries(ranking).sort((a,b)=>b[1]-a[1]).map(([t,v])=>`<div>${t} — <strong>${money(v)}</strong></div>`).join("")||"<div>Sem dados ainda.</div>";
-    const insights=[];if(!society.pixChave)insights.push("⚠️ Cadastre o PIX da empresa para facilitar pagamentos.");if(!(society.campos||[]).length)insights.push("🏟️ Cadastre uma quadra para liberar agendamentos.");if((comandas||[]).filter(c=>c.status==="ABERTA").length)insights.push(`🧾 ${(comandas||[]).filter(c=>c.status==="ABERTA").length} comanda(s) aberta(s) agora.`);const melhorHora=Object.entries(horas).sort((a,b)=>b[1]-a[1])[0];if(melhorHora)insights.push(`🔥 Horário mais procurado: ${melhorHora[0]}`);
+    const insights=[];if(!society.pixChave)insights.push("⚠️ Cadastre o PIX da empresa para facilitar pagamentos.");if(!(society.campos||[]).length)insights.push("🏟️ Cadastre uma quadra para liberar agendamentos.");if((comandas||[]).filter(c=>["ABERTA","FECHAMENTO_SOLICITADO"].includes(c.status)).length)insights.push(`🧾 ${(comandas||[]).filter(c=>["ABERTA","FECHAMENTO_SOLICITADO"].includes(c.status)).length} comanda(s) aberta(s) agora.`);const melhorHora=Object.entries(horas).sort((a,b)=>b[1]-a[1])[0];if(melhorHora)insights.push(`🔥 Horário mais procurado: ${melhorHora[0]}`);
     document.getElementById("insights").innerHTML=insights.map(i=>`<div>${i}</div>`).join("")||"<div>Nenhum alerta importante no momento.</div>";
   }catch(e){console.error(e);alert(e.message||"Erro ao carregar dashboard");}
 }

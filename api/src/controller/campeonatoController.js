@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const { PrismaClient } = require("@prisma/client");
 const { emitJogo } = require("../realtime");
+const { notifyUsuario } = require("../notifications");
 
 const prisma = new PrismaClient();
 
@@ -356,6 +357,15 @@ const readOne = async (req, res) => {
                         time: true,
                     },
                 },
+                convitesTimes: {
+                    include: {
+                        time: { select: { id: true, nome: true, brasao: true } },
+                        // A tela pública recebe somente o status das respostas, sem dados pessoais.
+                        // Isso permite exibir o progresso da convocação sem expor jogadores.
+                        jogadores: { select: { status: true } }
+                    },
+                    orderBy: { convidadoEm: "desc" }
+                },
 
                 grupos: {
                     include: {
@@ -474,6 +484,7 @@ const addTime = async (req, res) => {
             },
             include: {
                 times: true,
+                convitesTimes: true,
                 jogos: true,
                 grupos: true,
             },
@@ -491,10 +502,13 @@ const addTime = async (req, res) => {
             });
         }
 
-        if (campeonato.times.length >= campeonato.maxTimes) {
-            return res.status(400).json({
-                error: `O campeonato já possui ${campeonato.maxTimes} times.`,
-            });
+        const pendentes = (campeonato.convitesTimes || []).filter(c => c.status === "PENDENTE").length;
+        const imediato = req.body.imediato === true || String(req.body.imediato).toLowerCase() === "true";
+        if (!imediato && (campeonato.times.length + pendentes) >= campeonato.maxTimes) {
+            return res.status(400).json({ error: `As ${campeonato.maxTimes} vagas já estão preenchidas ou aguardando resposta.` });
+        }
+        if (imediato && campeonato.times.length >= campeonato.maxTimes) {
+            return res.status(400).json({ error: `O campeonato já possui ${campeonato.maxTimes} times.` });
         }
 
         const time = await prisma.time.findUnique({
@@ -511,8 +525,21 @@ const addTime = async (req, res) => {
 
         if (time.societyId !== campeonato.societyId) {
             return res.status(400).json({
-                error: "Este time não pertence ao society do campeonato.",
+                error: "Este time não pertence à empresa do campeonato.",
             });
+        }
+
+        if (!imediato) {
+            const jaInscrito = await prisma.timeCampeonato.findUnique({ where:{ campeonatoId_timeId:{campeonatoId,timeId} } });
+            if (jaInscrito) return res.status(400).json({ error:"Time já inscrito no campeonato." });
+            const convite = await prisma.conviteCampeonatoTime.upsert({
+                where:{ campeonatoId_timeId:{campeonatoId,timeId} },
+                create:{ campeonatoId,timeId,status:"PENDENTE" },
+                update:{ status:"PENDENTE", convidadoEm:new Date(), respondidoEm:null },
+                include:{ time:{ include:{ dono:{select:{id:true,nome:true}} } }, campeonato:{select:{id:true,nome:true}} }
+            });
+            await notifyUsuario(prisma, convite.time.donoId, "Convite para campeonato", `${convite.time.nome} foi convidado para ${convite.campeonato.nome}. Responda o convite e escolha os jogadores.`, `convites-campeonato.html`);
+            return res.status(201).json({ convite:true, status:convite.status, id:convite.id });
         }
 
         const existe = await prisma.timeCampeonato.findUnique({

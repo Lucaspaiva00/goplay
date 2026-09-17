@@ -250,17 +250,16 @@ async function removerItem(itemId) {
     } catch (e) { console.error(e); alert(e.message || "Erro ao remover item."); }
 }
 
-async function fecharComanda() {
+async function solicitarFechamentoComanda() {
     try {
         if (!comandaAtual?.id) return alert("Nenhuma comanda aberta.");
-        if (!Array.isArray(comandaAtual.itens) || !comandaAtual.itens.length) return alert("Adicione pelo menos um item antes de fechar a comanda.");
-        if (!confirm("Fechar esta comanda? Depois disso não será possível adicionar itens.")) return;
-        await fetchJSON(`${BASE_URL}/comanda/${comandaAtual.id}/fechar`, { method: "POST" });
-        const pagamento = await fetchJSON(`${BASE_URL}/comanda/${comandaAtual.id}/gerar-pagamento`, { method: "POST" });
+        if (!Array.isArray(comandaAtual.itens) || !comandaAtual.itens.length) return alert("Adicione pelo menos um item antes de solicitar o fechamento.");
+        if (!confirm("Solicitar o fechamento desta comanda para a empresa?")) return;
+        await fetchJSON(`${BASE_URL}/comanda/${comandaAtual.id}/solicitar-fechamento`, { method: "POST" });
         await carregarComanda(comandaAtual.id);
         await carregarHistorico();
-        if (pagamento?.id) window.location.href = `pagamentos.html?pagamentoId=${encodeURIComponent(pagamento.id)}`;
-    } catch (e) { console.error(e); alert(e.message || "Erro ao fechar comanda."); }
+        alert("Solicitação enviada. A empresa irá conferir, fechar a comanda e liberar o pagamento.");
+    } catch (e) { console.error(e); alert(e.message || "Erro ao solicitar fechamento."); }
 }
 
 function renderSemComanda() {
@@ -289,8 +288,11 @@ function renderComanda() {
                 <div style="text-align:right"><strong>${money(i.total)}</strong>${status === "ABERTA" ? `<br><button type="button" onclick="removerItem(${i.id})" style="margin-top:6px;border:0;background:transparent;color:#b91c1c;cursor:pointer;font-weight:800">Remover</button>` : ""}</div>
             </div>`).join("") : `<div class="empty-state">Nenhum item consumido ainda.</div>`;
     }
-    if (el("btnAbrirComanda")) el("btnAbrirComanda").disabled = status === "ABERTA";
-    if (el("btnFecharComanda")) el("btnFecharComanda").disabled = status !== "ABERTA";
+    if (el("btnAbrirComanda")) el("btnAbrirComanda").disabled = ["ABERTA","FECHAMENTO_SOLICITADO"].includes(status);
+    if (el("btnFecharComanda")) {
+        el("btnFecharComanda").disabled = status !== "ABERTA";
+        el("btnFecharComanda").textContent = status === "FECHAMENTO_SOLICITADO" ? "Fechamento solicitado" : "Solicitar fechamento";
+    }
 }
 
 async function carregarHistorico() {
@@ -317,7 +319,7 @@ async function carregarHistorico() {
 
 document.addEventListener("DOMContentLoaded", async () => {
     el("btnAbrirComanda")?.addEventListener("click", abrirComanda);
-    el("btnFecharComanda")?.addEventListener("click", fecharComanda);
+    el("btnFecharComanda")?.addEventListener("click", solicitarFechamentoComanda);
     el("btnFecharModal")?.addEventListener("click", fecharModalProduto);
     el("btnMenos")?.addEventListener("click", () => alterarQuantidade(-1));
     el("btnMais")?.addEventListener("click", () => alterarQuantidade(1));

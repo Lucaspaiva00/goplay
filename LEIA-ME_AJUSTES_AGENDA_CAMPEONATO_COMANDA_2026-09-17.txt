@@ -1,0 +1,46 @@
+GOPLAY — AJUSTES 17/09/2026
+============================================
+
+1) HORÁRIOS DE FUNCIONAMENTO POR EMPRESA
+- Configuração por dia da semana (aberto/fechado + início/fim).
+- Disponível tanto no cadastro da empresa quanto em Minha Empresa > Editar.
+- Agenda monta a grade com base no funcionamento de cada dia.
+- Dias/horários fora da configuração aparecem como Fechado.
+- API de disponibilidade e criação/remarcação de reservas bloqueiam horários fora do funcionamento.
+- Horários fixos/recorrentes também respeitam a configuração da empresa.
+- Empresas antigas sem configuração continuam temporariamente com fallback legado 18:00–23:00 até serem editadas.
+
+2) CONVITES PARA CAMPEONATO
+- Time já cadastrado não entra mais automaticamente no campeonato.
+- Dono da empresa envia convite ao dono do time.
+- Dono do time recebe notificação no sininho e responde em Convites de campeonato.
+- Ao aceitar, escolhe quais jogadores do próprio time deseja convocar.
+- Cada jogador recebe seu próprio convite e responde 👍 Vou jogar / 👎 Não vou.
+- A vaga do time fica reservada enquanto o convite está pendente.
+- Time digitado manualmente continua sendo criado/adicionado imediatamente, mantendo o fluxo anterior.
+- Tela administrativa mostra time confirmado, aguardando ou recusado e progresso de respostas dos jogadores sem expor nomes na rota pública.
+
+3) COMANDA — SOLICITAÇÃO DE FECHAMENTO
+- Cliente/jogador não fecha mais a própria comanda.
+- Cliente usa “Solicitar fechamento”.
+- A comanda passa para FECHAMENTO_SOLICITADO e fica bloqueada para novas alterações pelo cliente.
+- O dono da empresa correta recebe notificação no sininho.
+- Staff autorizado (Admin/Caixa/Bar) também pode receber aviso operacional.
+- Empresa confere e fecha a comanda pelo Caixa & Bar / gestão de comandas.
+- Só depois do fechamento a empresa gera o pagamento.
+- Cliente não consegue gerar nem confirmar o próprio pagamento.
+- Caixa/Admin confirma o recebimento e a comanda vira PAGA.
+
+MIGRATION NOVA
+- api/prisma/migrations/20260917150000_agenda_convites_comanda/migration.sql
+- Adiciona SocietyHorarioFuncionamento.
+- Adiciona convites de time/jogador para campeonato.
+- Adiciona status FECHAMENTO_SOLICITADO e fechamentoSolicitadoEm na Comanda.
+
+VALIDAÇÕES FEITAS
+- Sintaxe de todos os arquivos JavaScript do backend e frontend: OK.
+- IDs duplicados nas telas alteradas/novas: OK.
+- Rotas x exports dos controllers novos: OK.
+- Lógica de horários testada para dia aberto, fechado e faixas distintas: OK.
+- git diff --check entre base e entrega: OK.
+- O Prisma CLI não foi executado neste ambiente por indisponibilidade de instalação; o comando de deploy inclui prisma validate/generate no Mac e migrate deploy no Render.

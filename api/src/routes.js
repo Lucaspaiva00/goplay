@@ -24,6 +24,7 @@ const funcionarioController = require("./controller/funcionarioController");
 const notificacaoController = require("./controller/notificacaoController");
 const operacaoController = require("./controller/operacaoController");
 const horarioFixoController = require("./controller/horarioFixoController");
+const campeonatoConviteController = require("./controller/campeonatoConviteController");
 const { subscribeHorario } = require("./horarioRealtime");
 const { authenticate, authenticateOptional, requireSocietyRoles, requireEntitySocietyRoles } = require("./auth");
 
@@ -180,6 +181,10 @@ router.get("/campeonato/society/:societyId", campeonatoController.listBySociety)
 router.get("/campeonato/:id", campeonatoController.readOne);
 
 router.post("/campeonato/:id/add-time", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.addTime);
+router.get("/convites-campeonato/meus", authenticate, campeonatoConviteController.meusConvites);
+router.post("/convites-campeonato/time/:id/responder", authenticate, campeonatoConviteController.responderTime);
+router.post("/convites-campeonato/jogador/:id/responder", authenticate, campeonatoConviteController.responderJogador);
+
 router.post("/campeonato/:id/generate-groups", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.generateGroups);
 router.post("/campeonato/:id/generate-league", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.generateLeague);
 
@@ -226,6 +231,7 @@ router.get("/comanda/society/:societyId", authenticate, comandaController.listBy
 router.get("/comanda/usuario/:usuarioId", authenticate, comandaController.listByUsuario);
 router.get("/comanda/usuario/:usuarioId/empresa/:societyId/aberta", authenticate, comandaController.readOpenByUsuarioSociety);
 router.get("/comanda/:id", authenticate, comandaController.readOne);
+router.post("/comanda/:id/solicitar-fechamento", authenticate, comandaController.solicitarFechamento);
 router.post("/comanda/:id/fechar", authenticate, comandaController.fechar);
 router.post("/comanda/:id/gerar-pagamento", authenticate, comandaController.gerarPagamento);
 router.post("/comanda/:id/pagar", authenticate, comandaController.pagar);

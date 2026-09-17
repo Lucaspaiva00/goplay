@@ -1,6 +1,7 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { notifyUsuario, notifyStaff } = require("../notifications");
+const { configForDate, validateInterval, buildSlots, timeToMinutes, endToMinutes } = require("../businessHours");
 
 /* =========================
    HELPERS
@@ -22,55 +23,16 @@ const horariosDisponiveis = async (req, res) => {
   try {
     const campoId = toId(req.query.campoId);
     const dataStr = req.query.data;
-
-    if (!campoId || !dataStr) {
-      return res.status(400).json({ error: "campoId e data são obrigatórios." });
-    }
-
-    const campo = await prisma.campo.findUnique({
-      where: { id: campoId },
-    });
-
-    if (!campo) {
-      return res.status(404).json({ error: "Campo não encontrado." });
-    }
-
+    if (!campoId || !dataStr) return res.status(400).json({ error: "campoId e data são obrigatórios." });
+    const campo = await prisma.campo.findUnique({ where:{id:campoId}, include:{ society:{ include:{ horariosFuncionamento:{ orderBy:{diaSemana:"asc"} } } } } });
+    if (!campo) return res.status(404).json({ error: "Campo não encontrado." });
     const data = parseDateOnly(dataStr);
-
-    const HORA_INICIO = 18;
-    const HORA_FIM = 23;
-
-    const agendamentos = await prisma.agendamento.findMany({
-      where: {
-        campoId,
-        data,
-        status: { not: "CANCELADO" },
-      },
-      select: {
-        horaInicio: true,
-      },
-    });
-
-    const ocupados = agendamentos.map(a => a.horaInicio);
-
-    const horarios = [];
-
-    for (let h = HORA_INICIO; h < HORA_FIM; h++) {
-      const inicio = `${String(h).padStart(2, "0")}:00`;
-      const fim = `${String(h + 1).padStart(2, "0")}:00`;
-
-      horarios.push({
-        horaInicio: inicio,
-        horaFim: fim,
-        disponivel: !ocupados.includes(inicio),
-      });
-    }
-
-    res.json(horarios);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao listar horários." });
-  }
+    const config = configForDate(campo.society?.horariosFuncionamento, data);
+    if (!config.ativo) return res.json([]);
+    const agendamentos = await prisma.agendamento.findMany({ where:{campoId,data,status:{not:"CANCELADO"}}, select:{horaInicio:true} });
+    const ocupados=new Set(agendamentos.map(a=>String(a.horaInicio).slice(0,5)));
+    return res.json(buildSlots(config).map(s=>({...s,disponivel:!ocupados.has(s.horaInicio)})));
+  } catch(err){ console.error(err); return res.status(500).json({error:"Erro ao listar horários."}); }
 };
 
 /* =========================
@@ -112,30 +74,27 @@ const create = async (req, res) => {
       return res.status(400).json({ error: "A quadra selecionada não pertence a esta empresa." });
     }
 
-    const horaFim = `${String(Number(horaInicio.split(":")[0]) + 1).padStart(2, "0")}:00`;
+    const [hh, mm] = horaInicio.split(":").map(Number);
+    const fimMin = hh * 60 + (mm || 0) + 60;
+    const horaFim = fimMin === 1440 ? "00:00" : `${String(Math.floor(fimMin / 60)).padStart(2, "0")}:${String(fimMin % 60).padStart(2, "0")}`;
 
-    // 🔥 conflito REAL (intervalo)
-    const conflito = await prisma.agendamento.findFirst({
-      where: {
-        campoId,
-        data,
-        status: { not: "CANCELADO" },
-        OR: [
-          {
-            horaInicio: { lte: horaInicio },
-            horaFim: { gt: horaInicio },
-          },
-          {
-            horaInicio: { lt: horaFim },
-            horaFim: { gte: horaFim },
-          }
-        ]
-      },
+    const society = await prisma.society.findUnique({ where:{id:societyId}, include:{ horariosFuncionamento:true } });
+    const validacaoFuncionamento = validateInterval(configForDate(society?.horariosFuncionamento, data), horaInicio, horaFim);
+    if (!validacaoFuncionamento.ok) return res.status(400).json({ error: validacaoFuncionamento.error });
+
+    // Conflito real por intervalo, inclusive quando o encerramento é 00:00.
+    const existentes = await prisma.agendamento.findMany({
+      where: { campoId, data, status: { not: "CANCELADO" } },
+      select: { id: true, horaInicio: true, horaFim: true }
     });
-
-    if (conflito) {
-      return res.status(400).json({ error: "Horário já ocupado." });
-    }
+    const novoInicio = timeToMinutes(horaInicio);
+    const novoFim = endToMinutes(horaFim);
+    const conflito = existentes.find(a => {
+      const ini = timeToMinutes(a.horaInicio);
+      const fim = endToMinutes(a.horaFim);
+      return ini !== null && fim !== null && ini < novoFim && fim > novoInicio;
+    });
+    if (conflito) return res.status(400).json({ error: "Horário já ocupado." });
 
     if (!campo.valorAvulso) {
       return res.status(400).json({ error: "Campo sem valor configurado." });
@@ -291,12 +250,18 @@ const remarcar = async (req, res) => {
     if (!Number.isInteger(hh) || hh < 0 || hh > 23 || !Number.isInteger(mm) || mm < 0 || mm > 59) return res.status(400).json({ error: "Horário inválido." });
     const fimMin = hh * 60 + mm + 60;
     if (fimMin > 24 * 60) return res.status(400).json({ error: "Horário final ultrapassa o dia." });
-    const horaFim = `${String(Math.floor(fimMin / 60)).padStart(2, "0")}:${String(fimMin % 60).padStart(2, "0")}`;
-    const conflito = await prisma.agendamento.findFirst({
-      where: {
-        id: { not: id }, campoId: atual.campoId, data, status: { not: "CANCELADO" },
-        OR: [{ horaInicio: { lte: horaInicio }, horaFim: { gt: horaInicio } }, { horaInicio: { lt: horaFim }, horaFim: { gte: horaFim } }]
-      }
+    const horaFim = fimMin === 1440 ? "00:00" : `${String(Math.floor(fimMin / 60)).padStart(2, "0")}:${String(fimMin % 60).padStart(2, "0")}`;
+    const society = await prisma.society.findUnique({ where:{id:atual.societyId}, include:{ horariosFuncionamento:true } });
+    const validacaoFuncionamento = validateInterval(configForDate(society?.horariosFuncionamento, data), horaInicio, horaFim);
+    if (!validacaoFuncionamento.ok) return res.status(400).json({ error: validacaoFuncionamento.error });
+    const existentes = await prisma.agendamento.findMany({
+      where: { id: { not: id }, campoId: atual.campoId, data, status: { not: "CANCELADO" } },
+      select: { id: true, horaInicio: true, horaFim: true }
+    });
+    const novoInicio = timeToMinutes(horaInicio), novoFim = endToMinutes(horaFim);
+    const conflito = existentes.find(a => {
+      const ini = timeToMinutes(a.horaInicio), fim = endToMinutes(a.horaFim);
+      return ini !== null && fim !== null && ini < novoFim && fim > novoInicio;
     });
     if (conflito) return res.status(409).json({ error: "Esse horário já está ocupado nesta quadra." });
     const atualizado = await prisma.agendamento.update({ where: { id }, data: { data, horaInicio, horaFim } });

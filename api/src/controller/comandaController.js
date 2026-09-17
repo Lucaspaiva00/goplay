@@ -65,7 +65,7 @@ const abrir = async (req, res) => {
 
         // Uma única comanda aberta por usuário dentro da mesma empresa.
         const existente = await prisma.comanda.findFirst({
-            where: { usuarioId, societyId, status: "ABERTA" },
+            where: { usuarioId, societyId, status: { in: ["ABERTA", "FECHAMENTO_SOLICITADO"] } },
             include: includeResumo,
             orderBy: { createdAt: "desc" }
         });
@@ -241,7 +241,7 @@ const readOpenByUsuarioSociety = async (req, res) => {
         }
 
         const comanda = await prisma.comanda.findFirst({
-            where: { usuarioId, societyId, status: "ABERTA" },
+            where: { usuarioId, societyId, status: { in: ["ABERTA", "FECHAMENTO_SOLICITADO"] } },
             include: includeResumo,
             orderBy: { createdAt: "desc" }
         });
@@ -276,6 +276,25 @@ const readOne = async (req, res) => {
 };
 
 /* =========================
+   SOLICITAR FECHAMENTO (CLIENTE)
+========================= */
+const solicitarFechamento = async (req, res) => {
+    try {
+        const id = toId(req.params.id);
+        const comanda = await prisma.comanda.findUnique({ where:{id}, include:{ itens:{select:{id:true}}, society:{select:{id:true,nome:true,usuarioId:true}} } });
+        if (!comanda) return res.status(404).json({ error:"Comanda não encontrada." });
+        if (!(req.actor?.kind === "USER" && Number(req.actor.id) === Number(comanda.usuarioId))) return res.status(403).json({ error:"Somente o cliente da comanda pode solicitar o fechamento." });
+        if (comanda.status === "FECHAMENTO_SOLICITADO") return res.json({ ok:true, jaSolicitado:true });
+        if (comanda.status !== "ABERTA") return res.status(400).json({ error:"Esta comanda não está aberta." });
+        if (!comanda.itens.length) return res.status(400).json({ error:"Adicione pelo menos um item antes de solicitar o fechamento." });
+        const atualizada = await prisma.comanda.update({ where:{id}, data:{ status:"FECHAMENTO_SOLICITADO", fechamentoSolicitadoEm:new Date() }, include:includeResumo });
+        await notifyUsuario(prisma, comanda.society.usuarioId, "Fechamento de comanda solicitado", `O cliente solicitou o fechamento da comanda #${comanda.codigo || comanda.id} no valor de R$ ${Number(comanda.total||0).toFixed(2)}.`, "caixa-bar.html");
+        await notifyStaff(prisma, comanda.societyId, "Fechamento solicitado", `Comanda #${comanda.codigo || comanda.id} aguardando conferência e fechamento.`, ["ADMIN","CAIXA","BAR"], "caixa-bar.html");
+        return res.json(atualizada);
+    } catch (err) { console.error(err); return res.status(500).json({ error:"Erro ao solicitar fechamento da comanda." }); }
+};
+
+/* =========================
    FECHAR COMANDA
 ========================= */
 const fechar = async (req, res) => {
@@ -286,8 +305,8 @@ const fechar = async (req, res) => {
             include: { itens: { select: { id: true } } }
         });
 
-        if (!comanda || comanda.status !== "ABERTA") return res.status(400).json({ error: "Comanda inválida." });
-        if (!(await podeOperar(req, comanda, ["ADMIN","CAIXA","BAR"]))) return res.status(403).json({ error: "Sem permissão para fechar esta comanda." });
+        if (!comanda || !["ABERTA","FECHAMENTO_SOLICITADO"].includes(comanda.status)) return res.status(400).json({ error: "Comanda inválida ou já fechada." });
+        if (!(await podeOperar(req, comanda, ["ADMIN","CAIXA","BAR"], false))) return res.status(403).json({ error: "Somente a empresa pode fechar esta comanda." });
         if (!comanda.itens.length) {
             return res.status(400).json({ error: "Adicione pelo menos um item antes de fechar a comanda." });
         }
@@ -311,7 +330,7 @@ const gerarPagamento = async (req, res) => {
         const comanda = await prisma.comanda.findUnique({ where: { id }, include: { pagamento: true } });
 
         if (!comanda || comanda.status !== "FECHADA") return res.status(400).json({ error: "Comanda precisa estar fechada." });
-        if (!(await podeOperar(req, comanda, ["ADMIN","CAIXA","BAR"]))) return res.status(403).json({ error: "Sem permissão para gerar pagamento." });
+        if (!(await podeOperar(req, comanda, ["ADMIN","CAIXA","BAR"], false))) return res.status(403).json({ error: "Somente a empresa pode gerar o pagamento desta comanda." });
 
         if (comanda.pagamento) return res.json(comanda.pagamento);
 
@@ -373,6 +392,7 @@ module.exports = {
     listByUsuario,
     readOpenByUsuarioSociety,
     readOne,
+    solicitarFechamento,
     fechar,
     gerarPagamento,
     pagar

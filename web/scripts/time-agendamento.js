@@ -147,7 +147,7 @@ function renderSlots(horarios) {
     horarioSelecionado = null;
     el("acao").style.display = "none";
     if (!Array.isArray(horarios) || !horarios.length) {
-        div.innerHTML = `<div class="muted">Nenhum horário retornado.</div>`;
+        div.innerHTML = `<div class="muted">A empresa está fechada neste dia ou não há horários disponíveis.</div>`;
         return;
     }
     horarios.forEach(h => {

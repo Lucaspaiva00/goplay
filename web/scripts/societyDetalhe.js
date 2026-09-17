@@ -17,6 +17,25 @@ function el(id) {
     return document.getElementById(id);
 }
 
+const DIAS_SEMANA = ["Domingo","Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado"];
+function horariosNormalizados(data){
+    const lista=Array.isArray(data?.horariosFuncionamento)?data.horariosFuncionamento:[];
+    if(!lista.length) return DIAS_SEMANA.map((_,diaSemana)=>({diaSemana,ativo:true,horaInicio:"18:00",horaFim:"23:00",fallback:true}));
+    return DIAS_SEMANA.map((_,diaSemana)=>lista.find(h=>Number(h.diaSemana)===diaSemana)||{diaSemana,ativo:false,horaInicio:"08:00",horaFim:"18:00"});
+}
+function renderEditorHorarios(data){
+    const wrap=el("editHorariosFuncionamento"); if(!wrap)return;
+    wrap.innerHTML=horariosNormalizados(data).map(h=>`<div class="hours-row ${h.ativo?"":"closed"}" data-dia="${h.diaSemana}"><div class="hours-day">${DIAS_SEMANA[h.diaSemana]}</div><label class="hours-open"><input type="checkbox" class="hours-active" ${h.ativo?"checked":""}> Aberto</label><input type="time" class="hours-start" value="${h.horaInicio||"08:00"}"><input type="time" class="hours-end" value="${h.horaFim||"18:00"}"></div>`).join("");
+    wrap.querySelectorAll('.hours-active').forEach(ch=>ch.addEventListener('change',()=>ch.closest('.hours-row').classList.toggle('closed',!ch.checked)));
+}
+function coletarHorarios(){
+    return [...document.querySelectorAll('#editHorariosFuncionamento .hours-row')].map(row=>{const ativo=row.querySelector('.hours-active').checked;return {diaSemana:Number(row.dataset.dia),ativo,horaInicio:ativo?row.querySelector('.hours-start').value:null,horaFim:ativo?row.querySelector('.hours-end').value:null};});
+}
+function htmlHorarios(data){
+    const lista=horariosNormalizados(data);
+    return `<div class="business-hours-view"><strong><i class="fa fa-clock"></i> Funcionamento</strong><div class="business-hours-list">${lista.map(h=>`<div><b>${DIAS_SEMANA[h.diaSemana]}:</b> ${h.ativo?`${h.horaInicio} às ${h.horaFim}`:'Fechado'}</div>`).join('')}</div></div>`;
+}
+
 function getQueryParam(name) {
     const url = new URL(window.location.href);
     return url.searchParams.get(name);
@@ -76,6 +95,7 @@ function renderSocietyInfo(data) {
         <div><b>YouTube:</b> ${data.youtube || "-"}</div>
         <div><b>Endereço:</b> ${data.endereco || "-"}</div>
         <div><b>CEP:</b> ${data.cep || "-"}</div>
+        ${htmlHorarios(data)}
       </div>
 
       <div class="society-stats">
@@ -111,6 +131,7 @@ function preencherFormularioEdicao(data) {
     el("editEstado").value = data.estado || "";
     el("editPixTitular").value = data.pixTitular || "";
     el("editPixChave").value = data.pixChave || "";
+    renderEditorHorarios(data);
     if (el("editImagem")) el("editImagem").value = "";
 }
 
@@ -234,6 +255,7 @@ async function salvarEdicaoSociety() {
             estado: el("editEstado").value.trim(),
             pixTitular: el("editPixTitular").value.trim(),
             pixChave: el("editPixChave").value.trim(),
+            horariosFuncionamento: coletarHorarios(),
             imagem: societyAtual.imagem || null
         };
 

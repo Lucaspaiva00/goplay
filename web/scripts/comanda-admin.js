@@ -83,7 +83,7 @@ function getLista() {
 }
 
 function renderResumo() {
-    const abertas = comandasCache.filter(c => c.status === "ABERTA");
+    const abertas = comandasCache.filter(c => ["ABERTA","FECHAMENTO_SOLICITADO"].includes(c.status));
     const fechadas = comandasCache.filter(c => c.status === "FECHADA");
     const pagas = comandasCache.filter(c => c.status === "PAGA");
 
@@ -123,9 +123,14 @@ function renderLista() {
                     Ver
                 </button>
 
+                ${c.status === "FECHAMENTO_SOLICITADO" ? `
+                    <button onclick="fecharComandaAdmin(${c.id})" class="btn-admin-primary">
+                        Conferir e fechar
+                    </button>
+                ` : ""}
                 ${c.status === "FECHADA" ? `
                     <button onclick="pagarComanda(${c.id})" class="btn-admin-primary">
-                        Pagar
+                        Confirmar pagamento
                     </button>
                 ` : ""}
             </div>
@@ -151,6 +156,13 @@ async function abrirDetalhe(id) {
 
 function fecharDetalhe() {
     el("modalDetalhe").classList.remove("show");
+}
+
+async function fecharComandaAdmin(id) {
+    if (!confirm("Conferiu os itens? Fechar a comanda e liberar o pagamento?")) return;
+    await fetchJSON(`${BASE_URL}/comanda/${id}/fechar`, { method: "POST" });
+    await fetchJSON(`${BASE_URL}/comanda/${id}/gerar-pagamento`, { method: "POST" });
+    await carregarComandas();
 }
 
 async function pagarComanda(id) {

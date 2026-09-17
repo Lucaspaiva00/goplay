@@ -5,12 +5,8 @@ let agendamentosCache = [];
 let societyIdAtual = null;
 let draggedAgendamentoId = null;
 
-const HORAS = [
-    "06:00", "07:00", "08:00", "09:00", "10:00",
-    "11:00", "12:00", "13:00", "14:00", "15:00",
-    "16:00", "17:00", "18:00", "19:00", "20:00",
-    "21:00", "22:00", "23:00"
-];
+let HORAS = [];
+let societyAtual = null;
 
 function el(id) {
     return document.getElementById(id);
@@ -52,8 +48,25 @@ function pickDataAgendamento(a) {
 function mesmoSlot(a, dataKey, hora) {
     const dataAg = pickDataAgendamento(a);
     if (!dataAg) return false;
-
     return toDateKey(dataAg) === dataKey && String(a.horaInicio || "").slice(0, 5) === hora;
+}
+
+function minutos(h){const [a,b]=String(h||'').split(':').map(Number);return Number.isFinite(a)&&Number.isFinite(b)?a*60+b:null;}
+function fmtMin(m){m=((m%1440)+1440)%1440;return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;}
+function horariosConfig(){
+    const lista=Array.isArray(societyAtual?.horariosFuncionamento)?societyAtual.horariosFuncionamento:[];
+    if(!lista.length) return Array.from({length:7},(_,diaSemana)=>({diaSemana,ativo:true,horaInicio:'18:00',horaFim:'23:00'}));
+    return Array.from({length:7},(_,diaSemana)=>lista.find(x=>Number(x.diaSemana)===diaSemana)||{diaSemana,ativo:false,horaInicio:null,horaFim:null});
+}
+function configDia(date){return horariosConfig().find(h=>Number(h.diaSemana)===new Date(date).getDay());}
+function dentroFuncionamento(date,hora){
+    const cfg=configDia(date); if(!cfg?.ativo)return false; const ini=minutos(cfg.horaInicio), start=minutos(hora); let fim=minutos(cfg.horaFim); if(fim===0)fim=1440; return start>=ini && start+60<=fim;
+}
+function recalcularLinhasAgenda(){
+    const set=new Set();
+    horariosConfig().filter(h=>h.ativo).forEach(h=>{let ini=minutos(h.horaInicio),fim=minutos(h.horaFim);if(fim===0)fim=1440;if(ini==null||fim==null)return;for(let m=ini;m+60<=fim;m+=60)set.add(fmtMin(m));});
+    HORAS=[...set].sort((a,b)=>minutos(a)-minutos(b));
+    if(!HORAS.length) HORAS=['18:00','19:00','20:00','21:00','22:00'];
 }
 
 async function fetchJSON(url, options = {}) {
@@ -91,7 +104,11 @@ async function carregarAgenda() {
             return;
         }
 
-        agendamentosCache = await fetchJSON(`${BASE_URL}/agendamentos/society/${societyIdAtual}`);
+        [agendamentosCache, societyAtual] = await Promise.all([
+            fetchJSON(`${BASE_URL}/agendamentos/society/${societyIdAtual}`),
+            fetchJSON(`${BASE_URL}/society/${societyIdAtual}`)
+        ]);
+        recalcularLinhasAgenda();
         montarGrid();
     } catch (e) {
         console.error(e);
@@ -123,6 +140,11 @@ function montarGrid() {
         dias.forEach(dia => {
             const dataKey = toDateKey(dia);
             const ag = agendamentosCache.find(a => mesmoSlot(a, dataKey, hora));
+            if (!ag && !dentroFuncionamento(dia, hora)) {
+                const cfg=configDia(dia);
+                grid.innerHTML += `<div class="slot closed" title="${cfg?.ativo?`Fora do funcionamento (${cfg.horaInicio}-${cfg.horaFim})`:'Empresa fechada neste dia'}"><div class="closed-label">Fechado</div></div>`;
+                return;
+            }
 
             if (ag) {
                 const status = String(ag.status || "").toUpperCase();

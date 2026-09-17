@@ -331,4 +331,4 @@
         flex-direction: column;
         align-items: flex-start;
     }
-}
+}.slot.closed{background:#f3f4f6!important;cursor:not-allowed!important;opacity:.75}.slot.closed:hover{background:#f3f4f6!important}.closed-label{font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em}.legend .dot.fechado{background:#cbd5e1}

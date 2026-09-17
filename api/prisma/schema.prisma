@@ -29,6 +29,7 @@ enum TipoPagamento {
 
 enum StatusComanda {
   ABERTA
+  FECHAMENTO_SOLICITADO
   FECHADA
   PAGA
   CANCELADA
@@ -157,6 +158,18 @@ enum StatusHorarioFixo {
   PAUSADO
 }
 
+enum StatusConviteCampeonato {
+  PENDENTE
+  ACEITO
+  RECUSADO
+}
+
+enum StatusConviteJogadorCampeonato {
+  PENDENTE
+  ACEITO
+  RECUSADO
+}
+
 model Usuario {
   id           Int       @id @default(autoincrement())
   nome         String
@@ -206,6 +219,7 @@ model Usuario {
   horariosFixosOrganizados HorarioFixo[] @relation("HorarioFixoOrganizador")
   presencasHorario PresencaHorario[]
   agendamentosOrganizados Agendamento[]
+  convitesCampeonatoJogador ConviteCampeonatoJogador[]
   disponivelParaConvites Boolean @default(false)
 
   @@index([timeRelacionadoId])
@@ -250,6 +264,7 @@ model Society {
   funcionarios     Funcionario[]
   gruposHorario GrupoHorario[]
   horariosFixos HorarioFixo[]
+  horariosFuncionamento SocietyHorarioFuncionamento[]
 
   @@index([usuarioId])
 }
@@ -381,6 +396,7 @@ model Time {
   agendamentos      Agendamento[]
   pagamentos        Pagamento[]
   comandas          Comanda[]
+  convitesCampeonato ConviteCampeonatoTime[]
 
   @@unique([societyId, nome])
   @@index([societyId])
@@ -607,6 +623,64 @@ model PresencaHorario {
   @@index([status])
 }
 
+model SocietyHorarioFuncionamento {
+  id Int @id @default(autoincrement())
+  societyId Int
+  society Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  diaSemana Int
+  ativo Boolean @default(true)
+  horaInicio String?
+  horaFim String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([societyId, diaSemana])
+  @@index([societyId])
+  @@index([diaSemana])
+}
+
+model ConviteCampeonatoTime {
+  id Int @id @default(autoincrement())
+
+  campeonatoId Int
+  campeonato Campeonato @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
+
+  timeId Int
+  time Time @relation(fields: [timeId], references: [id], onDelete: Cascade)
+
+  status StatusConviteCampeonato @default(PENDENTE)
+  convidadoEm DateTime @default(now())
+  respondidoEm DateTime?
+
+  jogadores ConviteCampeonatoJogador[]
+
+  @@unique([campeonatoId, timeId])
+  @@index([campeonatoId])
+  @@index([timeId])
+  @@index([status])
+}
+
+model ConviteCampeonatoJogador {
+  id Int @id @default(autoincrement())
+
+  conviteTimeId Int
+  conviteTime ConviteCampeonatoTime @relation(fields: [conviteTimeId], references: [id], onDelete: Cascade)
+
+  usuarioId Int
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  status StatusConviteJogadorCampeonato @default(PENDENTE)
+  convidadoEm DateTime @default(now())
+  respondidoEm DateTime?
+
+  @@unique([conviteTimeId, usuarioId])
+  @@index([conviteTimeId])
+  @@index([usuarioId])
+  @@index([status])
+}
+
 model Campeonato {
   id        Int     @id @default(autoincrement())
   societyId Int
@@ -642,6 +716,7 @@ model Campeonato {
   jogos  Jogo[]
 
   tabela TabelaCampeonato[]
+  convitesTimes ConviteCampeonatoTime[]
 
   createdAt DateTime @default(now())
 
@@ -890,6 +965,7 @@ model Comanda {
 
   codigo String? @unique
 
+  fechamentoSolicitadoEm DateTime?
   fechadaEm DateTime?
   pagaEm    DateTime?
 

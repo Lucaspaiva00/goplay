@@ -136,3 +136,44 @@
         font-size: 16px;
     }
 }
+
+/* ============================================
+   HORÁRIOS DE FUNCIONAMENTO
+=============================================== */
+.section-help {
+    margin: 0 0 12px;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.45;
+}
+.hours-config {
+    display: grid;
+    gap: 10px;
+    margin-top: 10px;
+}
+.hours-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 1.2fr) auto minmax(105px, .8fr) auto minmax(105px, .8fr);
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+.hours-row .day-name { font-weight: 700; color: #052748; }
+.hours-row .open-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+.hours-row input[type="time"] {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #dcdfe6;
+    box-sizing: border-box;
+}
+.hours-row.closed { opacity: .68; background: #f1f5f9; }
+.hours-row.closed input[type="time"] { pointer-events: none; }
+@media (max-width: 680px) {
+    .hours-row { grid-template-columns: 1fr auto; }
+    .hours-row .time-label { display: none; }
+    .hours-row input[type="time"] { grid-column: span 1; }
+}
