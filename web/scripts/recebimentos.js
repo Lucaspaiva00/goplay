@@ -82,18 +82,18 @@ function isPendente(status) {
     return String(status || "").toUpperCase() === "PENDENTE";
 }
 
-function statusBadge(status) {
-    const s = String(status || "").toUpperCase();
-
+function statusBadge(p) {
+    const s = String(p?.status || "").toUpperCase();
     if (s === "PAGO") {
         return `<span class="status pago"><i class="fa-solid fa-circle-check"></i> PAGO</span>`;
     }
-
     if (s === "CANCELADO") {
         return `<span class="status cancelado"><i class="fa-solid fa-circle-xmark"></i> CANCELADO</span>`;
     }
-
-    return `<span class="status pendente"><i class="fa-solid fa-hourglass-half"></i> PENDENTE</span>`;
+    if (p?.avisoPagamentoEm) {
+        return `<span class="status" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe"><i class="fa-solid fa-bell"></i> PIX INFORMADO</span>`;
+    }
+    return `<span class="status pendente"><i class="fa-solid fa-hourglass-half"></i> AGUARDANDO PIX</span>`;
 }
 
 function showError(message) {
@@ -135,7 +135,7 @@ async function carregarRecebimentos() {
 
     const tbody = el("tbody");
     if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="7" class="loading">Carregando recebimentos...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="loading">Carregando recebimentos...</td></tr>`;
     }
 
     try {
@@ -148,15 +148,17 @@ async function carregarRecebimentos() {
         const lista = await fetchJSON(`${BASE_URL}/pagamentos/society/${encodeURIComponent(societyId)}`);
 
         RECEBIMENTOS = Array.isArray(lista) ? lista : [];
-        FILTRADOS = [...RECEBIMENTOS];
+        const focoId = Number(getQueryParam("pagamentoId") || 0);
+        FILTRADOS = focoId ? RECEBIMENTOS.filter(p => Number(p.id) === focoId) : [...RECEBIMENTOS];
 
         renderTudo(FILTRADOS);
+        if (focoId && !FILTRADOS.length) showError("Pagamento informado pelo cliente não foi encontrado nesta empresa.");
     } catch (e) {
         console.error(e);
         showError(e.message || "Erro ao carregar recebimentos.");
 
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="7" class="empty">Não foi possível carregar os recebimentos.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="empty">Não foi possível carregar os recebimentos.</td></tr>`;
         }
     }
 }
@@ -297,7 +299,7 @@ function renderTabela(lista) {
     if (!lista.length) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="7" class="empty">
+                <td colspan="8" class="empty">
                     Nenhum recebimento encontrado para os filtros selecionados.
                 </td>
             </tr>
@@ -320,7 +322,12 @@ function renderTabela(lista) {
                 <td><span class="tipo">${tipo}</span></td>
                 <td class="desc">${descricao}</td>
                 <td class="right money">${money(valor)}</td>
-                <td>${statusBadge(p.status)}</td>
+                <td>${statusBadge(p)}</td>
+                <td>
+                    <div class="recebimento-actions">
+                        ${String(p.status || "").toUpperCase() === "PENDENTE" ? `<button class="rec-btn confirm" onclick="confirmarRecebimento(${p.id})"><i class="fa-solid fa-check"></i> Confirmar</button><button class="rec-btn cancel" onclick="cancelarRecebimento(${p.id})"><i class="fa-solid fa-xmark"></i> Cancelar</button>` : ""}
+                    </div>
+                </td>
             </tr>
         `;
     }).join("");
@@ -386,6 +393,31 @@ function exportarCSV() {
 
     URL.revokeObjectURL(url);
 }
+
+async function confirmarRecebimento(id) {
+    if (!confirm("Confirmar que o valor foi recebido? A reserva será marcada como paga/confirmada.")) return;
+    try {
+        await fetchJSON(`${BASE_URL}/pagamentos/${id}/confirmar`, { method: "POST" });
+        await carregarRecebimentos();
+        alert("Pagamento confirmado. O cliente verá a reserva como PAGA.");
+    } catch (e) {
+        alert(e?.message || "Erro ao confirmar pagamento.");
+    }
+}
+
+async function cancelarRecebimento(id) {
+    if (!confirm("Cancelar esta cobrança? Se houver uma reserva vinculada e ainda não paga, ela também será cancelada.")) return;
+    try {
+        await fetchJSON(`${BASE_URL}/pagamentos/${id}/cancelar`, { method: "POST" });
+        await carregarRecebimentos();
+        alert("Cobrança cancelada.");
+    } catch (e) {
+        alert(e?.message || "Erro ao cancelar pagamento.");
+    }
+}
+
+window.confirmarRecebimento = confirmarRecebimento;
+window.cancelarRecebimento = cancelarRecebimento;
 
 document.addEventListener("DOMContentLoaded", async () => {
     el("btnFiltrar")?.addEventListener("click", aplicarFiltros);

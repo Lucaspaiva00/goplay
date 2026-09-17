@@ -19,7 +19,6 @@ let empresaAtual = null;
 let timeSelecionadoId = null;
 let campoSelecionado = null;
 let horarioSelecionado = null;
-let recorrenteSelecionado = false;
 let horaPreferidaUrl = null;
 
 function atualizarEtapas() {
@@ -196,8 +195,6 @@ async function criarAgendamento() {
         if (!campoSelecionado || !data || !horarioSelecionado?.horaInicio) return alert("Selecione quadra, data e horário.");
 
         const opt = el("campoId").selectedOptions?.[0];
-        const valorMensalCampo = Number(opt?.getAttribute("data-mensal") || 0);
-        const recorrente = recorrenteSelecionado && valorMensalCampo > 0;
 
         const agendamento = await fetchJSON(`${BASE_URL}/agendamentos`, {
             method: "POST", headers: { "Content-Type": "application/json" },
@@ -206,7 +203,7 @@ async function criarAgendamento() {
 
         await fetchJSON(`${BASE_URL}/pagamentos/agendamento`, {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ usuarioId: usuarioLogado.id, societyId: empresaAtual.id, timeId: timeSelecionadoId, campoId: campoSelecionado, agendamentoId: agendamento.id, forma: "PIX", recorrente })
+            body: JSON.stringify({ usuarioId: usuarioLogado.id, societyId: empresaAtual.id, timeId: timeSelecionadoId, campoId: campoSelecionado, agendamentoId: agendamento.id, forma: "PIX", recorrente: false })
         });
 
         const msg = el("msgSucesso");
@@ -241,7 +238,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
         el("data").addEventListener("change", () => { horarioSelecionado = null; el("acao").style.display = "none"; atualizarEtapas(); });
         el("timeId").addEventListener("change", () => { timeSelecionadoId = Number(el("timeId").value || 0) || null; renderResumo(); });
-        el("recorrente")?.addEventListener("change", e => { recorrenteSelecionado = !!e.target.checked; });
         el("btnBuscar").onclick = buscarHorarios;
         el("btnAgendar").onclick = criarAgendamento;
         atualizarEtapas();

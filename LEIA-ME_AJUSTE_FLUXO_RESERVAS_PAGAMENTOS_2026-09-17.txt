@@ -1,0 +1,47 @@
+GOPLAY - AJUSTE DE FLUXO DE RESERVAS, PAGAMENTOS E ROTINA
+Data: 17/09/2026
+
+1. NOVA RESERVA
+- A tela time-agendamento.html passa a ser exclusivamente para reserva avulsa.
+- Removida a opção duplicada "Tornar mensal (toda semana neste horário)".
+- Recorrência semanal/mensal fica somente em Horário Fixo / Presenças.
+
+2. MINHAS RESERVAS
+- "Meus Agendamentos" renomeado visualmente para "Minhas Reservas".
+- Situação exibida de forma orientada ao usuário:
+  * PAGAMENTO PENDENTE
+  * PIX INFORMADO
+  * PAGO
+  * CANCELADO
+  * HORÁRIO FIXO, quando aplicável
+- Após a empresa confirmar o pagamento, a reserva aparece como PAGA.
+- Ao cancelar uma reserva ainda não paga, a cobrança pendente vinculada também é cancelada.
+
+3. AVISO DE PIX
+- O botão "Já fiz o PIX — avisar empresa" continua sem confirmar o pagamento sozinho.
+- Agora o proprietário DONO_SOCIETY recebe a notificação no sininho.
+- Funcionários ADMIN/CAIXA também recebem a notificação.
+- A notificação abre diretamente o pagamento em Recebimentos.
+- Após o aviso, o cliente vê "Empresa avisada — aguardando confirmação" e não fica reenviando o aviso.
+
+4. RECEBIMENTOS DA EMPRESA
+- Pagamentos pendentes passam a mostrar:
+  * AGUARDANDO PIX
+  * PIX INFORMADO
+- A empresa tem ações explícitas:
+  * Confirmar recebimento
+  * Cancelar
+- Confirmar muda o pagamento para PAGO e, quando existe agendamento vinculado, confirma a reserva.
+- Cancelar muda pagamento e reserva vinculada para CANCELADO, desde que ainda não tenham sido pagos.
+
+5. MENSALIDADES / HORÁRIOS FIXOS
+- Cobranças mensais deixam de nascer como PAGO automaticamente.
+- Toda cobrança segue o mesmo fluxo: PENDENTE -> PIX INFORMADO -> PAGO/CANCELADO.
+- Ocorrências da rotina vinculada a um time agora mantêm o timeId para aparecerem corretamente na consulta do time.
+
+6. ROTINA / PRESENÇAS
+- Textos foram reorganizados para deixar claro que esta tela é apenas para recorrência semanal/mensal.
+- O script de horario-grupo recebeu identificação robusta do grupo e cache-busting para eliminar o erro "groupId is not defined" observado em produção.
+
+BANCO DE DADOS
+- Não há nova migration nesta entrega.

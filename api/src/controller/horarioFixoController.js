@@ -201,7 +201,7 @@ async function generateFixedOccurrences(hf, group){
     await ensureOrganizerMember(tx,group);
     const out=[];
     for(const dt of validation.dates){
-      const ag=await tx.agendamento.create({data:{societyId:group.societyId,campoId:hf.campoId,timeId:null,data:dt,horaInicio:hf.horaInicio,horaFim:hf.horaFim,valor:hf.tipoCobranca==='MENSAL'?Number(hf.valorMensal||0):Number(hf.valorPorJogo||0),status:'CONFIRMADO',grupoHorarioId:group.id,horarioFixoId:hf.id,organizadorId:group.organizadorId}});
+      const ag=await tx.agendamento.create({data:{societyId:group.societyId,campoId:hf.campoId,timeId:group.timeId||null,data:dt,horaInicio:hf.horaInicio,horaFim:hf.horaFim,valor:hf.tipoCobranca==='MENSAL'?Number(hf.valorMensal||0):Number(hf.valorPorJogo||0),status:'CONFIRMADO',grupoHorarioId:group.id,horarioFixoId:hf.id,organizadorId:group.organizadorId}});
       if(ids.length) await tx.presencaHorario.createMany({data:ids.map(usuarioId=>({agendamentoId:ag.id,usuarioId})),skipDuplicates:true});
       out.push(ag);
     }

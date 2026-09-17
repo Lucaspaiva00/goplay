@@ -179,7 +179,12 @@ const cancelar = async (req, res) => {
       });
     }
 
-    await prisma.agendamento.update({ where: { id }, data: { status: "CANCELADO" } });
+    await prisma.$transaction(async (tx) => {
+      await tx.agendamento.update({ where: { id }, data: { status: "CANCELADO" } });
+      if (agendamento.pagamento && agendamento.pagamento.status === "PENDENTE") {
+        await tx.pagamento.update({ where: { id: agendamento.pagamento.id }, data: { status: "CANCELADO" } });
+      }
+    });
     await notifyUsuario(prisma, agendamento.time?.donoId, "Reserva cancelada", `A reserva de ${agendamento.horaInicio} foi cancelada.`);
     if (agendamento.grupoHorario) {
       for (const m of agendamento.grupoHorario.membros) await notifyUsuario(prisma, m.usuarioId, "Jogo cancelado", `${agendamento.grupoHorario.nome}: o encontro de ${agendamento.horaInicio} foi cancelado.`, `horario-grupo.html?grupoId=${agendamento.grupoHorarioId}`);

@@ -40,13 +40,13 @@ if (!window.menuLoaded) {
       +item("fa-building","Explorar Empresas","location.href='societies.html'")
       +item("fa-futbol","Ver Quadras","navegarComEmpresa('campos-view.html')")
       +item("fa-users","Times da Empresa","navegarComEmpresa('times.html?view=empresa')")
-      +item("fa-calendar-check","Agendar Horário","location.href='time-agendamento.html'")
+      +item("fa-calendar-check","Nova Reserva","location.href='time-agendamento.html'")
       +item("fa-receipt","Minha Comanda","location.href='comanda.html'")
-      +item("fa-list","Meus Agendamentos","location.href='meus-agendamentos.html'")
+      +item("fa-list","Minhas Reservas","location.href='meus-agendamentos.html'")
       +item("fa-money-bill","Meus Pagamentos","location.href='meus-pagamentos.html'");
     html+=section("MEU TIME")
       +item("fa-shield-halved","Meus Times","location.href='times.html'")
-      +item("fa-thumbs-up","Rotina / Presenças","location.href='meus-horarios.html'")
+      +item("fa-thumbs-up","Horário Fixo / Presenças","location.href='meus-horarios.html'")
       +item("fa-trophy","Campeonatos","location.href='campeonatos-view.html'")
       +item("fa-envelope-open-text","Convites de campeonato","location.href='convites-campeonato.html'");
   }

@@ -44,11 +44,11 @@ function formatarDataHora(valor) {
     return String(valor);
 }
 
-function setStatusPill(status) {
+function setStatusPill(pagamento) {
     const pill = el("statusPill");
     if (!pill) return;
 
-    const s = String(status || "PENDENTE").toUpperCase();
+    const s = String(pagamento?.status || "PENDENTE").toUpperCase();
     pill.classList.remove("pendente", "pago", "cancelado");
 
     if (s === "PAGO") {
@@ -56,22 +56,22 @@ function setStatusPill(status) {
         pill.innerHTML = `<i class="fa-solid fa-circle-check"></i> PAGO`;
         return;
     }
-
     if (s === "CANCELADO") {
         pill.classList.add("cancelado");
         pill.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> CANCELADO`;
         return;
     }
-
     pill.classList.add("pendente");
-    pill.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> PENDENTE`;
+    pill.innerHTML = pagamento?.avisoPagamentoEm
+        ? `<i class="fa-solid fa-bell"></i> PIX INFORMADO`
+        : `<i class="fa-solid fa-hourglass-half"></i> AGUARDANDO PIX`;
 }
 
 async function carregarPagamento(pagamentoId) {
     const p = await fetchJSON(`${BASE_URL}/pagamentos/${encodeURIComponent(pagamentoId)}`);
 
     el("chipId").textContent = `#${p.id}`;
-    setStatusPill(p.status);
+    setStatusPill(p);
 
     el("societyNome").textContent = p?.society?.nome || "-";
     el("campoNome").textContent = p?.campo?.nome || "-";
@@ -203,11 +203,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             } else if (String(pagamento.status).toUpperCase() === "CANCELADO") {
                 btnConfirmar.disabled = true;
                 btnConfirmar.innerHTML = `<i class="fa-solid fa-ban"></i> Pagamento cancelado`;
+            } else if (pagamento.avisoPagamentoEm) {
+                btnConfirmar.disabled = true;
+                btnConfirmar.innerHTML = `<i class="fa-solid fa-clock"></i> Empresa avisada — aguardando confirmação`;
+                if (msg) msg.textContent = "O PIX foi informado à empresa. Assim que ela confirmar o recebimento, esta cobrança ficará como PAGA.";
             } else {
                 btnConfirmar.innerHTML = `<i class="fa-solid fa-bell"></i> Já fiz o PIX — avisar empresa`;
                 btnConfirmar.onclick = () => avisarPagamento(pagamentoId).catch(e => {
                     console.error(e);
-                    alert(e?.message || "Erro ao confirmar pagamento.");
+                    alert(e?.message || "Erro ao avisar a empresa.");
                 });
             }
         }

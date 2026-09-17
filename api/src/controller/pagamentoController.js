@@ -382,8 +382,7 @@ const createMensalidade = async (req, res) => {
                 tipo: "MENSALISTA",
                 valor,
                 forma,
-                status: "PAGO",
-                pagoEm: new Date(),
+                status: "PENDENTE",
                 descricao: "Mensalidade do campo",
             },
         });
@@ -415,8 +414,13 @@ const avisarPagamento = async (req, res) => {
             return res.json({ ok: true, message: "A empresa já foi avisada recentemente." });
         }
         await prisma.pagamento.update({ where: { id }, data: { avisoPagamentoEm: agora } });
-        await notifyStaff(prisma, p.societyId, "Cliente informou PIX", `Pagamento #${p.id} de R$ ${Number(p.valor||0).toFixed(2)} aguarda conferência.`, ["ADMIN","CAIXA"]);
-        await notifyUsuario(prisma, p.usuarioId, "PIX informado", `Avisamos ${p.society?.nome || "a empresa"}. O pagamento será confirmado após conferência.`);
+        const urlConferencia = `recebimentos.html?pagamentoId=${p.id}`;
+        const society = await prisma.society.findUnique({ where: { id: p.societyId }, select: { usuarioId: true, nome: true } });
+        if (society?.usuarioId) {
+            await notifyUsuario(prisma, society.usuarioId, "Cliente informou PIX", `Pagamento #${p.id} de R$ ${Number(p.valor||0).toFixed(2)} aguarda sua conferência.`, urlConferencia);
+        }
+        await notifyStaff(prisma, p.societyId, "Cliente informou PIX", `Pagamento #${p.id} de R$ ${Number(p.valor||0).toFixed(2)} aguarda conferência.`, ["ADMIN","CAIXA"], urlConferencia);
+        await notifyUsuario(prisma, p.usuarioId, "PIX informado", `Avisamos ${p.society?.nome || society?.nome || "a empresa"}. O pagamento será confirmado após conferência.`);
         return res.json({ ok: true });
     } catch (e) {
         console.error(e);
@@ -424,7 +428,45 @@ const avisarPagamento = async (req, res) => {
     }
 };
 
+/* =========================
+   CANCELAR PAGAMENTO PENDENTE / RESERVA
+   Empresa recusa ou cancela antes da confirmação.
+========================= */
+const cancelarPagamento = async (req, res) => {
+    try {
+        const id = toId(req.params.id);
+        if (!id) return res.status(400).json({ error: "ID inválido." });
+
+        const pagamento = await prisma.pagamento.findUnique({
+            where: { id },
+            include: { agendamento: true, society: { select: { nome: true } } },
+        });
+        if (!pagamento) return res.status(404).json({ error: "Pagamento não encontrado." });
+        if (!(await podeGerirPagamento(req, pagamento))) {
+            return res.status(403).json({ error: "Somente a empresa pode cancelar este pagamento." });
+        }
+        if (pagamento.status === "PAGO") {
+            return res.status(400).json({ error: "Pagamento já confirmado. O cancelamento exige um fluxo de estorno." });
+        }
+        if (pagamento.status === "CANCELADO") return res.json({ ok: true });
+
+        await prisma.$transaction(async (tx) => {
+            await tx.pagamento.update({ where: { id }, data: { status: "CANCELADO" } });
+            if (pagamento.agendamentoId) {
+                await tx.agendamento.update({ where: { id: pagamento.agendamentoId }, data: { status: "CANCELADO" } });
+            }
+        });
+
+        await notifyUsuario(prisma, pagamento.usuarioId, "Pagamento/reserva cancelado", `${pagamento.society?.nome || "A empresa"} cancelou a cobrança${pagamento.agendamentoId ? " e a reserva vinculada" : ""}.`);
+        return res.json({ ok: true });
+    } catch (e) {
+        console.error(e);
+        return res.status(500).json({ error: "Erro ao cancelar pagamento." });
+    }
+};
+
 module.exports = {
+    cancelarPagamento,
     avisarPagamento,
     readOne,
     createPagamentoAgendamento,

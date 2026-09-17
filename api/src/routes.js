@@ -171,6 +171,7 @@ router.post("/encontros-horario/:id/rateio", authenticate, horarioFixoController
 router.post("/pagamentos/agendamento", pagamentoController.createPagamentoAgendamento);
 router.post("/pagamentos/mensalidade", pagamentoController.createMensalidade);
 router.post("/pagamentos/:id/confirmar", authenticate, pagamentoController.confirmarPagamento);
+router.post("/pagamentos/:id/cancelar", authenticate, pagamentoController.cancelarPagamento);
 router.post("/pagamentos/:id/avisar", authenticate, pagamentoController.avisarPagamento);
 router.get("/pagamentos/society/:societyId", authenticate, pagamentoController.listBySociety);
 router.get("/pagamentos/time/:timeId", pagamentoController.listByTime);

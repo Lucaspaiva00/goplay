@@ -71,12 +71,32 @@ function getTimeMsFromDateOnly(value) {
     return d.getTime();
 }
 
-function statusPill(status) {
-    const s = String(status || "").toUpperCase();
-    if (s === "CONFIRMADO") return `<span class="status confirmado"><i class="fa-solid fa-circle-check"></i> CONFIRMADO</span>`;
-    if (s === "CANCELADO") return `<span class="status cancelado"><i class="fa-solid fa-circle-xmark"></i> CANCELADO</span>`;
+function statusPillAgendamento(a) {
+    const agStatus = String(a?.status || "").toUpperCase();
+    const pagamento = a?.pagamento || null;
+    const pagStatus = String(pagamento?.status || "").toUpperCase();
+
+    if (agStatus === "CANCELADO" || pagStatus === "CANCELADO") {
+        return `<span class="status cancelado"><i class="fa-solid fa-circle-xmark"></i> CANCELADO</span>`;
+    }
+    if (pagStatus === "PAGO") {
+        return `<span class="status confirmado"><i class="fa-solid fa-circle-check"></i> PAGO</span>`;
+    }
+    if (pagamento?.avisoPagamentoEm) {
+        return `<span class="status pendente" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8"><i class="fa-solid fa-bell"></i> PIX INFORMADO</span>`;
+    }
+    if (pagamento) {
+        return `<span class="status pendente"><i class="fa-solid fa-hourglass-half"></i> PAGAMENTO PENDENTE</span>`;
+    }
+    if (a?.horarioFixoId && agStatus === "CONFIRMADO") {
+        return `<span class="status confirmado"><i class="fa-solid fa-rotate"></i> HORÁRIO FIXO</span>`;
+    }
+    if (agStatus === "CONFIRMADO") {
+        return `<span class="status confirmado"><i class="fa-solid fa-circle-check"></i> CONFIRMADO</span>`;
+    }
     return `<span class="status pendente"><i class="fa-solid fa-hourglass-half"></i> PENDENTE</span>`;
 }
+
 
 let __TIMES__ = [];
 let __AGENDAMENTOS__ = [];
@@ -186,21 +206,19 @@ function renderTabela(lista) {
         const dataJogoBR = dtBRDateOnly(dataJogo);
 
         const status = String(a.status || "").toUpperCase();
-        const podeCancelar = status !== "CANCELADO";
+        const pagamento = a?.pagamento || null;
+        const pagStatus = String(pagamento?.status || "").toUpperCase();
+        const pago = pagStatus === "PAGO";
+        const cancelado = status === "CANCELADO" || pagStatus === "CANCELADO";
+        const podeCancelar = !cancelado && !pago;
 
         const btnCancelar = podeCancelar
             ? `<button class="btn-mini danger" onclick="cancelarAgendamento(${a.id})"><i class="fa-solid fa-ban"></i> Cancelar</button>`
             : "";
 
-        // 🔥 CORREÇÃO AQUI
-        const pagamento = a?.pagamento || null;
-        const pagStatus = String(pagamento?.status || "").toUpperCase();
-
-        const podePagar = pagamento && pagStatus !== "CONFIRMADO" && pagStatus !== "CANCELADO";
-
-        const btnPag = podePagar
+        const btnPag = pagamento && !cancelado && !pago
             ? `<button class="btn-mini ok" onclick="irParaPagamento(${pagamento.id})">
-                <i class="fa-solid fa-receipt"></i> Pagar
+                <i class="fa-solid fa-receipt"></i> ${pagamento.avisoPagamentoEm ? "Ver pagamento" : "Pagar / informar PIX"}
               </button>`
             : "";
 
@@ -210,7 +228,7 @@ function renderTabela(lista) {
         <td>${a.horaInicio || "-"} - ${a.horaFim || "-"}</td>
         <td>${societyNome}</td>
         <td>${campoNome}</td>
-        <td>${statusPill(a.status)}</td>
+        <td>${statusPillAgendamento(a)}</td>
         <td class="right">
           <div class="actions">
             ${btnPag}
