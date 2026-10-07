@@ -501,7 +501,10 @@ const agendar = async (req, res) => {
     const jogo = await buscarJogoCompleto(prisma, jogoId);
     if (!jogo) return res.status(404).json({ error: "Jogo não encontrado." });
     if (!(await podeConfigurarMesa(req, jogo))) {
-      return res.status(403).json({ error: "Somente o dono ou Administrador pode definir a data da partida." });
+      return res.status(403).json({ error: "Somente o responsável autorizado pode definir a data da partida." });
+    }
+    if (jogo.amistosoId) {
+      return res.status(400).json({ error: "A data do amistoso é administrada pelo módulo de Amistosos." });
     }
     if (jogo.finalizado) return res.status(400).json({ error: "Partida encerrada não pode ser reagendada." });
 
