@@ -1158,8 +1158,8 @@ function ensureAgendaModal() {
     if (document.getElementById("agendaJogoModal")) return;
     const el=document.createElement("div");
     el.id="agendaJogoModal";
-    el.className="modal-overlay";
-    el.innerHTML=`<div class="modal-card" style="max-width:470px"><button class="modal-close" onclick="fecharAgendaJogo()">×</button><h3>📅 Definir data da partida</h3><p id="agendaJogoTitulo" class="muted"></p><label style="display:block;font-weight:800;margin:14px 0 6px">Data e horário</label><input id="agendaJogoData" type="datetime-local" style="width:100%;padding:12px;border:1px solid #dbe4ec;border-radius:10px"><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button class="btn btn-light" onclick="fecharAgendaJogo()">Cancelar</button><button class="btn btn-primary" onclick="salvarAgendaJogo()">Salvar e avisar times</button></div></div>`;
+    el.className="champ-modal";
+    el.innerHTML=`<div class="champ-modal-box" style="max-width:470px"><div class="champ-modal-head"><div><h2>📅 Definir data da partida</h2><small id="agendaJogoTitulo">Partida</small></div><button class="back-btn" onclick="fecharAgendaJogo()">✕</button></div><label>Data e horário</label><input id="agendaJogoData" type="datetime-local"><div class="champ-modal-help">Ao salvar ou reagendar, os donos dos times, jogadores confirmados e equipe da empresa serão avisados.</div><div class="champ-modal-actions"><button class="btn btn-light" onclick="fecharAgendaJogo()">Cancelar</button><button class="btn btn-primary" onclick="salvarAgendaJogo()">Salvar e avisar times</button></div></div>`;
     document.body.appendChild(el);
 }
 let agendaJogoIdAtual=null;
