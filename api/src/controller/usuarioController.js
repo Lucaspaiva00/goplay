@@ -179,6 +179,7 @@ const login = async (req, res) => {
             email: usuario.email,
             tipo: usuario.tipo,
             fotoUrl: usuario.fotoUrl || null,
+            isSocioGoPlay: usuario.isSocioGoPlay === true,
             authToken
         });
 
