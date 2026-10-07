@@ -12,6 +12,14 @@ ALTER TABLE "Campeonato"
 ALTER COLUMN "societyId" DROP NOT NULL;
 
 ALTER TABLE "Campeonato"
+DROP CONSTRAINT IF EXISTS "Campeonato_societyId_fkey";
+
+ALTER TABLE "Campeonato"
+ADD CONSTRAINT "Campeonato_societyId_fkey"
+FOREIGN KEY ("societyId") REFERENCES "Society"("id")
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE "Campeonato"
 ADD COLUMN IF NOT EXISTS "organizadorId" INTEGER;
 
 ALTER TABLE "Jogo"
