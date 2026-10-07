@@ -38,6 +38,9 @@ async function responderTime(req,res){
     if(convite.campeonato.times.length>=convite.campeonato.maxTimes) return res.status(409).json({error:'O campeonato já atingiu o limite de times.'});
     const idsPermitidos=new Set(convite.time.jogadores.map(j=>j.id));
     const jogadorIds=[...new Set((Array.isArray(req.body.jogadorIds)?req.body.jogadorIds:[]).map(Number).filter(x=>idsPermitidos.has(x)))];
+    if(!jogadorIds.length) return res.status(400).json({error:'Selecione pelo menos um jogador para representar o time no campeonato.'});
+    const limite=Number(convite.campeonato.maxJogadoresPorTime||20);
+    if(jogadorIds.length>limite) return res.status(400).json({error:`Este campeonato permite no máximo ${limite} jogador(es) por time.`});
     const out=await prisma.$transaction(async tx=>{
       await tx.timeCampeonato.upsert({where:{campeonatoId_timeId:{campeonatoId:convite.campeonatoId,timeId:convite.timeId}},create:{campeonatoId:convite.campeonatoId,timeId:convite.timeId},update:{}});
       await tx.tabelaCampeonato.upsert({where:{campeonatoId_timeId:{campeonatoId:convite.campeonatoId,timeId:convite.timeId}},create:{campeonatoId:convite.campeonatoId,timeId:convite.timeId},update:{}});
