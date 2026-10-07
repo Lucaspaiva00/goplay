@@ -3,6 +3,7 @@ const prisma = new PrismaClient();
 const { notifyUsuario, notifyStaff } = require("../notifications");
 const { configForDate, validateInterval, buildSlots, timeToMinutes, endToMinutes } = require("../businessHours");
 const { ensureTeamPresences } = require("../presenceNotifications");
+const { parseDateOnly, formatDateBR } = require("../dateOnly");
 
 /* =========================
    HELPERS
@@ -12,10 +13,6 @@ const toId = (v) => {
   return Number.isFinite(n) ? n : null;
 };
 
-const parseDateOnly = (dateStr) => {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  return new Date(y, m - 1, d);
-};
 
 /* =========================
    HORÁRIOS DISPONÍVEIS
@@ -114,7 +111,7 @@ const create = async (req, res) => {
 
     const jogadores = await ensureTeamPresences(agendamento.id, timeId);
     for (const usuarioId of jogadores) {
-      await notifyUsuario(prisma, usuarioId, `Você vai jogar? • ${time.nome}`, `${new Date(data).toLocaleDateString("pt-BR")} às ${horaInicio}, ${campo.nome}. Confirme 👍 ou 👎.`, `confirmar-presenca.html?agendamentoId=${agendamento.id}`);
+      await notifyUsuario(prisma, usuarioId, `Você vai jogar? • ${time.nome}`, `${formatDateBR(data)} às ${horaInicio}, ${campo.nome}. Confirme 👍 ou 👎.`, `confirmar-presenca.html?agendamentoId=${agendamento.id}`);
     }
     await prisma.agendamento.update({ where:{id:agendamento.id}, data:{presencaNotificadaEm:new Date()} });
 
