@@ -512,6 +512,7 @@ model Agendamento {
   organizador Usuario? @relation(fields: [organizadorId], references: [id], onDelete: SetNull)
 
   presencas PresencaHorario[]
+  amistoso Amistoso?
   presencaNotificadaEm DateTime?
 
   createdAt DateTime @default(now())
@@ -821,6 +822,9 @@ model Amistoso {
   recusadoEm DateTime?
   motivoRecusa String?
   observacao String?
+
+  agendamentoId Int? @unique
+  agendamento Agendamento? @relation(fields: [agendamentoId], references: [id], onDelete: SetNull)
 
   presencas PresencaAmistoso[]
 
