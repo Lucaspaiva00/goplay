@@ -3,6 +3,7 @@ const PDFDocument = require("pdfkit");
 const { PrismaClient } = require("@prisma/client");
 const { emitJogo } = require("../realtime");
 const { notifyUsuario, notifyStaff } = require("../notifications");
+const { isPlatformAdmin } = require("../auth");
 
 const prisma = new PrismaClient();
 
