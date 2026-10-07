@@ -175,7 +175,7 @@ const create = async (req, res) => {
         const maxTimes = Number(req.body.maxTimes || 4);
         const maxJogadoresPorTime = Number(req.body.maxJogadoresPorTime || 20);
         const perfilOrganizador = req.actor?.kind === "USER" && ["ORGANIZADOR_COMPETICAO","ORGAO_PUBLICO"].includes(req.actor.tipo);
-        const socioSemSociety = req.actor?.kind === "USER" && req.actor.tipo === "SOCIO_GOPLAY" && !societyId;
+        const socioSemSociety = req.actor?.kind === "USER" && (req.actor.tipo === "SOCIO_GOPLAY" || req.actor.isSocioGoPlay === true) && !societyId;
         const organizadorId = perfilOrganizador || socioSemSociety ? Number(req.actor.id) : null;
 
         if (!societyId && !organizadorId) {
