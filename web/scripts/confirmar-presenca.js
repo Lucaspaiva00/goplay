@@ -13,7 +13,11 @@ async function load(){
   const isRoutine=!!data.grupoHorarioId;
   $('encontroHero').innerHTML=`<div><h2>${esc(data.nomeJogo||data.time?.nome||'Jogo')}</h2><p>${date(data.data)} • ${esc(data.horaInicio)}-${esc(data.horaFim)} • ${esc(data.society.nome)}</p></div><div class="phase4-actions">${isRoutine?`<button class="p4-btn p4-secondary" onclick="location.href='horario-grupo.html?grupoId=${data.grupoHorarioId}'">Ver rotina</button>`:`<button class="p4-btn p4-secondary" onclick="location.href='meus-agendamentos.html'">Minhas reservas</button>`}</div>`;
   const my=data.minhaPresenca;
+  const playerView=user?.tipo==='PLAYER'&&!data.podeGerenciar;
   $('votoBox').style.display=my?'block':'none';
+  $('presenceSummary').style.display=playerView?'none':'grid';
+  $('detailGrid').style.display=playerView?'none':'grid';
+  $('presenceListSection').style.display=playerView?'none':'block';
   $('btnVou').classList.toggle('active',my?.status==='VOU');
   $('btnNaoVou').classList.toggle('active',my?.status==='NAO_VOU');
   $('countVou').textContent=data.resumoPresenca.vou;
