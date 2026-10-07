@@ -267,6 +267,16 @@ const update = async (req, res) => {
             return res.status(404).json({ error: "Time não encontrado." });
         }
 
+        const isOwner = req.actor?.kind === "USER" && Number(timeAtual.donoId) === Number(req.actor.id);
+        const isSocietyOwner = req.actor?.kind === "USER" && req.actor.tipo === "DONO_SOCIETY" &&
+            !!(await prisma.society.findFirst({
+                where: { id: timeAtual.societyId, usuarioId: Number(req.actor.id) },
+                select: { id: true }
+            }));
+        if (!isOwner && !isSocietyOwner) {
+            return res.status(403).json({ error: "Somente o dono do time ou o dono da empresa pode editar este time." });
+        }
+
         const nome = req.body.nome !== undefined ? String(req.body.nome).trim() : undefined;
         const brasao = req.body.brasao !== undefined ? (req.body.brasao ? String(req.body.brasao).trim() : null) : undefined;
         const descricao = req.body.descricao !== undefined ? (req.body.descricao ? String(req.body.descricao).trim() : null) : undefined;
