@@ -569,9 +569,15 @@ function renderTimes(c) {
     const inputNovo = document.getElementById("novoTimeNome");
     const lotado = totalReservado >= c.maxTimes || (c.jogos?.length || 0) > 0;
     if (btnAdd) btnAdd.disabled = lotado;
-    if (btnCriar) btnCriar.disabled = totalConfirmados >= c.maxTimes || (c.jogos?.length || 0) > 0;
+    if (btnCriar) {
+        btnCriar.disabled = !c.societyId || totalConfirmados >= c.maxTimes || (c.jogos?.length || 0) > 0;
+        btnCriar.style.display = c.societyId ? "" : "none";
+    }
     if (select) select.disabled = lotado;
-    if (inputNovo) inputNovo.disabled = totalConfirmados >= c.maxTimes || (c.jogos?.length || 0) > 0;
+    if (inputNovo) {
+        inputNovo.disabled = !c.societyId || totalConfirmados >= c.maxTimes || (c.jogos?.length || 0) > 0;
+        inputNovo.style.display = c.societyId ? "" : "none";
+    }
     if (!div) return;
     const rows=[];
     inscritos.forEach((t,index)=>{const inv=(c.convitesTimes||[]).find(x=>Number(x.timeId)===Number(t?.time?.id??t?.timeId)&&x.status==='ACEITO');const totalJog=inv?.jogadores?.length||0;const okJog=(inv?.jogadores||[]).filter(j=>j.status==='ACEITO').length;rows.push(`<div class="item"><div><strong>${index+1}. ${escapeHTML(t?.time?.nome ?? "Time")}</strong><div class="muted" style="font-size:12px;">Participação confirmada${totalJog?` • Jogadores: ${okJog}/${totalJog} confirmados`:''}</div></div><span class="chip">CONFIRMADO</span></div>`);});
@@ -586,9 +592,9 @@ async function carregarSelectTimes() {
 
     try {
         const societyId = campeonatoAtual?.societyId;
-        if (!societyId) throw new Error("societyId não encontrado.");
-
-        const times = await safeFetchJSON(`${BASE_URL}/time/society/${societyId}`);
+        const times = societyId
+            ? await safeFetchJSON(`${BASE_URL}/time/society/${societyId}`)
+            : await safeFetchJSON(`${BASE_URL}/time`);
 
         const inscritos = new Set([
             ...(campeonatoAtual?.times || []).map(t => Number(t?.time?.id ?? t?.timeId)),
@@ -671,6 +677,10 @@ async function criarEAdicionarTime() {
         }
 
         const societyId = campeonatoAtual?.societyId;
+        if (!societyId) {
+            alert("Organizadores independentes devem convidar times já cadastrados. A criação manual exige uma empresa.");
+            return;
+        }
 
         const novoTime = await safeFetchJSON(`${BASE_URL}/time`, {
             method: "POST",
@@ -954,11 +964,15 @@ function renderJogos(c) {
 function permissoesJogoUI() {
     try {
         const u = JSON.parse(localStorage.getItem("usuarioLogado") || "null");
+        const f = JSON.parse(localStorage.getItem("funcionarioLogado") || "null");
         const tipo = String(u?.tipo || "").toUpperCase();
-        const funcao = String(u?.funcao || "").toUpperCase();
+        const socio = tipo === "SOCIO_GOPLAY" || u?.isSocioGoPlay === true;
+        const organizador = ["ORGANIZADOR_COMPETICAO","ORGAO_PUBLICO"].includes(tipo) && Number(campeonatoAtual?.organizadorId) === Number(u?.id);
+        const donoSociety = tipo === "DONO_SOCIETY" && Number(campeonatoAtual?.society?.usuarioId || 0) === Number(u?.id);
+        const staffSociety = f && Number(f.societyId) === Number(campeonatoAtual?.societyId || 0);
         return {
-            configurar: tipo === "DONO_SOCIETY" || (tipo === "FUNCIONARIO" && funcao === "ADMIN"),
-            operar: tipo === "DONO_SOCIETY" || (tipo === "FUNCIONARIO" && ["ADMIN","MESARIO"].includes(funcao))
+            configurar: socio || organizador || donoSociety || (staffSociety && f.funcao === "ADMIN"),
+            operar: socio || organizador || donoSociety || (staffSociety && ["ADMIN","MESARIO"].includes(f.funcao))
         };
     } catch { return { configurar:false, operar:false }; }
 }
