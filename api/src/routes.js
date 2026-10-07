@@ -23,6 +23,8 @@ const { subscribeJogo } = require("./realtime");
 const funcionarioController = require("./controller/funcionarioController");
 const notificacaoController = require("./controller/notificacaoController");
 const operacaoController = require("./controller/operacaoController");
+const amistosoController = require("./controller/amistosoController");
+const plataformaController = require("./controller/plataformaController");
 const horarioFixoController = require("./controller/horarioFixoController");
 const campeonatoConviteController = require("./controller/campeonatoConviteController");
 const { subscribeHorario } = require("./horarioRealtime");
@@ -163,6 +165,27 @@ router.get("/encontros-horario/:id", authenticate, horarioFixoController.detailO
 router.post("/encontros-horario/:id/presenca", authenticate, horarioFixoController.respond);
 router.post("/encontros-horario/:id/lembrete", authenticate, horarioFixoController.remindPending);
 router.post("/encontros-horario/:id/rateio", authenticate, horarioFixoController.generateSplit);
+
+/* =====================================================
+   AMISTOSOS
+===================================================== */
+
+router.post("/amistosos", authenticate, amistosoController.create);
+router.get("/amistosos/meus", authenticate, amistosoController.meus);
+router.get("/amistosos/:id", authenticate, amistosoController.readOne);
+router.post("/amistosos/:id/responder-adversario", authenticate, amistosoController.responderAdversario);
+router.post("/amistosos/:id/responder-society", authenticate, amistosoController.responderSociety);
+router.post("/amistosos/:id/presenca", authenticate, amistosoController.responderPresenca);
+router.post("/amistosos/:id/cancelar", authenticate, amistosoController.cancelar);
+
+/* =====================================================
+   PLATAFORMA GOPLAY
+===================================================== */
+
+router.get("/plataforma/dashboard", ...requirePlatformAdmin(), plataformaController.dashboard);
+router.get("/plataforma/usuarios", ...requirePlatformAdmin(), plataformaController.usuarios);
+router.get("/plataforma/societies", ...requirePlatformAdmin(), plataformaController.societies);
+router.get("/plataforma/saude", ...requirePlatformAdmin(), plataformaController.saude);
 
 /* =====================================================
    PAGAMENTOS
