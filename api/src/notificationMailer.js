@@ -88,7 +88,7 @@ async function sendNotificationEmail({ to, nome, titulo, mensagem, url }) {
   return sendMailWithFallback({
     from: `"GoPlay" <${user}>`,
     to: destinatario,
-    subject: `GoPlay • ${String(titulo || "Nova notificação").slice(0, 120)}`,
+    subject: `GoPlay • ${String(titulo || "Nova notificação").replace(/[\r\n]+/g, " ").slice(0, 120)}`,
     text: [
       `Olá, ${nome || "usuário"}.`,
       "",
