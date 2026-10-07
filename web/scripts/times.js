@@ -139,6 +139,9 @@ function playerAction(t) {
     if (req?.status === "APROVADA") {
         return `<button class="btn" onclick="location.href='meu-time.html'">✓ Entrada aprovada</button>`;
     }
+    if ((Array.isArray(t.jogadores) ? t.jogadores.length : 0) >= Number(t.maxJogadores || 20)) {
+        return `<button class="btn" disabled style="opacity:.55;cursor:not-allowed">Time lotado</button>`;
+    }
     return `<button class="btn" onclick="solicitarEntrada(${Number(t.id)})">${req?.status === "RECUSADA" ? "Solicitar novamente" : "Solicitar entrada"}</button>`;
 }
 
@@ -149,6 +152,8 @@ function montarCardTime(t, usuario) {
     const browseCompany = isDonoTime && isCompanyBrowseMode();
     const cidadeEstado = `${escapeHtml(t.cidade || "")}${t.estado ? ` - ${escapeHtml(t.estado)}` : ""}`;
     const jogadores = Array.isArray(t.jogadores) ? t.jogadores.length : 0;
+    const limite = Number(t.maxJogadores || 20);
+    const lotado = jogadores >= limite;
     const subtitulo = t?.society?.nome ? `<small>Empresa: ${escapeHtml(t.society.nome)}</small>` : "";
     let action = `<button class="btn" onclick="verDetalhes(${t.id})">Ver detalhes</button>`;
     if (isPlayer) action = `${playerAction(t)} <button class="btn" style="background:#eef4f8;color:#052845" onclick="verDetalhes(${t.id})">Ver time</button>`;
@@ -165,7 +170,7 @@ function montarCardTime(t, usuario) {
                 <div style="display:flex;flex-direction:column;gap:6px;">
                     <strong>${escapeHtml(t.nome || "-")}</strong>${subtitulo}
                     <small>${cidadeEstado || "Cidade não informada"}</small>
-                    <small>Jogadores: ${jogadores}</small>
+                    <small>Jogadores: ${jogadores}/${limite}${lotado ? " • LOTADO" : ""}</small>
                     ${t.modalidade ? `<small>Modalidade: ${escapeHtml(t.modalidade)}</small>` : ""}
                 </div>
             </div>
@@ -245,9 +250,11 @@ async function salvarTime() {
         donoId: usuario.id, societyId: Number(societyId), nome: document.getElementById("nome").value.trim(), brasao,
         descricao: document.getElementById("descricao").value.trim() || null, estado: document.getElementById("estado").value.trim() || null,
         cidade: document.getElementById("cidade").value.trim() || null, modalidade: document.getElementById("modalidade").value.trim() || null,
+        maxJogadores: Number(document.getElementById("maxJogadores").value || 20),
         tipoVinculo: "AVULSO", statusVinculo: "PENDENTE"
     };
     if (!payload.nome) return alert("O nome do time é obrigatório.");
+    if (!Number.isInteger(payload.maxJogadores) || payload.maxJogadores < 1 || payload.maxJogadores > 100) return alert("Informe um limite de jogadores entre 1 e 100.");
     try {
         await fetchJSON(`${BASE_URL}/time`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
         alert("Time cadastrado com sucesso! Agora ele aguarda aprovação da empresa.");
