@@ -48,6 +48,9 @@
             <input id="estado" class="input" placeholder="Estado (ex: SP)">
             <input id="cidade" class="input" placeholder="Cidade">
             <input id="modalidade" class="input" placeholder="Modalidade (ex: Society / Futsal)">
+            <label class="label">Limite de jogadores</label>
+            <input id="maxJogadores" class="input" type="number" min="1" max="100" value="20" placeholder="Ex: 20">
+            <small style="display:block;color:#64748b;margin:-4px 0 14px;">Ao atingir o limite, novas entradas ficam bloqueadas até aumentar o limite ou remover alguém.</small>
 
             <button class="btn" onclick="salvarTime()">Salvar Time</button>
         </section>
@@ -61,7 +64,7 @@
         <script src="../scripts/session.js"></script>
 <script src="../js/goplay_home.js"></script>
     <script src="../scripts/uploadCloudinary.js"></script>
-    <script src="../scripts/times.js"></script>
+    <script src="../scripts/times.js?v=20261007-1720"></script>
     <script src="../scripts/menu.js"></script>
 
 </body>
