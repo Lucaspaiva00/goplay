@@ -96,7 +96,7 @@ router.post("/time/solicitacoes/:id/responder", authenticate, timeController.res
 router.post("/time/solicitacoes/:id/cancelar", authenticate, timeController.cancelarSolicitacao);
 router.post("/time/:timeId/jogadores/:usuarioId/remover", authenticate, timeController.removerJogador);
 router.get("/time/:timeId", timeController.details);
-router.put("/time/:timeId", timeController.update);
+router.put("/time/:timeId", authenticate, timeController.update);
 router.delete("/time/:timeId", timeController.remove);
 router.post("/time/entrar", authenticate, timeController.join);
 router.post("/time/sair", authenticate, timeController.leave);
