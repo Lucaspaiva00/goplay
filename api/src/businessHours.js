@@ -6,7 +6,7 @@ function timeToMinutes(v){
 function endToMinutes(v){ const x=timeToMinutes(v); return x===0?1440:x; }
 function configForDate(horarios,date){
   const d = date instanceof Date ? date : new Date(date);
-  const day=d.getDay();
+  const day=d.getUTCDay();
   const rows=Array.isArray(horarios)?horarios:[];
   if(!rows.length) return {diaSemana:day,ativo:true,horaInicio:'18:00',horaFim:'23:00',fallback:true};
   return rows.find(h=>Number(h.diaSemana)===day) || {diaSemana:day,ativo:false,horaInicio:null,horaFim:null};
