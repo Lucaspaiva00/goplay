@@ -98,7 +98,7 @@ async function openMesa(id){
     const nome=user?.nome||staff?.nome||"Mesário";
     if(!confirm(`Abrir a Mesa de ${a.timeA.nome} × ${a.timeB.nome} como ${nome}?`))return;
     const d=await api(`${BASE_URL}/jogo/${a.jogo.id}/mesa/configurar`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mesarioNome:nome})});
-    location.href=`mesa-jogo.html?jogoId=${a.jogo.id}&token=${encodeURIComponent(d.token)}`;
+    location.href=`mesa-jogo.html?jogoId=${a.jogo.id}&token=${encodeURIComponent(d.mesaToken)}`;
   }catch(e){alert(e.message);}
 }
 async function cancelar(id){
