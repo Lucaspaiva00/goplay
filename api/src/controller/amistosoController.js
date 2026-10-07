@@ -550,10 +550,14 @@ async function cancelar(req, res) {
     const isSocietyOwner = a.societyId && await ownsSociety(req.actor, a.societyId);
     if (!isCreator && !isSocio && !isSocietyOwner) return res.status(403).json({ error: "Você não pode cancelar este amistoso." });
     if (a.status === "REALIZADO") return res.status(409).json({ error: "Amistoso já realizado." });
+    if (a.jogo?.statusOperacao === "AO_VIVO") return res.status(409).json({ error: "Não é possível cancelar um amistoso com a partida em andamento." });
 
     await prisma.$transaction(async tx => {
       if (a.agendamentoId) {
         await tx.agendamento.update({ where: { id: a.agendamentoId }, data: { status: "CANCELADO" } }).catch(()=>null);
+      }
+      if (a.jogo?.id && !a.jogo.finalizado) {
+        await tx.jogo.delete({ where: { id: a.jogo.id } }).catch(()=>null);
       }
       await tx.amistoso.update({ where: { id }, data: { status: "CANCELADO" } });
     });
