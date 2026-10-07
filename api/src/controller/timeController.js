@@ -30,6 +30,7 @@ const create = async (req, res) => {
         const estado = req.body.estado ? String(req.body.estado).trim() : null;
         const cidade = req.body.cidade ? String(req.body.cidade).trim() : null;
         const modalidade = req.body.modalidade ? String(req.body.modalidade).trim() : null;
+        const maxJogadores = Number(req.body.maxJogadores ?? 20);
 
         const tipoVinculo = req.body.tipoVinculo || "AVULSO";
         const statusVinculo = req.body.statusVinculo || "PENDENTE";
@@ -41,6 +42,9 @@ const create = async (req, res) => {
 
         if (!nome || !societyId || !donoId) {
             return res.status(400).json({ error: "Informe nome, societyId e donoId." });
+        }
+        if (!Number.isInteger(maxJogadores) || maxJogadores < 1 || maxJogadores > 100) {
+            return res.status(400).json({ error: "O limite de jogadores deve ser um número inteiro entre 1 e 100." });
         }
 
         const society = await prisma.society.findUnique({
@@ -80,6 +84,7 @@ const create = async (req, res) => {
                 estado,
                 cidade,
                 modalidade,
+                maxJogadores,
                 tipoVinculo,
                 statusVinculo,
                 valorMensalidade,
@@ -268,6 +273,7 @@ const update = async (req, res) => {
         const estado = req.body.estado !== undefined ? (req.body.estado ? String(req.body.estado).trim() : null) : undefined;
         const cidade = req.body.cidade !== undefined ? (req.body.cidade ? String(req.body.cidade).trim() : null) : undefined;
         const modalidade = req.body.modalidade !== undefined ? (req.body.modalidade ? String(req.body.modalidade).trim() : null) : undefined;
+        const maxJogadores = req.body.maxJogadores !== undefined ? Number(req.body.maxJogadores) : undefined;
 
         const tipoVinculo = req.body.tipoVinculo !== undefined ? req.body.tipoVinculo : undefined;
         const statusVinculo = req.body.statusVinculo !== undefined ? req.body.statusVinculo : undefined;
@@ -279,6 +285,15 @@ const update = async (req, res) => {
 
         if (nome !== undefined && !nome) {
             return res.status(400).json({ error: "Nome inválido." });
+        }
+        if (maxJogadores !== undefined) {
+            if (!Number.isInteger(maxJogadores) || maxJogadores < 1 || maxJogadores > 100) {
+                return res.status(400).json({ error: "O limite de jogadores deve ser um número inteiro entre 1 e 100." });
+            }
+            const ocupados = await prisma.usuario.count({ where: { timeRelacionadoId: timeId } });
+            if (maxJogadores < ocupados) {
+                return res.status(409).json({ error: `O time já possui ${ocupados} jogador(es). O limite não pode ser menor que o elenco atual.` });
+            }
         }
 
         if (nome && nome !== timeAtual.nome) {
@@ -304,6 +319,7 @@ const update = async (req, res) => {
                 estado,
                 cidade,
                 modalidade,
+                maxJogadores,
                 tipoVinculo,
                 statusVinculo,
                 valorMensalidade,
@@ -440,6 +456,10 @@ const solicitarEntrada = async (req, res) => {
         if (time.statusVinculo !== "APROVADO") {
             return res.status(400).json({ error: "Este time ainda não está disponível para novos jogadores." });
         }
+        const ocupados = await prisma.usuario.count({ where: { timeRelacionadoId: timeId } });
+        if (ocupados >= Number(time.maxJogadores || 20)) {
+            return res.status(409).json({ error: `Este time atingiu o limite de ${time.maxJogadores || 20} jogador(es).` });
+        }
 
         const solicitacao = await prisma.solicitacaoEntradaTime.upsert({
             where: { timeId_usuarioId: { timeId, usuarioId: req.actor.id } },
@@ -523,6 +543,12 @@ const responderSolicitacao = async (req, res) => {
             const usuarioAtual = await prisma.usuario.findUnique({ where: { id: solicitacao.usuarioId }, select: { timeRelacionadoId: true } });
             if (usuarioAtual?.timeRelacionadoId && Number(usuarioAtual.timeRelacionadoId) !== Number(solicitacao.timeId)) {
                 return res.status(409).json({ error: "O jogador já entrou em outro time." });
+            }
+
+            const ocupados = await prisma.usuario.count({ where: { timeRelacionadoId: solicitacao.timeId } });
+            const limite = Number(solicitacao.time.maxJogadores || 20);
+            if (ocupados >= limite) {
+                return res.status(409).json({ error: `O time já atingiu o limite de ${limite} jogador(es). Remova alguém ou aumente o limite antes de aprovar.` });
             }
 
             await prisma.$transaction(async tx => {
