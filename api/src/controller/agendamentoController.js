@@ -141,8 +141,10 @@ const listByTime = async (req, res) => {
         campo: true,
         society: { select: { id: true, nome: true, imagem: true, pixChave: true, pixTitular: true } },
         pagamento: true,
+        grupoHorario: { select: { id: true, nome: true } },
+        presencas: { select: { usuarioId: true, status: true } },
       },
-      orderBy: { data: "desc" },
+      orderBy: [{ data: "asc" }, { horaInicio: "asc" }],
     });
 
     res.json(lista);
