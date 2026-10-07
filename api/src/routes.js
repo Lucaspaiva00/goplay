@@ -219,6 +219,8 @@ router.post("/jogo/:id/mesa/revogar", authenticateOptional, jogoController.revog
 router.post("/jogo/:id/cronometro", authenticateOptional, jogoController.controlarCronometro);
 router.delete("/jogo/:id/evento/ultimo", authenticateOptional, jogoController.desfazerUltimoEvento);
 router.get("/jogo/:id", jogoController.readOne);
+router.put("/jogo/:id/agendar", authenticate, jogoController.agendar);
+router.get("/jogo/:id/sumula.pdf", authenticateOptional, jogoController.sumulaPdf);
 router.put("/jogo/:id/stats", authenticateOptional, jogoController.updateStats);
 router.post("/jogo/:id/escalacao", authenticateOptional, jogoController.addLineup);
 router.post("/jogo/:id/evento", authenticateOptional, jogoController.addEvento);
