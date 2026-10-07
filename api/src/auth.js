@@ -51,6 +51,7 @@ async function authenticateOptional(req,res,next){
 }
 
 function roleAllowed(actor, roles=[]){
+  if(actor?.kind==='USER' && actor.tipo==='SOCIO_GOPLAY') return true;
   if(actor?.kind==='USER' && actor.tipo==='DONO_SOCIETY') return true;
   return actor?.kind==='STAFF' && roles.includes(actor.funcao);
 }
@@ -59,6 +60,7 @@ async function ownsSociety(actor,societyId){
   societyId=Number(societyId);
   if(!societyId) return false;
   if(actor?.kind==='STAFF') return Number(actor.societyId)===societyId;
+  if(actor?.kind==='USER' && actor.tipo==='SOCIO_GOPLAY') return true;
   if(actor?.kind==='USER' && actor.tipo==='DONO_SOCIETY'){
     const s=await prisma.society.findFirst({where:{id:societyId,usuarioId:Number(actor.id)},select:{id:true}});
     return !!s;
@@ -93,4 +95,48 @@ function requireEntitySocietyRoles(roles=[], modelName, paramName='id'){
     }catch(e){console.error(e);res.status(500).json({error:'Erro ao validar permissão.'});}
   }];
 }
-module.exports={createToken,decodeToken,authenticate,authenticateOptional,roleAllowed,ownsSociety,requireSocietyRoles,requireEntitySocietyRoles};
+function requirePlatformAdmin(){
+  return [authenticate, (req,res,next)=>{
+    if(req.actor?.kind==='USER' && req.actor.tipo==='SOCIO_GOPLAY') return next();
+    return res.status(403).json({error:'Acesso restrito aos sócios administradores do GoPlay.'});
+  }];
+}
+
+function requireCampeonatoCreate(roles=['ADMIN']){
+  return [authenticate, async (req,res,next)=>{
+    try{
+      if(req.actor?.kind==='USER' && req.actor.tipo==='SOCIO_GOPLAY') return next();
+      if(req.actor?.kind==='USER' && ['ORGANIZADOR_COMPETICAO','ORGAO_PUBLICO'].includes(req.actor.tipo)){
+        req.organizadorCampeonatoId=Number(req.actor.id);
+        return next();
+      }
+      const societyId=Number(req.body.societyId);
+      if(!societyId) return res.status(400).json({error:'Empresa inválida.'});
+      if(!roleAllowed(req.actor,roles)) return res.status(403).json({error:'Seu perfil não possui permissão para criar competições.'});
+      if(!(await ownsSociety(req.actor,societyId))) return res.status(403).json({error:'Você não possui acesso a esta empresa.'});
+      return next();
+    }catch(e){console.error(e);return res.status(500).json({error:'Erro ao validar permissão do campeonato.'});}
+  }];
+}
+
+function requireCampeonatoManager(roles=['ADMIN'], paramName='id'){
+  return [authenticate, async (req,res,next)=>{
+    try{
+      const id=Number(req.params[paramName]);
+      if(!id) return res.status(400).json({error:'Campeonato inválido.'});
+      const campeonato=await prisma.campeonato.findUnique({where:{id},select:{id:true,societyId:true,organizadorId:true}});
+      if(!campeonato) return res.status(404).json({error:'Campeonato não encontrado.'});
+      if(req.actor?.kind==='USER' && req.actor.tipo==='SOCIO_GOPLAY'){req.authorizedCampeonatoId=id;return next();}
+      if(req.actor?.kind==='USER' && ['ORGANIZADOR_COMPETICAO','ORGAO_PUBLICO'].includes(req.actor.tipo) && Number(campeonato.organizadorId)===Number(req.actor.id)){
+        req.authorizedCampeonatoId=id;return next();
+      }
+      if(!campeonato.societyId) return res.status(403).json({error:'Você não possui acesso a este campeonato.'});
+      if(!roleAllowed(req.actor,roles)) return res.status(403).json({error:'Seu perfil não possui permissão para esta ação.'});
+      if(!(await ownsSociety(req.actor,campeonato.societyId))) return res.status(403).json({error:'Você não possui acesso à empresa deste campeonato.'});
+      req.authorizedCampeonatoId=id;
+      return next();
+    }catch(e){console.error(e);return res.status(500).json({error:'Erro ao validar permissão do campeonato.'});}
+  }];
+}
+
+module.exports={createToken,decodeToken,authenticate,authenticateOptional,roleAllowed,ownsSociety,requireSocietyRoles,requireEntitySocietyRoles,requirePlatformAdmin,requireCampeonatoCreate,requireCampeonatoManager};
