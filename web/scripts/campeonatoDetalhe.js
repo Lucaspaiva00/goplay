@@ -425,6 +425,7 @@ function renderOverview(c) {
     const jogos = c.jogos || [];
     const finalizados = jogos.filter(j => j.finalizado).length;
     const aoVivo = jogos.filter(j => j.statusOperacao === "AO_VIVO").length;
+    const datasPendentes = jogos.filter(j => !j.finalizado && !j.dataHora).length;
     const mesas = jogos.filter(j => j.mesaConfigurada).length;
     const cards = document.getElementById("overviewCards");
     const status = document.getElementById("overviewStatus");
@@ -432,6 +433,7 @@ function renderOverview(c) {
     if (cards) cards.innerHTML = `
       <div class="champ-kpi"><small>Times</small><strong>${c.times?.length || 0}/${c.maxTimes}</strong></div>
       <div class="champ-kpi"><small>Partidas</small><strong>${finalizados}/${jogos.length}</strong></div>
+      <div class="champ-kpi"><small>Datas pendentes</small><strong>${datasPendentes}</strong></div>
       <div class="champ-kpi"><small>Ao vivo agora</small><strong>${aoVivo}</strong></div>
       <div class="champ-kpi"><small>Mesas configuradas</small><strong>${mesas}</strong></div>`;
 
@@ -442,9 +444,12 @@ function renderOverview(c) {
     } else if (aoVivo) {
       const j = jogos.find(x => x.statusOperacao === "AO_VIVO");
       next.innerHTML = `<div class="champ-next-box"><div><strong><span class="live-dot"></span>Partida acontecendo agora</strong><div class="muted">${escapeHTML(j.timeA?.nome)} × ${escapeHTML(j.timeB?.nome)}</div></div><button class="btn btn-primary" onclick="abrirCentralJogo(${j.id})">Assistir ao vivo</button></div>`;
+    } else if (datasPendentes) {
+      const j = jogos.find(x => !x.finalizado && !x.dataHora);
+      next.innerHTML = `<div class="champ-next-box"><div><strong>⚠ Partida sem data</strong><div class="muted">${escapeHTML(j.timeA?.nome)} × ${escapeHTML(j.timeB?.nome)} • Defina data e horário antes de liberar a mesa.</div></div><button class="btn btn-primary" onclick="abrirAgendaJogo(${j.id})">Definir data</button></div>`;
     } else if (finalizados < jogos.length) {
       const j = jogos.find(x => !x.finalizado);
-      next.innerHTML = `<div class="champ-next-box"><div><strong>Próxima partida pendente</strong><div class="muted">${escapeHTML(j.timeA?.nome)} × ${escapeHTML(j.timeB?.nome)} • Configure a mesa antes do jogo.</div></div><button class="btn btn-primary" onclick="abrirConfigMesa(${j.id})">Configurar Mesa</button></div>`;
+      next.innerHTML = `<div class="champ-next-box"><div><strong>Próxima partida</strong><div class="muted">${escapeHTML(j.timeA?.nome)} × ${escapeHTML(j.timeB?.nome)} • ${formatGameDate(j.dataHora)}</div></div><button class="btn btn-primary" onclick="abrirConfigMesa(${j.id})">Configurar Mesa</button></div>`;
     } else {
       next.innerHTML = `<div class="champ-next-box"><div><strong>Fase concluída</strong><div class="muted">Confira a classificação e o campeão.</div></div><button class="btn btn-light" onclick="abrirSecao('sec-ranking')">Ver classificação</button></div>`;
     }
@@ -457,6 +462,7 @@ function renderConfigResumo(c) {
       <div class="item"><strong>Modalidade:</strong> ${escapeHTML(c.modalidade || "-")}</div>
       <div class="item"><strong>Categoria:</strong> ${escapeHTML(c.categoria || "-")}</div>
       <div class="item"><strong>Temporada:</strong> ${escapeHTML(c.temporada || "-")}</div>
+      <div class="item"><strong>Limite de jogadores/time:</strong> ${Number(c.maxJogadoresPorTime || 20)} <button class="btn btn-light" style="margin-left:8px;padding:5px 8px" onclick="editarLimiteJogadores()">Editar</button></div>
       <div class="item"><strong>Início:</strong> ${formatDate(c.dataInicio)}</div>
       <div class="item"><strong>Fim:</strong> ${formatDate(c.dataFim)}</div>
       <div class="item"><strong>Empresa:</strong> ${escapeHTML(c.society?.nome || "-")}</div>`;
@@ -877,6 +883,7 @@ async function gerarLiga() {
         });
 
         await carregarDetalhes(true);
+        alert("Partidas geradas. Agora defina a data e o horário de cada jogo antes de liberar a Mesa.");
         abrirSecao("sec-jogos");
 
     } catch (err) {
@@ -956,20 +963,36 @@ function permissoesJogoUI() {
     } catch { return { configurar:false, operar:false }; }
 }
 
+function formatGameDate(value) {
+    if (!value) return "⚠ Data pendente";
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? "⚠ Data inválida" : d.toLocaleString("pt-BR", { dateStyle:"short", timeStyle:"short" });
+}
+
 function renderJogoCard(j) {
     const isVolta = j.tipoJogo === "VOLTA";
     const isFinal = j.tipoJogo === "MATA_MATA";
     const badge = isFinal ? "🏆 Final" : (isVolta ? "🔁 Volta" : "➡️ Ida");
     const timeA = j.timeA?.nome || "Time A";
     const timeB = j.timeB?.nome || "Time B";
-    const statusMap = { AGENDADO: "Agendado", AO_VIVO: "AO VIVO", INTERVALO: "Intervalo", ENCERRADO: "Encerrado" };
-    const status = j.finalizado ? "Encerrado" : (statusMap[j.statusOperacao] || "Agendado");
+    const statusMap = { AGENDADO:"Agendado", AO_VIVO:"AO VIVO", PAUSADA:"Pausada", INTERVALO:"Intervalo", ENCERRADO:"Encerrada" };
+    const status = j.finalizado ? "Encerrada" : (statusMap[j.statusOperacao] || "Agendado");
     const aoVivo = j.statusOperacao === "AO_VIVO";
+    const semData = !j.dataHora && !j.finalizado;
     return `
-      <div class="match" style="background:#fff;border:1px solid #e8eef7;border-radius:18px;padding:16px;box-shadow:0 6px 18px rgba(15,23,42,.05);">
+      <div class="match" style="background:#fff;border:1px solid ${semData?"#f59e0b":"#e8eef7"};border-radius:18px;padding:16px;box-shadow:0 6px 18px rgba(15,23,42,.05);">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span class="chip">${badge}</span><span class="chip">${aoVivo ? '<span class="live-dot"></span>' : ''}${status}</span>${j.mesaConfigurada ? '<span class="chip">🎛 Mesa liberada</span>' : '<span class="chip">Mesa não configurada</span>'}</div>
-          <div class="match-actions"><button class="btn btn-light" onclick="abrirCentralJogo(${Number(j.id)})"><i class="fa-solid fa-tv"></i> ${aoVivo ? 'Assistir ao vivo' : 'Central da partida'}</button>${j.finalizado ? '' : `${permissoesJogoUI().operar ? `<button class="btn btn-light" onclick="abrirMesaDireta(${Number(j.id)})"><i class="fa-solid fa-stopwatch"></i> Abrir Mesa</button>` : ''}${permissoesJogoUI().configurar ? `<button class="btn btn-primary" onclick="abrirConfigMesa(${Number(j.id)})"><i class="fa-solid fa-clipboard-user"></i> Configurar acesso</button>` : ''}`}</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <span class="chip">${badge}</span>
+            <span class="chip">${aoVivo ? '<span class="live-dot"></span>' : ''}${status}</span>
+            <span class="chip" style="${semData?'background:#fff7ed;color:#9a3412':''}">📅 ${formatGameDate(j.dataHora)}</span>
+            ${j.mesaConfigurada ? '<span class="chip">🎛 Mesa liberada</span>' : '<span class="chip">Mesa não configurada</span>'}
+          </div>
+          <div class="match-actions">
+            ${!j.finalizado&&permissoesJogoUI().configurar?`<button class="btn btn-light" onclick="abrirAgendaJogo(${Number(j.id)})"><i class="fa-solid fa-calendar"></i> ${j.dataHora?'Reagendar':'Definir data'}</button>`:''}
+            <button class="btn btn-light" onclick="abrirCentralJogo(${Number(j.id)})"><i class="fa-solid fa-tv"></i> ${aoVivo ? 'Assistir ao vivo' : 'Central da partida'}</button>
+            ${j.finalizado ? `<button class="btn btn-primary" onclick="baixarSumula(${Number(j.id)})"><i class="fa-solid fa-file-pdf"></i> Súmula PDF</button>` : `${permissoesJogoUI().operar ? `<button class="btn btn-light" onclick="abrirMesaDireta(${Number(j.id)})"><i class="fa-solid fa-stopwatch"></i> Abrir Mesa</button>` : ''}${permissoesJogoUI().configurar ? `<button class="btn btn-primary" onclick="abrirConfigMesa(${Number(j.id)})"><i class="fa-solid fa-clipboard-user"></i> Configurar acesso</button>` : ''}`}
+          </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin:10px 0;">
           <div style="font-weight:900;color:#052845;font-size:16px;text-align:right;">${escapeHTML(timeA)}</div>
@@ -1116,6 +1139,70 @@ function renderRanking(campeonato) {
     }).join("");
 }
 
+
+async function editarLimiteJogadores() {
+    const atual = Number(campeonatoAtual?.maxJogadoresPorTime || 20);
+    const valor = Number(prompt("Máximo de jogadores por time:", String(atual)));
+    if (!Number.isInteger(valor) || valor < 1 || valor > 100) return alert("Informe um número inteiro entre 1 e 100.");
+    try {
+        await safeFetchJSON(`${BASE_URL}/campeonato/${campeonatoId}`, {
+            method:"PUT",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({maxJogadoresPorTime:valor})
+        });
+        await carregarDetalhes(true);
+    } catch (e) { alert(e.message); }
+}
+
+function ensureAgendaModal() {
+    if (document.getElementById("agendaJogoModal")) return;
+    const el=document.createElement("div");
+    el.id="agendaJogoModal";
+    el.className="modal-overlay";
+    el.innerHTML=`<div class="modal-card" style="max-width:470px"><button class="modal-close" onclick="fecharAgendaJogo()">×</button><h3>📅 Definir data da partida</h3><p id="agendaJogoTitulo" class="muted"></p><label style="display:block;font-weight:800;margin:14px 0 6px">Data e horário</label><input id="agendaJogoData" type="datetime-local" style="width:100%;padding:12px;border:1px solid #dbe4ec;border-radius:10px"><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button class="btn btn-light" onclick="fecharAgendaJogo()">Cancelar</button><button class="btn btn-primary" onclick="salvarAgendaJogo()">Salvar e avisar times</button></div></div>`;
+    document.body.appendChild(el);
+}
+let agendaJogoIdAtual=null;
+function abrirAgendaJogo(id) {
+    ensureAgendaModal();
+    agendaJogoIdAtual=Number(id);
+    const j=(campeonatoAtual?.jogos||[]).find(x=>Number(x.id)===agendaJogoIdAtual);
+    if(!j)return;
+    document.getElementById("agendaJogoTitulo").textContent=`${j.timeA?.nome||"Time A"} × ${j.timeB?.nome||"Time B"}`;
+    const input=document.getElementById("agendaJogoData");
+    if(j.dataHora){
+      const d=new Date(j.dataHora), pad=n=>String(n).padStart(2,"0");
+      input.value=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }else input.value="";
+    document.getElementById("agendaJogoModal").classList.add("open");
+}
+function fecharAgendaJogo(){document.getElementById("agendaJogoModal")?.classList.remove("open");agendaJogoIdAtual=null;}
+async function salvarAgendaJogo(){
+    const raw=document.getElementById("agendaJogoData")?.value;
+    if(!agendaJogoIdAtual||!raw)return alert("Informe a data e o horário.");
+    const data=new Date(raw);
+    if(Number.isNaN(data.getTime()))return alert("Data inválida.");
+    try{
+      await safeFetchJSON(`${BASE_URL}/jogo/${agendaJogoIdAtual}/agendar`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({dataHora:data.toISOString()})});
+      fecharAgendaJogo();
+      await carregarDetalhes(true);
+    }catch(e){alert(e.message);}
+}
+async function baixarSumula(jogoId){
+    try{
+      const r=await fetch(`${BASE_URL}/jogo/${Number(jogoId)}/sumula.pdf`);
+      if(!r.ok){const t=await r.text();let d=null;try{d=JSON.parse(t)}catch{}throw new Error(d?.error||t||"Erro ao gerar súmula.");}
+      const blob=await r.blob(), url=URL.createObjectURL(blob), a=document.createElement("a");
+      a.href=url;a.download=`sumula-jogo-${Number(jogoId)}.pdf`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    }catch(e){alert(e.message);}
+}
+
+window.editarLimiteJogadores=editarLimiteJogadores;
+window.abrirAgendaJogo=abrirAgendaJogo;
+window.fecharAgendaJogo=fecharAgendaJogo;
+window.salvarAgendaJogo=salvarAgendaJogo;
+window.baixarSumula=baixarSumula;
+
 /* =====================================================
    NAVEGAÇÃO
 ===================================================== */
@@ -1132,6 +1219,11 @@ function abrirDetalhesJogo(jogoId) { abrirCentralJogo(jogoId); }
 function abrirConfigMesa(jogoId) {
     mesaJogoIdAtual = Number(jogoId);
     const j = (campeonatoAtual?.jogos || []).find(x => Number(x.id) === mesaJogoIdAtual);
+    if (j && !j.dataHora) {
+        alert("Defina a data e o horário da partida antes de liberar a Mesa.");
+        abrirAgendaJogo(jogoId);
+        return;
+    }
     document.getElementById("mesaJogoNome").textContent = j ? `${j.timeA?.nome || 'Time A'} × ${j.timeB?.nome || 'Time B'}` : `Jogo #${jogoId}`;
     document.getElementById("mesarioNome").value = j?.mesarioNome || "";
     document.getElementById("mesaLink").value = "";
