@@ -19,7 +19,19 @@ app.get("/", (req, res) => {
 // Porta
 const PORT = process.env.PORT || 3000;
 const { startPresenceNotificationJob } = require("./src/presenceNotifications");
-app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
-    startPresenceNotificationJob();
-});
+const { syncPlatformAdmins } = require("./src/platformAdmins");
+
+async function startServer() {
+    try {
+        await syncPlatformAdmins();
+    } catch (error) {
+        console.error("[GOPLAY SOCIOS] falha ao sincronizar perfis:", error?.message || error);
+    }
+
+    app.listen(PORT, () => {
+        console.log(`Servidor rodando na porta ${PORT}`);
+        startPresenceNotificationJob();
+    });
+}
+
+startServer();
