@@ -31,7 +31,7 @@ async function resolveActor(token){
   const data=decodeToken(token);
   if(!data) return null;
   if(data.kind==='USER'){
-    const user=await prisma.usuario.findUnique({where:{id:Number(data.id)},select:{id:true,nome:true,email:true,tipo:true}});
+    const user=await prisma.usuario.findUnique({where:{id:Number(data.id)},select:{id:true,nome:true,email:true,tipo:true,isSocioGoPlay:true}});
     return user?{kind:'USER',...user}:null;
   }
   if(data.kind==='STAFF'){
@@ -50,8 +50,12 @@ async function authenticateOptional(req,res,next){
   catch(e){console.error('auth optional:',e);req.actor=null;return next();}
 }
 
+function isPlatformAdmin(actor){
+  return actor?.kind==='USER' && (actor.tipo==='SOCIO_GOPLAY' || actor.isSocioGoPlay===true);
+}
+
 function roleAllowed(actor, roles=[]){
-  if(actor?.kind==='USER' && actor.tipo==='SOCIO_GOPLAY') return true;
+  if(isPlatformAdmin(actor)) return true;
   if(actor?.kind==='USER' && actor.tipo==='DONO_SOCIETY') return true;
   return actor?.kind==='STAFF' && roles.includes(actor.funcao);
 }
@@ -60,7 +64,7 @@ async function ownsSociety(actor,societyId){
   societyId=Number(societyId);
   if(!societyId) return false;
   if(actor?.kind==='STAFF') return Number(actor.societyId)===societyId;
-  if(actor?.kind==='USER' && actor.tipo==='SOCIO_GOPLAY') return true;
+  if(isPlatformAdmin(actor)) return true;
   if(actor?.kind==='USER' && actor.tipo==='DONO_SOCIETY'){
     const s=await prisma.society.findFirst({where:{id:societyId,usuarioId:Number(actor.id)},select:{id:true}});
     return !!s;
@@ -97,7 +101,7 @@ function requireEntitySocietyRoles(roles=[], modelName, paramName='id'){
 }
 function requirePlatformAdmin(){
   return [authenticate, (req,res,next)=>{
-    if(req.actor?.kind==='USER' && req.actor.tipo==='SOCIO_GOPLAY') return next();
+    if(isPlatformAdmin(req.actor)) return next();
     return res.status(403).json({error:'Acesso restrito aos sócios administradores do GoPlay.'});
   }];
 }
@@ -105,7 +109,7 @@ function requirePlatformAdmin(){
 function requireCampeonatoCreate(roles=['ADMIN']){
   return [authenticate, async (req,res,next)=>{
     try{
-      if(req.actor?.kind==='USER' && req.actor.tipo==='SOCIO_GOPLAY') return next();
+      if(isPlatformAdmin(req.actor)) return next();
       if(req.actor?.kind==='USER' && ['ORGANIZADOR_COMPETICAO','ORGAO_PUBLICO'].includes(req.actor.tipo)){
         req.organizadorCampeonatoId=Number(req.actor.id);
         return next();
@@ -126,7 +130,7 @@ function requireCampeonatoManager(roles=['ADMIN'], paramName='id'){
       if(!id) return res.status(400).json({error:'Campeonato inválido.'});
       const campeonato=await prisma.campeonato.findUnique({where:{id},select:{id:true,societyId:true,organizadorId:true}});
       if(!campeonato) return res.status(404).json({error:'Campeonato não encontrado.'});
-      if(req.actor?.kind==='USER' && req.actor.tipo==='SOCIO_GOPLAY'){req.authorizedCampeonatoId=id;return next();}
+      if(isPlatformAdmin(req.actor)){req.authorizedCampeonatoId=id;return next();}
       if(req.actor?.kind==='USER' && ['ORGANIZADOR_COMPETICAO','ORGAO_PUBLICO'].includes(req.actor.tipo) && Number(campeonato.organizadorId)===Number(req.actor.id)){
         req.authorizedCampeonatoId=id;return next();
       }
@@ -139,4 +143,4 @@ function requireCampeonatoManager(roles=['ADMIN'], paramName='id'){
   }];
 }
 
-module.exports={createToken,decodeToken,authenticate,authenticateOptional,roleAllowed,ownsSociety,requireSocietyRoles,requireEntitySocietyRoles,requirePlatformAdmin,requireCampeonatoCreate,requireCampeonatoManager};
+module.exports={createToken,decodeToken,authenticate,authenticateOptional,isPlatformAdmin,roleAllowed,ownsSociety,requireSocietyRoles,requireEntitySocietyRoles,requirePlatformAdmin,requireCampeonatoCreate,requireCampeonatoManager};
