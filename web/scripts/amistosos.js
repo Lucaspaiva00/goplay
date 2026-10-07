@@ -91,9 +91,11 @@ async function respondSociety(id,acao){
 async function presence(id,status){
   try{await api(`${BASE_URL}/amistosos/${id}/presenca`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});await loadRows();}catch(e){alert(e.message);}
 }
-async function openMesa(a){
+async function openMesa(id){
   try{
-    let nome=user?.nome||staff?.nome||"Mesário";
+    const a=rows.find(x=>Number(x.id)===Number(id));
+    if(!a?.jogo?.id)return alert("A partida ainda não possui Mesa.");
+    const nome=user?.nome||staff?.nome||"Mesário";
     if(!confirm(`Abrir a Mesa de ${a.timeA.nome} × ${a.timeB.nome} como ${nome}?`))return;
     const d=await api(`${BASE_URL}/jogo/${a.jogo.id}/mesa/configurar`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mesarioNome:nome})});
     location.href=`mesa-jogo.html?jogoId=${a.jogo.id}&token=${encodeURIComponent(d.token)}`;
@@ -124,7 +126,7 @@ function rowHtml(a){
       ${opponentAction?`<button class="friend-action ok" onclick="respondOpponent(${a.id},'ACEITAR')">✓ Aceitar</button><button class="friend-action no" onclick="respondOpponent(${a.id},'RECUSAR')">✕ Recusar</button>`:''}
       ${canSocietyRespond(a)?`<button class="friend-action ok" onclick="respondSociety(${a.id},'APROVAR')">✓ Aprovar estrutura</button><button class="friend-action no" onclick="respondSociety(${a.id},'RECUSAR')">✕ Recusar</button>`:''}
       ${a.jogo?.id?`<button class="friend-action" onclick="location.href='jogo-detalhe.html?jogoId=${a.jogo.id}'">Central da partida</button>`:''}
-      ${canOpenMesa(a)&&a.status==="CONFIRMADO"?`<button class="friend-action dark" onclick='openMesa(${JSON.stringify({id:a.id,timeA:a.timeA,timeB:a.timeB,jogo:a.jogo}).replaceAll("'","&#39;")})'>Abrir Mesa</button>`:''}
+      ${canOpenMesa(a)&&a.status==="CONFIRMADO"?`<button class="friend-action dark" onclick="openMesa(${a.id})">Abrir Mesa</button>`:''}
       ${showCancel?`<button class="friend-action no" onclick="cancelar(${a.id})">Cancelar</button>`:''}
     </div>
     ${presencesHtml(a)}
