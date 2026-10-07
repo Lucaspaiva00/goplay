@@ -2,6 +2,7 @@ const crypto = require("crypto");
 const { PrismaClient } = require("@prisma/client");
 const { emitJogo } = require("../realtime");
 const { notifyUsuario } = require("../notifications");
+const { isPlatformAdmin } = require("../auth");
 
 const prisma = new PrismaClient();
 
@@ -812,7 +813,10 @@ const finalizarJogo = async (req, res) => {
 
         const acesso = await prisma.jogo.findUnique({
             where: { id: jogoId },
-            include: { campeonato: { include: { society: true } } },
+            include: {
+                campeonato: { include: { society: true, organizador: true } },
+                amistoso: { include: { society: true, criadoPor: true, timeA: true, timeB: true } },
+            },
         });
 
         if (!acesso) {
@@ -822,10 +826,15 @@ const finalizarJogo = async (req, res) => {
         const tokenMesa = String(req.headers["x-mesa-token"] || req.body.mesaToken || "").trim();
         const autorizadoMesa = tokenIgual(tokenMesa, acesso.mesaToken);
         const actor = req.actor;
-        const autorizadoDono = actor?.kind === "USER" && actor.tipo === "DONO_SOCIETY" && Number(acesso.campeonato?.society?.usuarioId) === Number(actor.id);
-        const autorizadoStaff = actor?.kind === "STAFF" && Number(actor.societyId) === Number(acesso.campeonato?.society?.id) && ["ADMIN","MESARIO"].includes(actor.funcao);
+        const societyId = Number(acesso.campeonato?.society?.id || acesso.amistoso?.society?.id || 0);
+        const societyOwnerId = Number(acesso.campeonato?.society?.usuarioId || acesso.amistoso?.society?.usuarioId || 0);
+        const autorizadoSocio = isPlatformAdmin(actor);
+        const autorizadoDono = actor?.kind === "USER" && actor.tipo === "DONO_SOCIETY" && societyOwnerId && societyOwnerId === Number(actor.id);
+        const autorizadoOrganizador = actor?.kind === "USER" && ["ORGANIZADOR_COMPETICAO","ORGAO_PUBLICO"].includes(actor.tipo) && Number(acesso.campeonato?.organizadorId) === Number(actor.id);
+        const autorizadoCriadorAmistoso = actor?.kind === "USER" && acesso.amistoso && !societyId && Number(acesso.amistoso.criadoPorId) === Number(actor.id);
+        const autorizadoStaff = actor?.kind === "STAFF" && Number(actor.societyId) === societyId && ["ADMIN","MESARIO"].includes(actor.funcao);
 
-        if (!autorizadoMesa && !autorizadoDono && !autorizadoStaff) {
+        if (!autorizadoMesa && !autorizadoSocio && !autorizadoDono && !autorizadoOrganizador && !autorizadoCriadorAmistoso && !autorizadoStaff) {
             return res.status(403).json({
                 error: "Somente Mesa autorizada, Mesário, Administrador ou dono da empresa pode encerrar o jogo.",
             });
@@ -850,7 +859,8 @@ const finalizarJogo = async (req, res) => {
                 };
             }
 
-            const ehFinal = jogo.tipoJogo === "MATA_MATA";
+            const ehAmistoso = !!jogo.amistosoId;
+            const ehFinal = !ehAmistoso && jogo.tipoJogo === "MATA_MATA";
 
             if (ehFinal && golsA === golsB) {
                 const penaltisValidos = Number.isFinite(penaltisA) && Number.isFinite(penaltisB) && penaltisA >= 0 && penaltisB >= 0 && penaltisA !== penaltisB;
@@ -885,6 +895,22 @@ const finalizarJogo = async (req, res) => {
                     encerradoEm: new Date(),
                 },
             });
+
+            if (ehAmistoso) {
+                await tx.amistoso.update({
+                    where: { id: jogo.amistosoId },
+                    data: { status: "REALIZADO" },
+                });
+
+                return {
+                    status: 200,
+                    body: {
+                        ok: true,
+                        jogo: jogoAtualizado,
+                        amistosoRealizado: true,
+                    },
+                };
+            }
 
             // A final não altera a classificação da fase de liga.
             if (ehFinal) {
