@@ -1,10 +1,12 @@
 const BASE_URL = "https://goplay-dzlr.onrender.com";
 
 function salvarCampeonato() {
+    const usuario=JSON.parse(localStorage.getItem("usuarioLogado")||"null");
     const societyId = localStorage.getItem("societyId");
+    const independente=["ORGANIZADOR_COMPETICAO","ORGAO_PUBLICO"].includes(usuario?.tipo);
 
     const data = {
-        societyId: Number(societyId),
+        societyId: independente ? null : (Number(societyId)||null),
         nome: document.getElementById("nome").value.trim(),
         tipo: "LIGA_IDA_VOLTA",
         maxTimes: Number(document.getElementById("maxTimes").value),
@@ -19,7 +21,7 @@ function salvarCampeonato() {
         regulamentoTexto: document.getElementById("regulamentoTexto").value.trim() || null,
     };
 
-    if (!data.societyId) return alert("Empresa não encontrada.");
+    if (!data.societyId && !independente) return alert("Empresa não encontrada.");
     if (!data.nome) return alert("Informe o nome do campeonato.");
     if (!Number.isInteger(data.maxTimes) || data.maxTimes < 2) {
         return alert("Informe uma quantidade de times a partir de 2.");
