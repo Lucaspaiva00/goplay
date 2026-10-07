@@ -42,6 +42,39 @@ async function jogosDoTime(timeId){
   return (mes.length?mes:futuros.slice(0,6)).sort((a,b)=>dateKey(a.data).localeCompare(dateKey(b.data))||String(a.horaInicio).localeCompare(String(b.horaInicio)));
 }
 
+async function votarAmistosoHome(id,status,btn){
+  try{
+    if(btn){btn.disabled=true;btn.textContent="Salvando...";}
+    await api(`${BASE_URL}/amistosos/${id}/presenca`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});
+    await carregarHomeEsportiva();
+  }catch(e){alert(e.message);}
+}
+window.votarAmistosoHome=votarAmistosoHome;
+
+function cardAmistoso(a){
+  const p=(a.presencas||[]).find(x=>Number(x.usuarioId)===Number(usuarioLogado.id));
+  const player=usuarioLogado.tipo==="PLAYER";
+  return `<article class="home-game-card">
+    <div class="home-game-date"><strong>${new Date(a.dataHora).toLocaleDateString("pt-BR")}</strong><span>${new Date(a.dataHora).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</span></div>
+    <div class="home-game-body"><strong>🤝 ${esc(a.timeA?.nome)} × ${esc(a.timeB?.nome)}</strong><small>${esc(a.society?.nome||"Local a definir")}${a.campo?.nome?` • ${esc(a.campo.nome)}`:""}</small></div>
+    <div class="home-presence-actions">
+      ${player&&p?`<button class="home-vote yes ${p.status==="VOU"?"active":""}" onclick="votarAmistosoHome(${a.id},'VOU',this)">👍 Vou</button><button class="home-vote no ${p.status==="NAO_VOU"?"active":""}" onclick="votarAmistosoHome(${a.id},'NAO_VOU',this)">👎 Não vou</button>`:`<span class="chip">${a.status==="CONFIRMADO"?"Confirmado":a.status.replaceAll("_"," ")}</span>`}
+    </div>
+    <button class="home-game-more" onclick="location.href='amistosos.html?amistosoId=${a.id}'" aria-label="Abrir amistoso">›</button>
+  </article>`;
+}
+
+async function amistososDoUsuario(timeId=null){
+  const list=await api(`${BASE_URL}/amistosos/meus`).catch(()=>[]);
+  const now=Date.now();
+  return (list||[]).filter(a=>{
+    if(!["CONFIRMADO","PENDENTE_ADVERSARIO","PENDENTE_SOCIETY"].includes(a.status))return false;
+    if(new Date(a.dataHora).getTime()<now)return false;
+    if(timeId&&![Number(a.timeAId),Number(a.timeBId)].includes(Number(timeId)))return false;
+    return true;
+  }).sort((a,b)=>new Date(a.dataHora)-new Date(b.dataHora)).slice(0,6);
+}
+
 async function renderDonoTime(){
   const times=await api(`${BASE_URL}/time/dono/${usuarioLogado.id}`);
   if(!times.length)return `<section class="action-card"><h3>Seu primeiro time</h3><p>Crie um time para começar a organizar jogos e reservas.</p><button class="btn green" onclick="location.href='times.html'">Criar / gerenciar time</button></section>`;
@@ -49,11 +82,14 @@ async function renderDonoTime(){
   if(!times.some(t=>Number(t.id)===selected))selected=Number(times[0].id);
   localStorage.setItem("homeTimeId",String(selected));
   const time=times.find(t=>Number(t.id)===selected);
-  const jogos=await jogosDoTime(selected);
+  const [jogos,amistosos]=await Promise.all([jogosDoTime(selected),amistososDoUsuario(selected)]);
   const selector=times.length>1?`<select id="homeTimeSelect" class="home-team-select">${times.map(t=>`<option value="${t.id}" ${Number(t.id)===selected?"selected":""}>${esc(t.nome)}</option>`).join("")}</select>`:`<strong class="home-team-name">⚽ ${esc(time.nome)}</strong>`;
   return `<section class="home-team-head"><div><span class="home-eyebrow">MEU TIME</span>${selector}</div><button class="home-link-btn" onclick="location.href='times.html'">Gerenciar</button></section>
   <section class="action-card home-games-section"><div class="home-section-head"><div><h3>Próximos jogos</h3><p>Confirme sua presença sem abrir outra tela.</p></div><button class="home-link-btn" onclick="location.href='meus-horarios.html'">Ver rotina</button></div>
     <div class="home-games-strip">${jogos.length?jogos.map(cardJogo).join(""):'<div class="home-empty">Nenhum próximo jogo marcado para este time.</div>'}</div>
+  </section>
+  <section class="action-card home-games-section"><div class="home-section-head"><div><h3>Amistosos</h3><p>Convites e próximos amistosos deste time.</p></div><button class="home-link-btn" onclick="location.href='amistosos.html'">Gerenciar</button></div>
+    <div class="home-games-strip">${amistosos.length?amistosos.map(cardAmistoso).join(""):'<div class="home-empty">Nenhum amistoso próximo.</div>'}</div>
   </section>
   <section class="home-quick-grid">
     <button onclick="location.href='campos-view.html'"><i class="fa fa-futbol"></i><span>Reservar quadra</span></button>
@@ -65,10 +101,13 @@ async function renderDonoTime(){
 async function renderPlayer(){
   let time=null;try{time=await api(`${BASE_URL}/time/details/by-player/${usuarioLogado.id}`);}catch{}
   if(!time?.id)return `<section class="action-card"><h3>Encontre seu time</h3><p>Escolha uma empresa e solicite entrada em um time. Depois da aprovação, seus jogos aparecem aqui.</p><button class="btn green" onclick="location.href='times.html'">Ver times</button></section>`;
-  const jogos=await jogosDoTime(time.id);
+  const [jogos,amistosos]=await Promise.all([jogosDoTime(time.id),amistososDoUsuario(time.id)]);
   return `<section class="home-team-head"><div><span class="home-eyebrow">MEU TIME</span><strong class="home-team-name">⚽ ${esc(time.nome)}</strong></div></section>
   <section class="action-card home-games-section"><div class="home-section-head"><div><h3>Seus próximos jogos</h3><p>É só responder se você vai ou não.</p></div></div>
     <div class="home-games-strip">${jogos.length?jogos.map(cardJogo).join(""):'<div class="home-empty">Nenhum próximo jogo marcado.</div>'}</div>
+  </section>
+  <section class="action-card home-games-section"><div class="home-section-head"><div><h3>Próximos amistosos</h3><p>Confirme sua presença aqui mesmo.</p></div><button class="home-link-btn" onclick="location.href='amistosos.html'">Ver todos</button></div>
+    <div class="home-games-strip">${amistosos.length?amistosos.map(cardAmistoso).join(""):'<div class="home-empty">Nenhum amistoso confirmado.</div>'}</div>
   </section>
   <section class="home-quick-grid">
     <button onclick="location.href='comanda.html'"><i class="fa fa-receipt"></i><span>Minha comanda</span></button>
