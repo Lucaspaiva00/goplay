@@ -172,6 +172,7 @@ const login = async (req, res) => {
             return res.status(400).json({ error: "Senha incorreta." });
         }
 
+        await prisma.usuario.update({ where: { id: usuario.id }, data: { ultimoAcessoEm: new Date() } });
         const authToken = createToken({ kind: "USER", id: usuario.id });
         return res.status(200).json({
             id: usuario.id,
