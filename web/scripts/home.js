@@ -129,6 +129,12 @@ async function renderHome(){
   const empresa=getEmpresaAtual();
   let html=`<section class="welcome-card"><h2>👋 Bem-vindo, ${esc(usuarioLogado.nome||"usuário")}!</h2><p>${empresa?`Empresa atual: <strong>${esc(empresa.nome||"Selecionada")}</strong>`:"Selecione uma empresa quando quiser usar uma estrutura."}</p></section>`;
   if(["PLAYER","DONO_TIME"].includes(usuarioLogado.tipo))html+='<div id="homeEsportiva"></div>';
+  if(["ORGANIZADOR_COMPETICAO","ORGAO_PUBLICO"].includes(usuarioLogado.tipo)){
+    html+=`<section class="action-card"><h3>Gestão de Competições</h3><p>Seu perfil pode criar e administrar competições sem possuir uma Society.</p><button class="btn green" onclick="location.href='campeonato-create.html'"><i class="fa fa-plus"></i> Criar campeonato</button><button class="btn navy" onclick="location.href='campeonatos.html'"><i class="fa fa-trophy"></i> Meus campeonatos</button></section>`;
+  }
+  if(usuarioLogado?.isSocioGoPlay===true||usuarioLogado.tipo==="SOCIO_GOPLAY"){
+    html+=`<section class="action-card"><h3>Painel GoPlay</h3><p>Visão gerencial da plataforma para os sócios.</p><button class="btn green" onclick="location.href='plataforma-admin.html'"><i class="fa fa-chart-pie"></i> Abrir Painel dos Sócios</button></section>`;
+  }
   if(usuarioLogado.tipo==="DONO_SOCIETY"){
     if(!empresa)html+=`<section class="action-card"><h3>Selecione a empresa que deseja administrar</h3><p>Use o seletor “Empresa atual” no menu.</p><button class="btn green" onclick="location.href='society-create.html'">Cadastrar Empresa</button></section>`;
     else html+=`<section class="action-card"><h3>Painel — ${esc(empresa.nome||"Empresa")}</h3>
