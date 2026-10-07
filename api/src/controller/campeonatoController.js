@@ -338,6 +338,26 @@ const listBySociety = async (req, res) => {
     }
 };
 
+const listByOrganizer = async (req, res) => {
+    try {
+        if (req.actor?.kind !== "USER") return res.status(403).json({ error: "Acesso negado." });
+        const rows = await prisma.campeonato.findMany({
+            where: { organizadorId: Number(req.actor.id) },
+            include: {
+                society: true,
+                times: { include: { time: true } },
+                jogos: true,
+                grupos: true,
+            },
+            orderBy: { id: "desc" },
+        });
+        return res.json(rows.map(sanitizarCampeonato));
+    } catch (err) {
+        console.error("ERRO listByOrganizer campeonato:", err);
+        return res.status(500).json({ error: "Erro ao listar campeonatos do organizador." });
+    }
+};
+
 /* =====================================================
    BUSCAR UM CAMPEONATO
 ===================================================== */
@@ -1464,6 +1484,7 @@ module.exports = {
     create,
     listAll,
     listBySociety,
+    listByOrganizer,
     readOne,
     addTime,
 
