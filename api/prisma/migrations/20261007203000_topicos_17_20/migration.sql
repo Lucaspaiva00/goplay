@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS "Amistoso" (
   "recusadoEm" TIMESTAMP(3),
   "motivoRecusa" TEXT,
   "observacao" TEXT,
+  "agendamentoId" INTEGER,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP(3) NOT NULL,
   CONSTRAINT "Amistoso_pkey" PRIMARY KEY ("id")
@@ -86,6 +87,7 @@ CREATE INDEX IF NOT EXISTS "Amistoso_timeAId_idx" ON "Amistoso"("timeAId");
 CREATE INDEX IF NOT EXISTS "Amistoso_timeBId_idx" ON "Amistoso"("timeBId");
 CREATE INDEX IF NOT EXISTS "Amistoso_dataHora_idx" ON "Amistoso"("dataHora");
 CREATE INDEX IF NOT EXISTS "Amistoso_status_idx" ON "Amistoso"("status");
+CREATE UNIQUE INDEX IF NOT EXISTS "Amistoso_agendamentoId_key" ON "Amistoso"("agendamentoId");
 
 CREATE UNIQUE INDEX IF NOT EXISTS "PresencaAmistoso_amistosoId_usuarioId_key"
 ON "PresencaAmistoso"("amistosoId","usuarioId");
@@ -115,6 +117,10 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Amistoso_timeBId_fkey') THEN
     ALTER TABLE "Amistoso" ADD CONSTRAINT "Amistoso_timeBId_fkey"
       FOREIGN KEY ("timeBId") REFERENCES "Time"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Amistoso_agendamentoId_fkey') THEN
+    ALTER TABLE "Amistoso" ADD CONSTRAINT "Amistoso_agendamentoId_fkey"
+      FOREIGN KEY ("agendamentoId") REFERENCES "Agendamento"("id") ON DELETE SET NULL ON UPDATE CASCADE;
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'PresencaAmistoso_amistosoId_fkey') THEN
