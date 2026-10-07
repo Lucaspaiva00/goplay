@@ -12,6 +12,7 @@ async function loadDashboard(){
   const u=d.usuarios,o=d.operacao,f=d.financeiro;
   $("kpis").innerHTML=[
     kpi("Usuários",u.total,`+${u.novos30Dias} em 30 dias`),
+    kpi("Ativos • 30 dias",u.ativos30Dias,"Acessaram o GoPlay"),
     kpi("Jogadores",u.jogadores),
     kpi("Donos de time",u.donosTime),
     kpi("Societies",o.societies,`+${o.novasSocieties30Dias} em 30 dias`),
@@ -40,7 +41,7 @@ async function loadHealth(){
 async function searchUsers(){
   const q=encodeURIComponent($("userQ").value.trim()),tipo=encodeURIComponent($("userTipo").value);
   const rows=await api(`${BASE_URL}/plataforma/usuarios?q=${q}&tipo=${tipo}`);
-  $("usersResults").innerHTML=rows.length?rows.map(u=>`<div class="result-row"><strong>${esc(u.nome)}</strong><p>${esc(u.email)}${u.telefone?` • ${esc(u.telefone)}`:""} • cadastro ${new Date(u.createdAt).toLocaleDateString("pt-BR")}</p><div class="meta"><span class="mini-chip">${esc(roleLabel(u.tipo))}</span>${u.isSocioGoPlay?'<span class="mini-chip">Sócio GoPlay</span>':''}<span class="mini-chip">${u._count.times} time(s)</span><span class="mini-chip">${u._count.societies} Society(s)</span><span class="mini-chip">${u._count.pagamentos} pagamento(s)</span></div></div>`).join(""):'<div class="result-row">Nenhum usuário encontrado.</div>';
+  $("usersResults").innerHTML=rows.length?rows.map(u=>`<div class="result-row"><strong>${esc(u.nome)}</strong><p>${esc(u.email)}${u.telefone?` • ${esc(u.telefone)}`:""} • cadastro ${new Date(u.createdAt).toLocaleDateString("pt-BR")} • último acesso ${u.ultimoAcessoEm?new Date(u.ultimoAcessoEm).toLocaleString("pt-BR"):"nunca"}</p><div class="meta"><span class="mini-chip">${esc(roleLabel(u.tipo))}</span>${u.isSocioGoPlay?'<span class="mini-chip">Sócio GoPlay</span>':''}<span class="mini-chip">${u._count.times} time(s)</span><span class="mini-chip">${u._count.societies} Society(s)</span><span class="mini-chip">${u._count.pagamentos} pagamento(s)</span></div></div>`).join(""):'<div class="result-row">Nenhum usuário encontrado.</div>';
 }
 async function searchSocieties(){
   const q=encodeURIComponent($("societyQ").value.trim());
