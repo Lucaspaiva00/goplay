@@ -15,7 +15,8 @@
     "db:setup": "prisma generate && prisma migrate dev",
     "db:reset": "prisma migrate reset --force && prisma generate",
     "seed": "node prisma/seed.js",
-    "db:seed": "npm run seed"
+    "db:seed": "npm run seed",
+    "db:clear:production": "node scripts/clearDatabase.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
