@@ -11,6 +11,9 @@ enum TipoUsuario {
   PLAYER
   DONO_TIME
   DONO_SOCIETY
+  ORGANIZADOR_COMPETICAO
+  ORGAO_PUBLICO
+  SOCIO_GOPLAY
 }
 
 enum FuncaoFuncionario {
@@ -178,6 +181,21 @@ enum StatusSolicitacaoTime {
   CANCELADA
 }
 
+enum StatusAmistoso {
+  PENDENTE_ADVERSARIO
+  PENDENTE_SOCIETY
+  CONFIRMADO
+  RECUSADO
+  CANCELADO
+  REALIZADO
+}
+
+enum StatusPresencaAmistoso {
+  PENDENTE
+  VOU
+  NAO_VOU
+}
+
 model Usuario {
   id           Int       @id @default(autoincrement())
   nome         String
@@ -229,6 +247,9 @@ model Usuario {
   agendamentosOrganizados Agendamento[]
   convitesCampeonatoJogador ConviteCampeonatoJogador[]
   solicitacoesEntradaTime SolicitacaoEntradaTime[]
+  campeonatosOrganizados Campeonato[] @relation("CampeonatoOrganizador")
+  amistososCriados Amistoso[] @relation("AmistosoCriador")
+  presencasAmistoso PresencaAmistoso[]
   disponivelParaConvites Boolean @default(false)
 
   @@index([timeRelacionadoId])
@@ -266,6 +287,7 @@ model Society {
   campeonatos    Campeonato[]
   times          Time[]
   agendamentos   Agendamento[]
+  amistosos      Amistoso[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -350,6 +372,7 @@ model Campo {
   agendamentos Agendamento[]
   horariosFixos HorarioFixo[]
   pagamentos   Pagamento[]
+  amistosos    Amistoso[]
 
   @@unique([societyId, nome])
   @@index([societyId])
@@ -363,6 +386,7 @@ model Time {
   estado     String?
   cidade     String?
   modalidade String?
+  maxJogadores Int @default(20)
 
   societyId Int
   society   Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
@@ -408,6 +432,9 @@ model Time {
   convitesCampeonato ConviteCampeonatoTime[]
   solicitacoesEntrada SolicitacaoEntradaTime[]
   rotinaHorario GrupoHorario?
+  amistososTimeA Amistoso[] @relation("AmistosoTimeA")
+  amistososTimeB Amistoso[] @relation("AmistosoTimeB")
+  presencasAmistoso PresencaAmistoso[]
 
   @@unique([societyId, nome])
   @@index([societyId])
@@ -719,8 +746,11 @@ model ConviteCampeonatoJogador {
 
 model Campeonato {
   id        Int     @id @default(autoincrement())
-  societyId Int
-  society   Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  societyId Int?
+  society   Society? @relation(fields: [societyId], references: [id], onDelete: SetNull)
+
+  organizadorId Int?
+  organizador Usuario? @relation("CampeonatoOrganizador", fields: [organizadorId], references: [id], onDelete: SetNull)
 
   nome     String
   tipo     TipoCampeonato
@@ -758,8 +788,76 @@ model Campeonato {
   createdAt DateTime @default(now())
 
   @@index([societyId])
+  @@index([organizadorId])
   @@index([campeaoId])
   @@index([viceCampeaoId])
+  @@index([status])
+}
+
+model Amistoso {
+  id Int @id @default(autoincrement())
+
+  criadoPorId Int
+  criadoPor Usuario @relation("AmistosoCriador", fields: [criadoPorId], references: [id], onDelete: Cascade)
+
+  societyId Int?
+  society Society? @relation(fields: [societyId], references: [id], onDelete: SetNull)
+
+  campoId Int?
+  campo Campo? @relation(fields: [campoId], references: [id], onDelete: SetNull)
+
+  timeAId Int
+  timeA Time @relation("AmistosoTimeA", fields: [timeAId], references: [id], onDelete: Cascade)
+
+  timeBId Int
+  timeB Time @relation("AmistosoTimeB", fields: [timeBId], references: [id], onDelete: Cascade)
+
+  dataHora DateTime
+  duracaoMinutos Int @default(60)
+  status StatusAmistoso
+
+  aprovadoAdversarioEm DateTime?
+  aprovadoSocietyEm DateTime?
+  recusadoEm DateTime?
+  motivoRecusa String?
+  observacao String?
+
+  presencas PresencaAmistoso[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([criadoPorId])
+  @@index([societyId])
+  @@index([campoId])
+  @@index([timeAId])
+  @@index([timeBId])
+  @@index([dataHora])
+  @@index([status])
+}
+
+model PresencaAmistoso {
+  id Int @id @default(autoincrement())
+
+  amistosoId Int
+  amistoso Amistoso @relation(fields: [amistosoId], references: [id], onDelete: Cascade)
+
+  usuarioId Int
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  timeId Int
+  time Time @relation(fields: [timeId], references: [id], onDelete: Cascade)
+
+  status StatusPresencaAmistoso @default(PENDENTE)
+  respondidoEm DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([amistosoId, usuarioId])
+  @@index([amistosoId])
+  @@index([usuarioId])
+  @@index([timeId])
   @@index([status])
 }
 
