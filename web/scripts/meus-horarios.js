@@ -3,7 +3,7 @@ const user=JSON.parse(localStorage.getItem('usuarioLogado')||'null');
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
 async function api(url,opt={}){const r=await fetch(url,opt),t=await r.text().catch(()=>"");let d=null;try{d=t?JSON.parse(t):null}catch{}if(!r.ok)throw new Error(d?.error||t||`HTTP ${r.status}`);return d;}
-function dte(v){return v?new Date(v).toLocaleDateString('pt-BR'):'—';}
+function dte(v){const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})/);return m?`${m[3]}/${m[2]}/${m[1]}`:'—';}
 function counts(p=[]){return {vou:p.filter(x=>x.status==='VOU').length,nao:p.filter(x=>x.status==='NAO_VOU').length,pend:p.filter(x=>x.status==='PENDENTE').length};}
 function myStatus(p=[]){return p.find(x=>Number(x.usuarioId)===Number(user.id))?.status||'PENDENTE';}
 let grupos=[];
