@@ -2,6 +2,7 @@ if (!window.menuLoaded) {
   window.menuLoaded = true;
   const BASE_URL = "https://goplay-dzlr.onrender.com";
   const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado") || "null");
+  const isSocioGoPlay = usuarioLogado?.tipo === "SOCIO_GOPLAY" || usuarioLogado?.isSocioGoPlay === true;
   const menu = document.getElementById("menuDynamic");
   if (!usuarioLogado?.id) window.location.href = "login.html";
 
@@ -21,7 +22,7 @@ if (!window.menuLoaded) {
 
   if(usuarioLogado.tipo==="DONO_SOCIETY"){
     html+=section("OPERAÇÃO")+item("fa-gauge-high","Operação de Hoje","navegarComEmpresa('operacao.html')")+item("fa-calendar","Agenda","navegarComEmpresa('horarios.html')")+item("fa-rotate","Horários Fixos","navegarComEmpresa('horarios-fixos-empresa.html')")+item("fa-cash-register","Caixa & Bar","navegarComEmpresa('caixa-bar.html')");
-    html+=section("ESPORTES")+item("fa-trophy","Campeonatos","navegarComEmpresa('campeonatos.html')")+item("fa-users","Times","navegarComEmpresa('times.html')");
+    html+=section("ESPORTES")+item("fa-trophy","Campeonatos","navegarComEmpresa('campeonatos.html')")+item("fa-handshake","Amistosos","location.href='amistosos.html'")+item("fa-users","Times","navegarComEmpresa('times.html')");
     html+=section("FINANCEIRO")+item("fa-credit-card","Recebimentos","navegarComEmpresa('recebimentos.html')")+item("fa-chart-line","Visão Gerencial","navegarComEmpresa('society-dashboard.html')");
     html+=section("EMPRESA")+item("fa-user-shield","Funcionários","navegarComEmpresa('funcionarios.html')")+item("fa-building","Minha Empresa","abrirMinhaEmpresaMenu()")+item("fa-futbol","Quadras","navegarComEmpresa('campos.html')")+item("fa-utensils","Cardápio","navegarComEmpresa('cardapio.html')")+item("fa-plus","Cadastrar Empresa","location.href='society-create.html'");
   }
@@ -47,7 +48,8 @@ if (!window.menuLoaded) {
       +item("fa-shield-halved","Meus Times","location.href='times.html'")
       +item("fa-thumbs-up","Horário Fixo / Presenças","location.href='meus-horarios.html'")
       +item("fa-trophy","Campeonatos","location.href='campeonatos-view.html'")
-      +item("fa-envelope-open-text","Convites de campeonato","location.href='convites-campeonato.html'");
+      +item("fa-envelope-open-text","Convites de campeonato","location.href='convites-campeonato.html'")
+      +item("fa-handshake","Amistosos","location.href='amistosos.html'");
   }
   if(usuarioLogado.tipo==="PLAYER"){
     html+=section("JOGAR")
@@ -57,7 +59,18 @@ if (!window.menuLoaded) {
       +item("fa-thumbs-up","Minhas Presenças","location.href='meus-horarios.html'")
       +item("fa-receipt","Minha Comanda","location.href='comanda.html'")
       +item("fa-trophy","Campeonatos","location.href='campeonatos-view.html'")
-      +item("fa-envelope-open-text","Convites de campeonato","location.href='convites-campeonato.html'");
+      +item("fa-envelope-open-text","Convites de campeonato","location.href='convites-campeonato.html'")
+      +item("fa-handshake","Meus Amistosos","location.href='amistosos.html'");
+  }
+  if(["ORGANIZADOR_COMPETICAO","ORGAO_PUBLICO"].includes(usuarioLogado.tipo)){
+    html+=section("COMPETIÇÕES")
+      +item("fa-trophy","Campeonatos","location.href='campeonatos.html'")
+      +item("fa-user","Perfil","location.href='perfil.html'");
+  }
+  if(isSocioGoPlay){
+    html+=section("GOPLAY")
+      +item("fa-chart-pie","Painel dos Sócios","location.href='plataforma-admin.html'")
+      +item("fa-handshake","Todos os Amistosos","location.href='amistosos.html'");
   }
   html+=section("CONTA");
   if(usuarioLogado.tipo!=="FUNCIONARIO") html+=item("fa-user","Perfil","location.href='perfil.html'");
