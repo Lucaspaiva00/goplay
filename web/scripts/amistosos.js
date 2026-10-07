@@ -21,8 +21,7 @@ async function loadOptions(){
   societies=await api(`${BASE_URL}/society`).catch(()=>[]);
   if(user?.tipo==="DONO_TIME") ownTeams=(await api(`${BASE_URL}/time/dono/${user.id}`).catch(()=>[])).filter(t=>String(t.statusVinculo||"").toUpperCase()==="APROVADO");
   if(user?.tipo==="DONO_SOCIETY"||isSocio()){
-    const sid=currentSociety();
-    ownTeams=sid?allTeams.filter(t=>Number(t.societyId)===sid):allTeams;
+    ownTeams=allTeams;
   }
   renderCreateOptions();
 }
