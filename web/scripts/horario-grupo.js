@@ -6,7 +6,10 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
 async function api(url,opt={}){const r=await fetch(url,opt),t=await r.text().catch(()=>"");let d=null;try{d=t?JSON.parse(t):null}catch{}if(!r.ok)throw new Error(d?.error||t||`HTTP ${r.status}`);return d;}
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const date=v=>new Date(v).toLocaleDateString('pt-BR');
+const dateKey=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})/);return m?`${m[1]}-${m[2]}-${m[3]}`:'';};
+const date=v=>{const k=dateKey(v);if(!k)return '—';const [y,m,d]=k.split('-');return `${d}/${m}/${y}`;};
+const localDateKey=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+const weekdayFromInput=v=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(String(v||'')))return null;return new Date(`${v}T12:00:00`).getDay();};
 let group=null;
 let campoAtual=null;
 function countStatus(a,s){return (a?.presencas||[]).filter(p=>p.status===s).length;}
@@ -29,7 +32,8 @@ async function render(){
   const topTitle=document.querySelector('.topbar .title');
   if(topTitle) topTitle.textContent=group.time?'Rotina do Time':'Rotina / Presenças';
   document.title=group.time?`Rotina • ${group.time.nome} – GoPlay`:'Rotina / Presenças – GoPlay';
-  const future=group.agendamentos.filter(a=>new Date(a.data)>=new Date(new Date().setHours(0,0,0,0)));
+  const hoje=localDateKey();
+  const future=group.agendamentos.filter(a=>dateKey(a.data)>=hoje);
   const next=future[0];
   $('grupoHero').innerHTML=`<div><h2>${esc(group.nome)}</h2><p>📍 ${esc(group.society.nome)} • ${group.time?`⚽ Time: ${esc(group.time.nome)} • `:''}Organizador: ${esc(group.organizador.nome)}</p></div><div class="phase4-actions"><button class="p4-btn p4-secondary" onclick="location.href='meus-horarios.html'">Todas as rotinas</button>${group.time?`<button class="p4-btn p4-secondary" onclick="location.href='time-detalhe.html?timeId=${group.time.id}'">Ver time</button>`:''}</div>`;
   $('grupoResumo').innerHTML=`<div class="p4-topline"><span class="p4-chip">👥 ${group.membros.length}/${group.maxJogadores}</span><span class="p4-chip">${group.ativo?'Ativo':'Inativo'}</span></div><p class="p4-muted" style="margin-top:10px">${esc(group.descricao||'Sem descrição.')}</p>`;
@@ -59,7 +63,12 @@ async function loadFields(){
     updateBillingChoice();
   };
   document.querySelectorAll('input[name="hfTipoCobranca"]').forEach(r=>r.onchange=updateBillingChoice);
-  if(!$('hfInicio').value) $('hfInicio').value=new Date().toISOString().slice(0,10);
+  if(!$('hfInicio').value) $('hfInicio').value=localDateKey();
+  const syncWeekday=()=>{const w=weekdayFromInput($('hfInicio').value);if(w!==null)$('hfDia').value=String(w);};
+  syncWeekday();
+  $('hfInicio').onchange=syncWeekday;
+  $('hfDia').disabled=true;
+  $('hfDia').title='O dia da semana é definido automaticamente pela data inicial.';
   updateBillingChoice();
 }
 window.remover=async uid=>{if(!confirm('Remover este jogador do grupo?'))return;try{await api(`${BASE_URL}/grupos-horario/${GRUPO_ID}/membros/${uid}`,{method:'DELETE'});await render();}catch(e){alert(e.message);}};
@@ -78,7 +87,10 @@ $('formHorarioFixo')?.addEventListener('submit',async e=>{
   const texto=tipo==='MENSAL'?`mensalidade de ${money(valor)}`:`${money(valor)} por jogo`;
   if(!confirm(`Solicitar este horário com cobrança ${texto}? A empresa precisará aprovar antes das reservas serem criadas.`))return;
   try{
-    const body={campoId:Number($('hfCampo').value),diaSemana:Number($('hfDia').value),dataInicio:$('hfInicio').value,horaInicio:$('hfHoraInicio').value,horaFim:$('hfHoraFim').value,semanas:Number($('hfSemanas').value||12),tipoCobranca:tipo,dividirValor:tipo==='POR_JOGO'&&$('hfDividir').checked};
+    const dataInicio=$('hfInicio').value;
+    const diaSemana=weekdayFromInput(dataInicio);
+    if(diaSemana===null) return alert('Informe uma data inicial válida.');
+    const body={campoId:Number($('hfCampo').value),diaSemana,dataInicio,horaInicio:$('hfHoraInicio').value,horaFim:$('hfHoraFim').value,semanas:Number($('hfSemanas').value||12),tipoCobranca:tipo,dividirValor:tipo==='POR_JOGO'&&$('hfDividir').checked};
     const d=await api(`${BASE_URL}/grupos-horario/${GRUPO_ID}/horario-fixo`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(d.pendenteAprovacao) alert(`Solicitação enviada com cobrança ${texto}. A empresa recebeu um aviso no sininho para aprovar.`); else alert(`${d.agendamentos.length} encontros criados.`);
     await render();
