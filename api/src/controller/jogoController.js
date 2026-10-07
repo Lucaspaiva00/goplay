@@ -45,7 +45,10 @@ async function buscarJogoCompleto(client, jogoId) {
   return client.jogo.findUnique({
     where: { id: jogoId },
     include: {
-      campeonato: { include: { society: { select: { id: true, nome: true, usuarioId: true, imagem: true, cidade: true } } } },
+      campeonato: { include: {
+        society: { select: { id: true, nome: true, usuarioId: true, imagem: true, cidade: true } },
+        organizador: { select: { id: true, nome: true, email: true, tipo: true } }
+      } },
       timeA: { include: { jogadores: true } },
       timeB: { include: { jogadores: true } },
       estatisticasTimes: true,
@@ -96,14 +99,18 @@ function tokenMesaValido(req, jogo) {
 
 async function donoPodeOperar(req, jogo) {
   const a=req.actor;
+  if(a?.kind==="USER"&&a.tipo==="SOCIO_GOPLAY") return true;
   if(a?.kind==="USER"&&a.tipo==="DONO_SOCIETY") return Number(jogo?.campeonato?.society?.usuarioId)===Number(a.id);
+  if(a?.kind==="USER"&&["ORGANIZADOR_COMPETICAO","ORGAO_PUBLICO"].includes(a.tipo)) return Number(jogo?.campeonato?.organizadorId)===Number(a.id);
   if(a?.kind==="STAFF") return Number(a.societyId)===Number(jogo?.campeonato?.society?.id)&&["ADMIN","MESARIO"].includes(a.funcao);
   return false;
 }
 
 async function podeConfigurarMesa(req,jogo){
   const a=req.actor;
+  if(a?.kind==="USER"&&a.tipo==="SOCIO_GOPLAY") return true;
   if(a?.kind==="USER"&&a.tipo==="DONO_SOCIETY") return Number(jogo?.campeonato?.society?.usuarioId)===Number(a.id);
+  if(a?.kind==="USER"&&["ORGANIZADOR_COMPETICAO","ORGAO_PUBLICO"].includes(a.tipo)) return Number(jogo?.campeonato?.organizadorId)===Number(a.id);
   if(a?.kind==="STAFF") return Number(a.societyId)===Number(jogo?.campeonato?.society?.id)&&a.funcao==="ADMIN";
   return false;
 }
@@ -516,14 +523,16 @@ const agendar = async (req, res) => {
     for (const usuarioId of destinoIds) {
       await notifyUsuario(prisma, usuarioId, titulo, mensagem, `jogo-detalhe.html?jogoId=${jogoId}`);
     }
-    await notifyStaff(
-      prisma,
-      jogo.campeonato.society.id,
-      titulo,
-      mensagem,
-      ["ADMIN","MESARIO"],
-      `jogo-detalhe.html?jogoId=${jogoId}`
-    );
+    if (jogo.campeonato?.society?.id) {
+      await notifyStaff(
+        prisma,
+        jogo.campeonato.society.id,
+        titulo,
+        mensagem,
+        ["ADMIN","MESARIO"],
+        `jogo-detalhe.html?jogoId=${jogoId}`
+      );
+    }
 
     emitJogo(jogoId, { tipo: "agendamento", dataHora: atualizado.dataHora });
     return res.json({ ok: true, jogo: sanitizarJogoPublico(atualizado) });
