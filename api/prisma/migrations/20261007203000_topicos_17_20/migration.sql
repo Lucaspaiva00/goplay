@@ -11,6 +11,15 @@ ALTER COLUMN "societyId" DROP NOT NULL;
 ALTER TABLE "Campeonato"
 ADD COLUMN IF NOT EXISTS "organizadorId" INTEGER;
 
+ALTER TABLE "Jogo"
+ALTER COLUMN "campeonatoId" DROP NOT NULL;
+
+ALTER TABLE "Jogo"
+ADD COLUMN IF NOT EXISTS "amistosoId" INTEGER;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "Jogo_amistosoId_key" ON "Jogo"("amistosoId");
+CREATE INDEX IF NOT EXISTS "Jogo_amistosoId_idx" ON "Jogo"("amistosoId");
+
 CREATE INDEX IF NOT EXISTS "Campeonato_organizadorId_idx"
 ON "Campeonato"("organizadorId");
 
@@ -121,6 +130,11 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Amistoso_agendamentoId_fkey') THEN
     ALTER TABLE "Amistoso" ADD CONSTRAINT "Amistoso_agendamentoId_fkey"
       FOREIGN KEY ("agendamentoId") REFERENCES "Agendamento"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Jogo_amistosoId_fkey') THEN
+    ALTER TABLE "Jogo" ADD CONSTRAINT "Jogo_amistosoId_fkey"
+      FOREIGN KEY ("amistosoId") REFERENCES "Amistoso"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'PresencaAmistoso_amistosoId_fkey') THEN
