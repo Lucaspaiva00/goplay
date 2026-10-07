@@ -214,6 +214,7 @@ model Usuario {
   sexo         String?
 
   tipo TipoUsuario @default(PLAYER)
+  isSocioGoPlay Boolean @default(false)
 
   resetToken          String?
   resetTokenExpiresAt DateTime?
