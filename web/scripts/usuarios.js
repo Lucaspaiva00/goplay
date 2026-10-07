@@ -41,8 +41,10 @@ function criarConta() {
                 return;
             }
 
-            // salva usuário como logado
-            localStorage.setItem("usuarioLogado", JSON.stringify(json));
+            if (json.authToken) localStorage.setItem("authToken", json.authToken);
+            const { authToken, ...usuarioSeguro } = json;
+            localStorage.setItem("usuarioLogado", JSON.stringify(usuarioSeguro));
+            localStorage.removeItem("funcionarioLogado");
 
             alert("Conta criada com sucesso!");
             window.location.href = "home.html";
