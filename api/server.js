@@ -19,23 +19,7 @@ app.get("/", (req, res) => {
 // Porta
 const PORT = process.env.PORT || 3000;
 const { startPresenceNotificationJob } = require("./src/presenceNotifications");
-const { clearDatabaseOnce } = require("./scripts/clearDatabase");
-
-async function startServer() {
-    const reset = await clearDatabaseOnce();
-    if (reset?.cleared) {
-        console.log(`Reset único GoPlay executado: ${reset.tables} tabela(s) limpas.`);
-    } else if (process.env.GOPLAY_RESET_TOKEN) {
-        console.log(`Reset GoPlay ignorado: ${reset?.reason || "já executado"}.`);
-    }
-
-    app.listen(PORT, () => {
-        console.log(`Servidor rodando na porta ${PORT}`);
-        startPresenceNotificationJob();
-    });
-}
-
-startServer().catch(error => {
-    console.error("Falha ao iniciar a API GoPlay:", error);
-    process.exit(1);
+app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+    startPresenceNotificationJob();
 });
