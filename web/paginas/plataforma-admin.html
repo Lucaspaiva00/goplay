@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel GoPlay • Sócios</title>
+  <link rel="stylesheet" href="../css/goplay_home.css">
+  <link rel="stylesheet" href="../css/plataforma-admin.css?v=20261007-1720">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <header class="topbar"><button id="menuBtn" class="menu-btn"><i class="fa fa-bars"></i></button><h1 class="title">GoPlay • Painel dos Sócios</h1></header>
+  <aside id="sidebar" class="sidebar"><div class="logo-area"><h2>GoPlay</h2></div><ul id="menuDynamic"></ul></aside>
+  <div id="overlay" class="overlay"></div>
+
+  <main class="content platform-page">
+    <section class="platform-hero">
+      <div><span>GESTÃO DA PLATAFORMA</span><h2>Visão geral do GoPlay</h2><p>Usuários, operação, financeiro, crescimento e saúde da plataforma.</p></div>
+      <button id="refreshAll"><i class="fa fa-rotate"></i> Atualizar</button>
+    </section>
+
+    <section id="healthBanner" class="health-banner">Carregando saúde da plataforma...</section>
+
+    <section class="platform-section"><div class="platform-head"><div><h3>Indicadores principais</h3><p>Visão consolidada da operação.</p></div></div><div id="kpis" class="platform-kpis"></div></section>
+
+    <section class="platform-split">
+      <article class="platform-section">
+        <div class="platform-head"><div><h3>Crescimento • 6 meses</h3><p>Novos usuários, Societies, reservas e amistosos.</p></div></div>
+        <div id="growth" class="growth-list"></div>
+      </article>
+      <article class="platform-section">
+        <div class="platform-head"><div><h3>Uso por cidade</h3><p>Concentração de estruturas cadastradas.</p></div></div>
+        <div id="cities" class="city-list"></div>
+      </article>
+    </section>
+
+    <section class="platform-section">
+      <div class="platform-head"><div><h3>Alertas operacionais</h3><p>Pontos que merecem atenção dos sócios.</p></div></div>
+      <div id="alerts" class="alert-list"></div>
+    </section>
+
+    <section class="platform-split">
+      <article class="platform-section">
+        <div class="platform-head"><div><h3>Pesquisar usuários</h3><p>Consulte contas sem entrar em cada perfil.</p></div></div>
+        <div class="search-line"><input id="userQ" placeholder="Nome, e-mail ou telefone"><select id="userTipo"><option value="">Todos os perfis</option><option>PLAYER</option><option>DONO_TIME</option><option>DONO_SOCIETY</option><option>ORGANIZADOR_COMPETICAO</option><option>ORGAO_PUBLICO</option></select><button id="searchUsers">Buscar</button></div>
+        <div id="usersResults" class="result-list"></div>
+      </article>
+      <article class="platform-section">
+        <div class="platform-head"><div><h3>Pesquisar Societies</h3><p>Empresa, cidade, dono e volume de operação.</p></div></div>
+        <div class="search-line"><input id="societyQ" placeholder="Nome, cidade, e-mail..."><button id="searchSocieties">Buscar</button></div>
+        <div id="societiesResults" class="result-list"></div>
+      </article>
+    </section>
+  </main>
+
+  <script src="../scripts/session.js"></script>
+  <script src="../js/goplay_home.js"></script>
+  <script src="../scripts/menu.js"></script>
+  <script src="../scripts/plataforma-admin.js?v=20261007-1720"></script>
+</body>
+</html>
