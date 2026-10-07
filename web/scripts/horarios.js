@@ -16,12 +16,22 @@ function getUsuario() {
     return JSON.parse(localStorage.getItem("usuarioLogado") || "null");
 }
 
-function toDateKey(date) {
-    const d = new Date(date);
+function toDateKey(value) {
+    if (typeof value === "string") {
+        const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+    }
+    const d = new Date(value);
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
     return `${y}-${m}-${day}`;
+}
+
+function formatDateOnlyBR(value) {
+    const key = toDateKey(value);
+    const [y,m,d] = key.split("-");
+    return `${d}/${m}/${y}`;
 }
 
 function inicioSemana(date) {
@@ -209,7 +219,7 @@ function abrirModalOcupado(id) {
     el("modalDescricao").textContent = "Confira os detalhes da reserva.";
 
     el("modalInfo").innerHTML = `
-        <div><strong>Data:</strong> ${data ? new Date(data).toLocaleDateString("pt-BR") : "-"}</div>
+        <div><strong>Data:</strong> ${data ? formatDateOnlyBR(data) : "-"}</div>
         <div><strong>Horário:</strong> ${ag.horaInicio || "-"} - ${ag.horaFim || "-"}</div>
         <div><strong>${ag.grupoHorario ? "Grupo" : "Time"}:</strong> ${ag.grupoHorario?.nome || ag.time?.nome || "-"}</div>
         <div><strong>Quadra:</strong> ${ag.campo?.nome || "-"}</div>
