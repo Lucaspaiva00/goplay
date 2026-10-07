@@ -8,6 +8,7 @@ function salvarCampeonato() {
         nome: document.getElementById("nome").value.trim(),
         tipo: "LIGA_IDA_VOLTA",
         maxTimes: Number(document.getElementById("maxTimes").value),
+        maxJogadoresPorTime: Number(document.getElementById("maxJogadoresPorTime").value || 20),
         modalidade: document.getElementById("modalidade").value,
         categoria: document.getElementById("categoria").value,
         temporada: document.getElementById("temporada").value.trim() || null,
@@ -21,9 +22,10 @@ function salvarCampeonato() {
     if (!data.societyId) return alert("Empresa não encontrada.");
     if (!data.nome) return alert("Informe o nome do campeonato.");
     if (!Number.isInteger(data.maxTimes) || data.maxTimes < 2) {
-        return alert(
-            "Informe uma quantidade de times a partir de 2."
-        );
+        return alert("Informe uma quantidade de times a partir de 2.");
+    }
+    if (!Number.isInteger(data.maxJogadoresPorTime) || data.maxJogadoresPorTime < 1 || data.maxJogadoresPorTime > 100) {
+        return alert("Informe um limite de jogadores por time entre 1 e 100.");
     }
 
     fetch(`${BASE_URL}/campeonato`, {
