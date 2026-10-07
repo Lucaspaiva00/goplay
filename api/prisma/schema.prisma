@@ -104,6 +104,7 @@ enum StatusCampeonato {
 enum StatusOperacaoJogo {
   AGENDADO
   AO_VIVO
+  PAUSADA
   INTERVALO
   ENCERRADO
 }
@@ -724,6 +725,7 @@ model Campeonato {
   nome     String
   tipo     TipoCampeonato
   maxTimes Int
+  maxJogadoresPorTime Int @default(20)
 
   modalidade ModalidadeCampeonato @default(SOCIETY)
   categoria  CategoriaCampeonato  @default(ADULTO)
