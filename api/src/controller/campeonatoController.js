@@ -173,6 +173,7 @@ const create = async (req, res) => {
         const societyId = toId(req.body.societyId);
         const nome = String(req.body.nome || "").trim();
         const maxTimes = Number(req.body.maxTimes || 4);
+        const maxJogadoresPorTime = Number(req.body.maxJogadoresPorTime || 20);
 
         if (!societyId) {
             return res.status(400).json({
@@ -189,6 +190,12 @@ const create = async (req, res) => {
         if (!Number.isInteger(maxTimes) || maxTimes < 2) {
             return res.status(400).json({
                 error: "A quantidade de times deve ser um número inteiro a partir de 2.",
+            });
+        }
+
+        if (!Number.isInteger(maxJogadoresPorTime) || maxJogadoresPorTime < 1 || maxJogadoresPorTime > 100) {
+            return res.status(400).json({
+                error: "O limite de jogadores por time deve ser um número inteiro entre 1 e 100.",
             });
         }
 
@@ -210,6 +217,7 @@ const create = async (req, res) => {
                 nome,
                 tipo: "LIGA_IDA_VOLTA",
                 maxTimes,
+                maxJogadoresPorTime,
 
                 modalidade: req.body.modalidade || "SOCIETY",
                 categoria: req.body.categoria || "ADULTO",
@@ -1208,9 +1216,72 @@ const getBracket = async (req, res) => {
 };
 
 const updateInfo = async (req, res) => {
-    return res.status(400).json({
-        error: "Edição de campeonato ainda não habilitada nesta versão.",
-    });
+    try {
+        const campeonatoId = toId(req.params.id);
+        if (!campeonatoId) return res.status(400).json({ error: "ID inválido." });
+
+        const atual = await prisma.campeonato.findUnique({
+            where: { id: campeonatoId },
+            include: {
+                times: true,
+                jogos: { select: { id: true } },
+                convitesTimes: { include: { jogadores: true } },
+            },
+        });
+        if (!atual) return res.status(404).json({ error: "Campeonato não encontrado." });
+
+        const data = {};
+        if (req.body.nome !== undefined) {
+            const nome = String(req.body.nome || "").trim();
+            if (!nome) return res.status(400).json({ error: "Informe o nome do campeonato." });
+            data.nome = nome;
+        }
+
+        if (req.body.maxTimes !== undefined) {
+            const maxTimes = Number(req.body.maxTimes);
+            if (!Number.isInteger(maxTimes) || maxTimes < 2) {
+                return res.status(400).json({ error: "A quantidade de times deve ser um inteiro a partir de 2." });
+            }
+            if (atual.jogos.length && maxTimes !== atual.maxTimes) {
+                return res.status(400).json({ error: "O limite de times não pode ser alterado depois que os jogos foram gerados." });
+            }
+            const vagasUsadas = atual.times.length + atual.convitesTimes.filter(c => c.status === "PENDENTE").length;
+            if (maxTimes < vagasUsadas) {
+                return res.status(400).json({ error: `O campeonato já possui ${vagasUsadas} vaga(s) confirmadas ou aguardando resposta.` });
+            }
+            data.maxTimes = maxTimes;
+        }
+
+        if (req.body.maxJogadoresPorTime !== undefined) {
+            const limite = Number(req.body.maxJogadoresPorTime);
+            if (!Number.isInteger(limite) || limite < 1 || limite > 100) {
+                return res.status(400).json({ error: "O limite de jogadores por time deve ser um inteiro entre 1 e 100." });
+            }
+            const maiorConvocacao = atual.convitesTimes.reduce((max, c) => Math.max(max, c.jogadores?.length || 0), 0);
+            if (limite < maiorConvocacao) {
+                return res.status(400).json({ error: `Já existe uma convocação com ${maiorConvocacao} jogador(es). O limite não pode ser menor.` });
+            }
+            data.maxJogadoresPorTime = limite;
+        }
+
+        for (const campo of ["modalidade","categoria","temporada","regulamentoTexto","regulamentoUrl"]) {
+            if (req.body[campo] !== undefined) data[campo] = req.body[campo] || null;
+        }
+
+        if (req.body.dataInicio !== undefined) data.dataInicio = parseDateOrNull(req.body.dataInicio);
+        if (req.body.dataFim !== undefined) data.dataFim = parseDateOrNull(req.body.dataFim);
+        const inicio = data.dataInicio !== undefined ? data.dataInicio : atual.dataInicio;
+        const fim = data.dataFim !== undefined ? data.dataFim : atual.dataFim;
+        if (inicio && fim && inicio > fim) {
+            return res.status(400).json({ error: "A data final não pode ser anterior à data inicial." });
+        }
+
+        const atualizado = await prisma.campeonato.update({ where: { id: campeonatoId }, data });
+        return res.json(atualizado);
+    } catch (err) {
+        console.error("ERRO updateInfo campeonato:", err);
+        return res.status(500).json({ error: err.message || "Erro ao atualizar campeonato." });
+    }
 };
 
 /* =====================================================
