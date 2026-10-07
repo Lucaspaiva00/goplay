@@ -26,7 +26,7 @@ const operacaoController = require("./controller/operacaoController");
 const horarioFixoController = require("./controller/horarioFixoController");
 const campeonatoConviteController = require("./controller/campeonatoConviteController");
 const { subscribeHorario } = require("./horarioRealtime");
-const { authenticate, authenticateOptional, requireSocietyRoles, requireEntitySocietyRoles } = require("./auth");
+const { authenticate, authenticateOptional, requireSocietyRoles, requireEntitySocietyRoles, requirePlatformAdmin, requireCampeonatoCreate, requireCampeonatoManager } = require("./auth");
 
 /* =====================================================
    AUTH / USUÁRIOS
@@ -182,30 +182,30 @@ router.get("/pagamentos/:id", pagamentoController.readOne);
    CAMPEONATOS
 ===================================================== */
 
-router.post("/campeonato", ...requireSocietyRoles(["ADMIN"], req => req.body.societyId), campeonatoController.create);
+router.post("/campeonato", ...requireCampeonatoCreate(["ADMIN"]), campeonatoController.create);
 router.get("/campeonato", campeonatoController.listAll);
 router.get("/campeonato/society/:societyId", campeonatoController.listBySociety);
 router.get("/campeonato/:id", campeonatoController.readOne);
 
-router.post("/campeonato/:id/add-time", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.addTime);
+router.post("/campeonato/:id/add-time", ...requireCampeonatoManager(["ADMIN"]), campeonatoController.addTime);
 router.get("/convites-campeonato/meus", authenticate, campeonatoConviteController.meusConvites);
 router.post("/convites-campeonato/time/:id/responder", authenticate, campeonatoConviteController.responderTime);
 router.post("/convites-campeonato/jogador/:id/responder", authenticate, campeonatoConviteController.responderJogador);
 
-router.post("/campeonato/:id/generate-groups", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.generateGroups);
-router.post("/campeonato/:id/generate-league", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.generateLeague);
+router.post("/campeonato/:id/generate-groups", ...requireCampeonatoManager(["ADMIN"]), campeonatoController.generateGroups);
+router.post("/campeonato/:id/generate-league", ...requireCampeonatoManager(["ADMIN"]), campeonatoController.generateLeague);
 
 /* Compatibilidade com front antigo */
-router.post("/campeonato/:id/generate", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.generateLeague);
-router.post("/campeonato/:id/generate-group-matches", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.generateGroupMatches);
-router.post("/campeonato/:id/generate-mata-mata", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.generateMataMata);
+router.post("/campeonato/:id/generate", ...requireCampeonatoManager(["ADMIN"]), campeonatoController.generateLeague);
+router.post("/campeonato/:id/generate-group-matches", ...requireCampeonatoManager(["ADMIN"]), campeonatoController.generateGroupMatches);
+router.post("/campeonato/:id/generate-mata-mata", ...requireCampeonatoManager(["ADMIN"]), campeonatoController.generateMataMata);
 
 router.get("/campeonato/:id/ranking", campeonatoController.ranking);
 router.get("/campeonato/:id/ranking-grupos", campeonatoController.rankingPorGrupos);
 router.get("/campeonato/:id/bracket", campeonatoController.getBracket);
 
-router.put("/campeonato/:id", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.updateInfo);
-router.post("/campeonato/:id/groups-manual", ...requireEntitySocietyRoles(["ADMIN"], "campeonato"), campeonatoController.salvarGruposManual
+router.put("/campeonato/:id", ...requireCampeonatoManager(["ADMIN"]), campeonatoController.updateInfo);
+router.post("/campeonato/:id/groups-manual", ...requireCampeonatoManager(["ADMIN"]), campeonatoController.salvarGruposManual
 );
 
 /* =====================================================
