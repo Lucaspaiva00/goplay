@@ -1,8 +1,19 @@
 const crypto = require("crypto");
+const PDFDocument = require("pdfkit");
 const { PrismaClient } = require("@prisma/client");
 const { emitJogo } = require("../realtime");
+const { notifyUsuario, notifyStaff } = require("../notifications");
 
 const prisma = new PrismaClient();
+
+const EVENTOS_INDIVIDUAIS = new Set([
+  "GOL",
+  "CARTAO_AMARELO",
+  "CARTAO_VERMELHO",
+  "CHUTE",
+  "CHUTE_NO_GOL",
+  "FALTA",
+]);
 
 const TIPOS_EVENTO_VALIDOS = [
   "GOL",
@@ -345,6 +356,9 @@ const addEvento = async (req, res) => {
     if (["GOL", "CARTAO_AMARELO", "CARTAO_VERMELHO", "SUBSTITUICAO", "CHUTE", "CHUTE_NO_GOL", "ESCANTEIO", "LATERAL", "FALTA"].includes(tipo) && !timeId) {
       return res.status(400).json({ error: "Selecione o time do evento." });
     }
+    if (EVENTOS_INDIVIDUAIS.has(tipo) && !jogadorId) {
+      return res.status(400).json({ error: "Selecione o jogador responsável por este evento." });
+    }
     if (tipo === "SUBSTITUICAO" && (!jogadorSaindoId || !jogadorEntrandoId)) {
       return res.status(400).json({ error: "Informe quem sai e quem entra." });
     }
@@ -417,7 +431,7 @@ const controlarCronometro = async (req, res) => {
     if (acao === "INICIAR") {
       data = { statusOperacao: "AO_VIVO", cronometroInicioEm: agora, iniciadoEm: jogo.iniciadoEm || agora, periodo: jogo.periodo || 1 };
     } else if (acao === "PAUSAR") {
-      data = { cronometroSegundos: atual, cronometroInicioEm: null };
+      data = { statusOperacao: "PAUSADA", cronometroSegundos: atual, cronometroInicioEm: null };
     } else if (acao === "RETOMAR") {
       data = { statusOperacao: "AO_VIVO", cronometroInicioEm: agora };
     } else if (acao === "INTERVALO") {
@@ -439,6 +453,203 @@ const controlarCronometro = async (req, res) => {
   }
 };
 
+
+function formatDateTimeBR(value) {
+  if (!value) return "Data pendente";
+  try {
+    return new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      dateStyle: "short",
+      timeStyle: "short",
+    }).format(new Date(value));
+  } catch {
+    return new Date(value).toISOString();
+  }
+}
+
+const agendar = async (req, res) => {
+  try {
+    const jogoId = Number(req.params.id);
+    const jogo = await buscarJogoCompleto(prisma, jogoId);
+    if (!jogo) return res.status(404).json({ error: "Jogo não encontrado." });
+    if (!(await podeConfigurarMesa(req, jogo))) {
+      return res.status(403).json({ error: "Somente o dono ou Administrador pode definir a data da partida." });
+    }
+    if (jogo.finalizado) return res.status(400).json({ error: "Partida encerrada não pode ser reagendada." });
+
+    const dataHora = new Date(req.body.dataHora);
+    if (Number.isNaN(dataHora.getTime())) {
+      return res.status(400).json({ error: "Informe uma data e horário válidos." });
+    }
+
+    if (jogo.campeonato?.dataInicio) {
+      const inicio = new Date(jogo.campeonato.dataInicio);
+      inicio.setUTCHours(0,0,0,0);
+      if (dataHora < inicio) return res.status(400).json({ error: "A partida não pode ser anterior ao início do campeonato." });
+    }
+    if (jogo.campeonato?.dataFim) {
+      const fim = new Date(jogo.campeonato.dataFim);
+      fim.setUTCHours(23,59,59,999);
+      if (dataHora > fim) return res.status(400).json({ error: "A partida não pode ser posterior ao fim do campeonato." });
+    }
+
+    const atualizado = await prisma.jogo.update({
+      where: { id: jogoId },
+      data: { dataHora },
+    });
+
+    const destinoIds = new Set([jogo.timeA?.donoId, jogo.timeB?.donoId].filter(Boolean).map(Number));
+    const jogadores = await prisma.conviteCampeonatoJogador.findMany({
+      where: {
+        status: "ACEITO",
+        conviteTime: {
+          campeonatoId: jogo.campeonatoId,
+          timeId: { in: [jogo.timeAId, jogo.timeBId] },
+        },
+      },
+      select: { usuarioId: true },
+    });
+    jogadores.forEach(j => destinoIds.add(Number(j.usuarioId)));
+
+    const titulo = "Partida agendada";
+    const mensagem = `${jogo.timeA.nome} × ${jogo.timeB.nome} — ${formatDateTimeBR(dataHora)}.`;
+    for (const usuarioId of destinoIds) {
+      await notifyUsuario(prisma, usuarioId, titulo, mensagem, `jogo-detalhe.html?jogoId=${jogoId}`);
+    }
+    await notifyStaff(
+      prisma,
+      jogo.campeonato.society.id,
+      titulo,
+      mensagem,
+      ["ADMIN","MESARIO"],
+      `jogo-detalhe.html?jogoId=${jogoId}`
+    );
+
+    emitJogo(jogoId, { tipo: "agendamento", dataHora: atualizado.dataHora });
+    return res.json({ ok: true, jogo: sanitizarJogoPublico(atualizado) });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: err.message || "Erro ao agendar a partida." });
+  }
+};
+
+function pdfText(doc, label, value) {
+  doc.font("Helvetica-Bold").text(label, { continued: true });
+  doc.font("Helvetica").text(value || "-");
+}
+
+const sumulaPdf = async (req, res) => {
+  try {
+    const jogoId = Number(req.params.id);
+    const jogo = await buscarJogoCompleto(prisma, jogoId);
+    if (!jogo) return res.status(404).json({ error: "Jogo não encontrado." });
+    if (!(await exigirOperador(req, res, jogo))) return;
+
+    const statsJogadores = await prisma.estatisticaJogo.findMany({
+      where: { jogoId },
+      include: { jogador: { select: { id: true, nome: true } } },
+      orderBy: [{ gols: "desc" }, { jogador: { nome: "asc" } }],
+    });
+
+    const doc = new PDFDocument({ size: "A4", margin: 42, info: { Title: `Súmula jogo ${jogoId} - GoPlay` } });
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="sumula-jogo-${jogoId}.pdf"`);
+    doc.pipe(res);
+
+    doc.fontSize(18).font("Helvetica-Bold").text("SÚMULA OFICIAL — GOPLAY", { align: "center" });
+    doc.moveDown(0.35);
+    doc.fontSize(10).font("Helvetica").fillColor("#555").text(
+      `${jogo.campeonato?.nome || "Campeonato"} • ${jogo.campeonato?.society?.nome || "Empresa"}`,
+      { align: "center" }
+    );
+    doc.fillColor("#000").moveDown();
+
+    pdfText(doc, "Partida: ", `${jogo.timeA.nome} x ${jogo.timeB.nome}`);
+    pdfText(doc, "Rodada: ", String(jogo.rodada || "-"));
+    pdfText(doc, "Data/hora: ", formatDateTimeBR(jogo.dataHora));
+    pdfText(doc, "Mesário: ", jogo.mesarioNome || "-");
+    pdfText(doc, "Status: ", jogo.finalizado ? "ENCERRADA" : jogo.statusOperacao);
+    pdfText(doc, "Início real: ", jogo.iniciadoEm ? formatDateTimeBR(jogo.iniciadoEm) : "-");
+    pdfText(doc, "Encerramento: ", jogo.encerradoEm ? formatDateTimeBR(jogo.encerradoEm) : "-");
+
+    doc.moveDown().fontSize(16).font("Helvetica-Bold").text(
+      `${jogo.timeA.nome}  ${jogo.golsA ?? 0} x ${jogo.golsB ?? 0}  ${jogo.timeB.nome}`,
+      { align: "center" }
+    );
+    if (jogo.penaltisA != null && jogo.penaltisB != null) {
+      doc.fontSize(10).font("Helvetica").text(`Pênaltis: ${jogo.penaltisA} x ${jogo.penaltisB}`, { align: "center" });
+    }
+
+    const lineups = jogo.jogadoresAtuacao || [];
+    const renderElenco = (titulo, timeId) => {
+      doc.moveDown().fontSize(12).font("Helvetica-Bold").text(titulo);
+      const rows = lineups.filter(x => Number(x.timeId) === Number(timeId));
+      if (!rows.length) {
+        doc.fontSize(9).font("Helvetica").text("Escalação não registrada.");
+        return;
+      }
+      rows.forEach(x => {
+        const partes = [x.titular ? "Titular" : "Reserva"];
+        if (x.entrouMinuto != null) partes.push(`entrou ${x.entrouMinuto}'`);
+        if (x.saiuMinuto != null) partes.push(`saiu ${x.saiuMinuto}'`);
+        doc.fontSize(9).font("Helvetica").text(`• ${x.jogador?.nome || "Jogador"} — ${partes.join(" • ")}`);
+      });
+    };
+    renderElenco(`ELENCO — ${jogo.timeA.nome}`, jogo.timeAId);
+    renderElenco(`ELENCO — ${jogo.timeB.nome}`, jogo.timeBId);
+
+    doc.addPage();
+    doc.fontSize(13).font("Helvetica-Bold").text("EVENTOS DA PARTIDA");
+    const eventos = [...(jogo.eventos || [])].sort((a,b) => (a.minuto ?? 0) - (b.minuto ?? 0) || a.id - b.id);
+    if (!eventos.length) {
+      doc.fontSize(9).font("Helvetica").text("Nenhum evento registrado.");
+    } else {
+      eventos.forEach(e => {
+        let detalhe = [e.time?.nome, e.jogador?.nome, e.detalhe].filter(Boolean).join(" • ");
+        if (e.tipo === "SUBSTITUICAO") detalhe = `${e.time?.nome || ""} • ${e.jogadorSaindo?.nome || "-"} saiu / ${e.jogadorEntrando?.nome || "-"} entrou`;
+        doc.fontSize(9).font("Helvetica-Bold").text(`${e.minuto ?? 0}' — ${String(e.tipo).replaceAll("_"," ")}`, { continued: !!detalhe });
+        if (detalhe) doc.font("Helvetica").text(` — ${detalhe}`);
+      });
+    }
+
+    doc.moveDown().fontSize(13).font("Helvetica-Bold").text("ESTATÍSTICAS POR JOGADOR");
+    if (!statsJogadores.length) {
+      doc.fontSize(9).font("Helvetica").text("Sem gols ou cartões individuais registrados.");
+    } else {
+      statsJogadores.forEach(s => {
+        doc.fontSize(9).font("Helvetica").text(
+          `• ${s.jogador.nome}: ${s.gols} gol(s), ${s.amarelos} amarelo(s), ${s.vermelhos} vermelho(s)`
+        );
+      });
+    }
+
+    doc.moveDown().fontSize(13).font("Helvetica-Bold").text("ESTATÍSTICAS DOS TIMES");
+    for (const t of jogo.estatisticasTimes || []) {
+      const nome = Number(t.timeId) === Number(jogo.timeAId) ? jogo.timeA.nome : jogo.timeB.nome;
+      doc.fontSize(9).font("Helvetica").text(
+        `• ${nome}: chutes ${t.chutes}, no gol ${t.chutesNoGol}, escanteios ${t.escanteios}, laterais ${t.laterais}, faltas ${t.faltas}, posse ${t.posse}%`
+      );
+    }
+
+    const observacoes = eventos.filter(e => e.tipo === "OBSERVACAO").map(e => e.detalhe).filter(Boolean);
+    if (jogo.observacao) observacoes.push(jogo.observacao);
+    doc.moveDown().fontSize(13).font("Helvetica-Bold").text("OCORRÊNCIAS / OBSERVAÇÕES");
+    doc.fontSize(9).font("Helvetica").text(observacoes.length ? observacoes.map(x => `• ${x}`).join("\n") : "Nenhuma ocorrência registrada.");
+
+    doc.moveDown(2);
+    doc.fontSize(9).text("____________________________________", 70, doc.y, { continued: true });
+    doc.text("        ____________________________________", { align: "right" });
+    doc.text("Mesário", 70, doc.y + 2, { continued: true });
+    doc.text("Responsável da organização", { align: "right" });
+
+    doc.end();
+  } catch (err) {
+    console.error(err);
+    if (!res.headersSent) return res.status(500).json({ error: err.message || "Erro ao gerar súmula." });
+    try { res.end(); } catch {}
+  }
+};
+
 module.exports = {
   readOne,
   readMesa,
@@ -449,6 +660,8 @@ module.exports = {
   addEvento,
   desfazerUltimoEvento,
   controlarCronometro,
+  agendar,
+  sumulaPdf,
   cronometroAtual,
   tokenMesaValido,
 };
