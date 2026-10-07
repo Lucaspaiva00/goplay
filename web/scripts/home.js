@@ -3,88 +3,120 @@ const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado") || "null"
 const homeContent = document.getElementById("homeContent");
 if (!usuarioLogado?.id) window.location.href = "login.html";
 
-function getEmpresaAtual(){
-  const id=Number(localStorage.getItem("societyId")||0);
-  const nome=localStorage.getItem("societyContextName")||"";
-  return id?{id,nome}:null;
-}
+const esc=v=>String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+function getEmpresaAtual(){const id=Number(localStorage.getItem("societyId")||0),nome=localStorage.getItem("societyContextName")||"";return id?{id,nome}:null;}
 function money(v){return Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});}
+async function api(url,opt={}){const r=await fetch(url,opt),t=await r.text().catch(()=>"");let d=null;try{d=t?JSON.parse(t):null}catch{}if(!r.ok)throw new Error(d?.error||t||`HTTP ${r.status}`);return d;}
+function dateKey(v){const m=String(v||"").match(/^(\d{4})-(\d{2})-(\d{2})/);return m?`${m[1]}-${m[2]}-${m[3]}`:"";}
+function dateBR(v){const k=dateKey(v);if(!k)return "—";const [y,m,d]=k.split("-");return `${d}/${m}/${y}`;}
+function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
+function currentMonth(){return todayKey().slice(0,7);}
+function resposta(a){return (a.presencas||[]).find(p=>Number(p.usuarioId)===Number(usuarioLogado.id))?.status||"PENDENTE";}
 
+async function votarHome(id,status,btn){
+  try{
+    if(btn){btn.disabled=true;btn.textContent="Salvando...";}
+    await api(`${BASE_URL}/encontros-horario/${id}/presenca`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});
+    await carregarHomeEsportiva();
+  }catch(e){alert(e.message);}
+}
+window.votarHome=votarHome;
+
+function cardJogo(a){
+  const st=resposta(a);
+  return `<article class="home-game-card">
+    <div class="home-game-date"><strong>${dateBR(a.data)}</strong><span>${esc(a.horaInicio)}–${esc(a.horaFim)}</span></div>
+    <div class="home-game-body"><strong>${esc(a.grupoHorario?.nome||a.time?.nome||"Jogo")}</strong><small>${esc(a.campo?.nome||"Quadra")} • ${esc(a.society?.nome||"")}</small></div>
+    <div class="home-presence-actions">
+      <button class="home-vote yes ${st==="VOU"?"active":""}" onclick="votarHome(${a.id},'VOU',this)">👍 Vou</button>
+      <button class="home-vote no ${st==="NAO_VOU"?"active":""}" onclick="votarHome(${a.id},'NAO_VOU',this)">👎 Não vou</button>
+    </div>
+    <button class="home-game-more" onclick="location.href='confirmar-presenca.html?agendamentoId=${a.id}'" aria-label="Abrir detalhes">›</button>
+  </article>`;
+}
+async function jogosDoTime(timeId){
+  const rows=await api(`${BASE_URL}/agendamentos/time/${timeId}`);
+  const hoje=todayKey();
+  const futuros=(rows||[]).filter(a=>a.status!=="CANCELADO"&&dateKey(a.data)>=hoje);
+  const mes=futuros.filter(a=>dateKey(a.data).slice(0,7)===currentMonth());
+  return (mes.length?mes:futuros.slice(0,6)).sort((a,b)=>dateKey(a.data).localeCompare(dateKey(b.data))||String(a.horaInicio).localeCompare(String(b.horaInicio)));
+}
+
+async function renderDonoTime(){
+  const times=await api(`${BASE_URL}/time/dono/${usuarioLogado.id}`);
+  if(!times.length)return `<section class="action-card"><h3>Seu primeiro time</h3><p>Crie um time para começar a organizar jogos e reservas.</p><button class="btn green" onclick="location.href='times.html'">Criar / gerenciar time</button></section>`;
+  let selected=Number(localStorage.getItem("homeTimeId")||0);
+  if(!times.some(t=>Number(t.id)===selected))selected=Number(times[0].id);
+  localStorage.setItem("homeTimeId",String(selected));
+  const time=times.find(t=>Number(t.id)===selected);
+  const jogos=await jogosDoTime(selected);
+  const selector=times.length>1?`<select id="homeTimeSelect" class="home-team-select">${times.map(t=>`<option value="${t.id}" ${Number(t.id)===selected?"selected":""}>${esc(t.nome)}</option>`).join("")}</select>`:`<strong class="home-team-name">⚽ ${esc(time.nome)}</strong>`;
+  return `<section class="home-team-head"><div><span class="home-eyebrow">MEU TIME</span>${selector}</div><button class="home-link-btn" onclick="location.href='times.html'">Gerenciar</button></section>
+  <section class="action-card home-games-section"><div class="home-section-head"><div><h3>Próximos jogos</h3><p>Confirme sua presença sem abrir outra tela.</p></div><button class="home-link-btn" onclick="location.href='meus-horarios.html'">Ver rotina</button></div>
+    <div class="home-games-strip">${jogos.length?jogos.map(cardJogo).join(""):'<div class="home-empty">Nenhum próximo jogo marcado para este time.</div>'}</div>
+  </section>
+  <section class="home-quick-grid">
+    <button onclick="location.href='campos-view.html'"><i class="fa fa-futbol"></i><span>Reservar quadra</span></button>
+    <button onclick="location.href='meus-agendamentos.html'"><i class="fa fa-calendar-check"></i><span>Minhas reservas</span></button>
+    <button onclick="location.href='comanda.html'"><i class="fa fa-receipt"></i><span>Comanda</span></button>
+    <button onclick="location.href='campeonatos-view.html'"><i class="fa fa-trophy"></i><span>Campeonatos</span></button>
+  </section>`;
+}
+async function renderPlayer(){
+  let time=null;try{time=await api(`${BASE_URL}/time/details/by-player/${usuarioLogado.id}`);}catch{}
+  if(!time?.id)return `<section class="action-card"><h3>Encontre seu time</h3><p>Escolha uma empresa e solicite entrada em um time. Depois da aprovação, seus jogos aparecem aqui.</p><button class="btn green" onclick="location.href='times.html'">Ver times</button></section>`;
+  const jogos=await jogosDoTime(time.id);
+  return `<section class="home-team-head"><div><span class="home-eyebrow">MEU TIME</span><strong class="home-team-name">⚽ ${esc(time.nome)}</strong></div></section>
+  <section class="action-card home-games-section"><div class="home-section-head"><div><h3>Seus próximos jogos</h3><p>É só responder se você vai ou não.</p></div></div>
+    <div class="home-games-strip">${jogos.length?jogos.map(cardJogo).join(""):'<div class="home-empty">Nenhum próximo jogo marcado.</div>'}</div>
+  </section>
+  <section class="home-quick-grid">
+    <button onclick="location.href='comanda.html'"><i class="fa fa-receipt"></i><span>Minha comanda</span></button>
+    <button onclick="location.href='times.html'"><i class="fa fa-users"></i><span>Times da empresa</span></button>
+    <button onclick="location.href='campeonatos-view.html'"><i class="fa fa-trophy"></i><span>Campeonatos</span></button>
+    <button onclick="location.href='societies.html'"><i class="fa fa-building"></i><span>Empresas</span></button>
+  </section>`;
+}
+async function carregarHomeEsportiva(){
+  const box=document.getElementById("homeEsportiva");if(!box)return;
+  try{
+    box.innerHTML='<div class="home-loading">Carregando seus jogos...</div>';
+    box.innerHTML=usuarioLogado.tipo==="DONO_TIME"?await renderDonoTime():await renderPlayer();
+    document.getElementById("homeTimeSelect")?.addEventListener("change",e=>{localStorage.setItem("homeTimeId",e.target.value);carregarHomeEsportiva();});
+  }catch(e){console.error(e);box.innerHTML='<div class="home-empty">Não foi possível carregar seus jogos agora.</div>';}
+}
 async function renderHome(){
-  if(window.GoPlayEmpresaContextReady) await window.GoPlayEmpresaContextReady;
+  if(window.GoPlayEmpresaContextReady)await window.GoPlayEmpresaContextReady;
   const empresa=getEmpresaAtual();
-  let html=`
-    <section class="welcome-card">
-      <h2>👋 Bem-vindo, ${usuarioLogado.nome || "usuário"}!</h2>
-      <p>${empresa?`Empresa atual: <strong>${empresa.nome||"Selecionada"}</strong>`:"Escolha uma empresa no menu quando uma ação depender de localização."}</p>
-    </section>`;
-
-  if(usuarioLogado.tipo==="PLAYER"){
-    html+=`<section id="proximoHorarioHome"></section><section class="action-card"><h3>O que deseja fazer?</h3>
-      ${empresa?`<div style="padding:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;margin-bottom:16px"><strong>📍 ${empresa.nome||"Empresa selecionada"}</strong><br><small>Comandas e cardápio usarão este estabelecimento.</small></div>`:""}
-      <button class="btn green" onclick="location.href='societies.html'"><i class="fa fa-building"></i> Explorar Empresas</button>
-      <button class="btn navy" onclick="location.href='comanda.html'"><i class="fa fa-receipt"></i> Minha Comanda</button>
-      <button class="btn navy" onclick="location.href='meus-horarios.html'"><i class="fa fa-thumbs-up"></i> Meus Horários</button>
-      <button class="btn navy" onclick="location.href='meu-time.html'"><i class="fa fa-futbol"></i> Meu Time</button>
-      <button class="btn navy" onclick="location.href='campeonatos-view.html'"><i class="fa fa-trophy"></i> Campeonatos</button>
-    </section>`;
-  }
-
-  if(usuarioLogado.tipo==="DONO_TIME"){
-    html+=`<section id="proximoHorarioHome"></section><section class="action-card"><h3>Jogar e organizar</h3>
-      ${empresa?`<div style="padding:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;margin-bottom:16px"><strong>📍 ${empresa.nome||"Empresa selecionada"}</strong><br><small>Você pode trocar de empresa no seletor do menu.</small></div>`:`<div style="padding:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;margin-bottom:16px">Selecione onde deseja jogar pelo menu ou em Explorar Empresas.</div>`}
-      <button class="btn green" onclick="location.href='campos-view.html'"><i class="fa fa-futbol"></i> Ver Quadras e Reservar</button>
-      <button class="btn navy" onclick="location.href='meus-horarios.html'"><i class="fa fa-thumbs-up"></i> Meus Horários / Peladas</button>
-      <button class="btn navy" onclick="location.href='comanda.html'"><i class="fa fa-receipt"></i> Minha Comanda</button>
-      <button class="btn navy" onclick="location.href='meus-agendamentos.html'"><i class="fa fa-list"></i> Meus Agendamentos</button>
-      <button class="btn navy" onclick="location.href='times.html'"><i class="fa fa-users"></i> Meus Times</button>
-      <button class="btn navy" onclick="location.href='societies.html'"><i class="fa fa-building"></i> Explorar Empresas</button>
-    </section>`;
-  }
-
+  let html=`<section class="welcome-card"><h2>👋 Bem-vindo, ${esc(usuarioLogado.nome||"usuário")}!</h2><p>${empresa?`Empresa atual: <strong>${esc(empresa.nome||"Selecionada")}</strong>`:"Selecione uma empresa quando quiser usar uma estrutura."}</p></section>`;
+  if(["PLAYER","DONO_TIME"].includes(usuarioLogado.tipo))html+='<div id="homeEsportiva"></div>';
   if(usuarioLogado.tipo==="DONO_SOCIETY"){
-    if(!empresa){
-      html+=`<section class="action-card"><h3>Selecione a empresa que deseja administrar</h3><p class="subtitle">Use o seletor “Empresa atual” no menu. O GoPlay não vai mais escolher uma empresa sozinho.</p><button class="btn green" onclick="location.href='society-create.html'"><i class="fa fa-plus"></i> Cadastrar Empresa</button></section>`;
-    }else{
-      html+=`<section class="action-card"><h3>Painel — ${empresa.nome||"Empresa"}</h3>
-        <div class="dashboard-grid"><div class="dashboard-card"><span class="dashboard-label">Times</span><strong id="totalTimes">—</strong></div><div class="dashboard-card"><span class="dashboard-label">Reservas</span><strong id="totalAgendamentos">—</strong></div><div class="dashboard-card"><span class="dashboard-label">Recebido</span><strong id="valorPago">—</strong></div><div class="dashboard-card"><span class="dashboard-label">Pendente</span><strong id="valorPendente">—</strong></div></div>
-        <button class="btn green" onclick="location.href='society-dashboard.html'"><i class="fa fa-chart-line"></i> Visão Geral e Configuração</button>
-        <button class="btn navy" onclick="location.href='horarios.html'"><i class="fa fa-calendar"></i> Agenda</button>
-        <button class="btn navy" onclick="location.href='comanda-admin.html'"><i class="fa fa-receipt"></i> Comandas</button>
-        <button class="btn navy" onclick="location.href='campeonatos.html'"><i class="fa fa-trophy"></i> Campeonatos</button>
-        <button class="btn navy" onclick="abrirMinhaEmpresa()"><i class="fa fa-building"></i> Configurar Empresa</button>
-      </section>`;
-    }
+    if(!empresa)html+=`<section class="action-card"><h3>Selecione a empresa que deseja administrar</h3><p>Use o seletor “Empresa atual” no menu.</p><button class="btn green" onclick="location.href='society-create.html'">Cadastrar Empresa</button></section>`;
+    else html+=`<section class="action-card"><h3>Painel — ${esc(empresa.nome||"Empresa")}</h3>
+      <div class="dashboard-grid">
+        <button class="dashboard-card dashboard-card-link" onclick="location.href='times.html'"><span class="dashboard-label">Times</span><strong id="totalTimes">—</strong><small>Ver times →</small></button>
+        <button class="dashboard-card dashboard-card-link" onclick="location.href='horarios.html'"><span class="dashboard-label">Reservas</span><strong id="totalAgendamentos">—</strong><small>Ver agenda →</small></button>
+        <button class="dashboard-card dashboard-card-link" onclick="location.href='recebimentos.html?status=PAGO'"><span class="dashboard-label">Recebido</span><strong id="valorPago">—</strong><small>Ver recebimentos →</small></button>
+        <button class="dashboard-card dashboard-card-link" onclick="location.href='recebimentos.html?status=PENDENTE'"><span class="dashboard-label">Pendente</span><strong id="valorPendente">—</strong><small>Resolver →</small></button>
+      </div>
+      <button class="btn green" onclick="location.href='society-dashboard.html'"><i class="fa fa-chart-line"></i> Visão Gerencial</button>
+      <button class="btn navy" onclick="location.href='horarios.html'"><i class="fa fa-calendar"></i> Agenda</button>
+      <button class="btn navy" onclick="location.href='caixa-bar.html'"><i class="fa fa-cash-register"></i> Caixa & Bar</button>
+      <button class="btn navy" onclick="location.href='campeonatos.html'"><i class="fa fa-trophy"></i> Campeonatos</button>
+    </section>`;
   }
   homeContent.innerHTML=html;
-  if(["PLAYER","DONO_TIME"].includes(usuarioLogado.tipo)) await carregarProximoHorario();
-  if(usuarioLogado.tipo==="DONO_SOCIETY"&&empresa) await carregarResumo(empresa.id);
+  if(["PLAYER","DONO_TIME"].includes(usuarioLogado.tipo))await carregarHomeEsportiva();
+  if(usuarioLogado.tipo==="DONO_SOCIETY"&&empresa)await carregarResumo(empresa.id);
 }
-
-async function carregarProximoHorario(){
-  const box=document.getElementById("proximoHorarioHome");if(!box)return;
-  try{
-    const r=await fetch(`${BASE_URL}/grupos-horario/meus`);const groups=await r.json();if(!r.ok||!Array.isArray(groups))return;
-    const candidates=groups.filter(g=>g.proximo).sort((a,b)=>new Date(a.proximo.data)-new Date(b.proximo.data));const g=candidates[0];if(!g){box.innerHTML='';return;}
-    const a=g.proximo,p=(a.presencas||[]).find(x=>Number(x.usuarioId)===Number(usuarioLogado.id));const st=p?.status||'PENDENTE';
-    box.innerHTML=`<section class="action-card" style="border:1px solid #dce9f1"><h3>⚽ Próximo horário</h3><p><strong>${g.nome}</strong> • ${new Date(a.data).toLocaleDateString('pt-BR')} às ${a.horaInicio}<br><span style="color:#6b7280">${g.society?.nome||''}</span></p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn green" onclick="location.href='confirmar-presenca.html?agendamentoId=${a.id}'">${st==='VOU'?'👍 Você vai':st==='NAO_VOU'?'👎 Você não vai':'Responder 👍 / 👎'}</button><button class="btn navy" onclick="location.href='horario-grupo.html?grupoId=${g.id}'">Ver grupo</button></div></section>`;
-  }catch(e){console.error(e);}
-}
-
-window.abrirMinhaEmpresa=function(){const e=getEmpresaAtual();if(!e)return alert("Selecione uma empresa no menu.");location.href=`society-detalhe.html?societyId=${e.id}`;};
-
 async function carregarResumo(societyId){
   try{
-    const [times,agendamentos,pagamentos]=await Promise.all([
-      fetch(`${BASE_URL}/time/society/${societyId}`).then(r=>r.json()),
-      fetch(`${BASE_URL}/agendamentos/society/${societyId}`).then(r=>r.json()),
-      fetch(`${BASE_URL}/pagamentos/society/${societyId}`).then(r=>r.json())]);
+    const [times,agendamentos,pagamentos]=await Promise.all([api(`${BASE_URL}/time/society/${societyId}`),api(`${BASE_URL}/agendamentos/society/${societyId}`),api(`${BASE_URL}/pagamentos/society/${societyId}`)]);
     document.getElementById("totalTimes").textContent=Array.isArray(times)?times.length:0;
-    document.getElementById("totalAgendamentos").textContent=Array.isArray(agendamentos)?agendamentos.length:0;
+    document.getElementById("totalAgendamentos").textContent=Array.isArray(agendamentos)?agendamentos.filter(a=>a.status!=="CANCELADO").length:0;
     const pago=Array.isArray(pagamentos)?pagamentos.filter(p=>p.status==="PAGO").reduce((s,p)=>s+Number(p.valor||0),0):0;
     const pend=Array.isArray(pagamentos)?pagamentos.filter(p=>p.status==="PENDENTE").reduce((s,p)=>s+Number(p.valor||0),0):0;
     document.getElementById("valorPago").textContent=money(pago);document.getElementById("valorPendente").textContent=money(pend);
   }catch(e){console.error(e);}
 }
-
 document.addEventListener("DOMContentLoaded",renderHome);
