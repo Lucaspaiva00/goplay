@@ -75,8 +75,20 @@
 
                         <div>
                             <label class="label">Número máximo de times</label>
-                            <input id="maxTimes" class="input" type="number" min="2" step="1" placeholder="Ex: 3, 6, 8...">
-                            <small style="display:block;margin-top:6px;color:#64748b;">Pode ser 2, 3, 5, 6, 7, 8... sem exigência de múltiplos de 4.</small>
+                            <input id="maxTimes" class="input" type="number" min="2" step="1" placeholder="Ex: 4, 6, 8...">
+                            <small style="display:block;margin-top:6px;color:#64748b;">Defina quantos times poderão participar.</small>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div>
+                            <label class="label">Máximo de jogadores por time</label>
+                            <input id="maxJogadoresPorTime" class="input" type="number" min="1" max="100" step="1" value="20">
+                            <small style="display:block;margin-top:6px;color:#64748b;">Esse limite será usado na convocação do campeonato e poderá ser editado depois.</small>
+                        </div>
+                        <div>
+                            <label class="label">Como funciona</label>
+                            <div class="input" style="height:auto;min-height:56px;display:flex;align-items:center;color:#64748b;">O dono do time aceita o convite e escolhe até este limite de jogadores.</div>
                         </div>
                     </div>
 
@@ -107,7 +119,7 @@
 
         <script src="../scripts/session.js"></script>
 <script src="../scripts/menu.js"></script>
-    <script src="../scripts/campeonatoCreate.js"></script>
+    <script src="../scripts/campeonatoCreate.js?v=20261007-0916"></script>
 </body>
 
 </html>
