@@ -40,35 +40,26 @@ function pickDataJogo(a) {
     return v;
 }
 
-// ✅ aceita "2026-01-16", ISO "2026-01-16T00:00:00.000Z", Date, etc
+// Datas de reserva são datas de calendário, não instantes. O backend as serializa
+// em UTC; por isso usamos apenas YYYY-MM-DD para impedir deslocamento de fuso.
+function dateKeyOnly(value) {
+    if (!value) return null;
+    const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return match ? `${match[1]}-${match[2]}-${match[3]}` : null;
+}
+
 function dtBRDateOnly(value) {
-    if (!value) return "-";
-
-    if (value instanceof Date) {
-        return Number.isNaN(value.getTime()) ? "-" : value.toLocaleDateString("pt-BR");
-    }
-
-    const s = String(value);
-
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-        const x = new Date(`${s}T00:00:00`);
-        return Number.isNaN(x.getTime()) ? "-" : x.toLocaleDateString("pt-BR");
-    }
-
-    const x = new Date(s);
-    return Number.isNaN(x.getTime()) ? "-" : x.toLocaleDateString("pt-BR");
+    const key = dateKeyOnly(value);
+    if (!key) return "-";
+    const [y,m,d] = key.split("-");
+    return `${d}/${m}/${y}`;
 }
 
 function getTimeMsFromDateOnly(value) {
-    if (!value) return NaN;
-    const s = String(value);
-
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-        return new Date(`${s}T00:00:00`).getTime();
-    }
-
-    const d = new Date(s);
-    return d.getTime();
+    const key = dateKeyOnly(value);
+    if (!key) return NaN;
+    const [y,m,d] = key.split("-").map(Number);
+    return Date.UTC(y, m - 1, d);
 }
 
 function statusPillAgendamento(a) {
@@ -171,7 +162,7 @@ function aplicarFiltroLocal() {
     if (timeId) lista = lista.filter(a => Number(a.timeId) === Number(timeId));
 
     if (from) {
-        const f = new Date(`${from}T00:00:00`).getTime();
+        const f = getTimeMsFromDateOnly(from);
         lista = lista.filter(a => {
             const t = getTimeMsFromDateOnly(pickDataJogo(a));
             return !Number.isNaN(t) && t >= f;
@@ -179,7 +170,7 @@ function aplicarFiltroLocal() {
     }
 
     if (to) {
-        const tmax = new Date(`${to}T00:00:00`).getTime();
+        const tmax = getTimeMsFromDateOnly(to);
         lista = lista.filter(a => {
             const t = getTimeMsFromDateOnly(pickDataJogo(a));
             return !Number.isNaN(t) && t <= tmax;
