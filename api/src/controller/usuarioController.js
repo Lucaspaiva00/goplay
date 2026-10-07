@@ -105,7 +105,8 @@ const create = async (req, res) => {
         const email = normalizeEmail(req.body.email);
         const senha = String(req.body.senha || "").trim();
         const telefone = req.body.telefone ? String(req.body.telefone).trim() : null;
-        const tipo = String(req.body.tipo || "").trim();
+        const tipo = String(req.body.tipo || "").trim().toUpperCase();
+        const tiposPublicos = new Set(["PLAYER","DONO_TIME","DONO_SOCIETY","ORGANIZADOR_COMPETICAO","ORGAO_PUBLICO"]);
 
         if (!nome || !email || !senha || !tipo) {
             return res.status(400).json({ error: "Preencha todos os campos obrigatórios." });
@@ -113,6 +114,9 @@ const create = async (req, res) => {
 
         if (senha.length < 6) {
             return res.status(400).json({ error: "A senha deve ter pelo menos 6 caracteres." });
+        }
+        if (!tiposPublicos.has(tipo)) {
+            return res.status(403).json({ error: "Este tipo de perfil não pode ser criado pelo cadastro público." });
         }
 
         const existe = await prisma.usuario.findUnique({ where: { email } });
