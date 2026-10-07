@@ -1,7 +1,7 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { notifyUsuario, notifyStaff } = require("../notifications");
-const { ownsSociety } = require("../auth");
+const { ownsSociety, isPlatformAdmin } = require("../auth");
 const { parseDateOnly } = require("../dateOnly");
 const { configForDate, validateInterval, timeToMinutes, endToMinutes } = require("../businessHours");
 
@@ -297,12 +297,12 @@ async function create(req, res) {
         return res.status(403).json({ error: "Você só pode solicitar amistoso usando um time que pertence a você." });
       }
       status = "PENDENTE_ADVERSARIO";
-    } else if (tipo === "DONO_SOCIETY" || tipo === "SOCIO_GOPLAY") {
+    } else if (tipo === "DONO_SOCIETY" || isPlatformAdmin(req.actor)) {
       if (!societyId) return res.status(400).json({ error: "Selecione a empresa onde o amistoso será realizado." });
-      if (tipo !== "SOCIO_GOPLAY" && !(await ownsSociety(req.actor, societyId))) {
+      if (!isPlatformAdmin(req.actor) && !(await ownsSociety(req.actor, societyId))) {
         return res.status(403).json({ error: "Você só pode criar amistosos na sua própria empresa." });
       }
-      status = "CONFIRMADO";
+      status = "PENDENTE_SOCIETY";
       aprovadoAdversarioEm = new Date();
       aprovadoSocietyEm = new Date();
     } else {
@@ -495,7 +495,7 @@ async function meus(req, res) {
       where = { OR: [{ timeA: { donoId: Number(req.actor.id) } }, { timeB: { donoId: Number(req.actor.id) } }] };
     } else if (req.actor.kind === "USER" && req.actor.tipo === "DONO_SOCIETY") {
       where = { society: { usuarioId: Number(req.actor.id) } };
-    } else if (req.actor.kind === "USER" && req.actor.tipo === "SOCIO_GOPLAY") {
+    } else if (req.actor.kind === "USER" && isPlatformAdmin(req.actor)) {
       where = {};
     } else if (req.actor.kind === "STAFF") {
       where = { societyId: Number(req.actor.societyId) };
@@ -546,7 +546,7 @@ async function cancelar(req, res) {
     if (!a) return res.status(404).json({ error: "Amistoso não encontrado." });
 
     const isCreator = Number(a.criadoPorId) === Number(req.actor.id);
-    const isSocio = req.actor.tipo === "SOCIO_GOPLAY";
+    const isSocio = isPlatformAdmin(req.actor);
     const isSocietyOwner = a.societyId && await ownsSociety(req.actor, a.societyId);
     if (!isCreator && !isSocio && !isSocietyOwner) return res.status(403).json({ error: "Você não pode cancelar este amistoso." });
     if (a.status === "REALIZADO") return res.status(409).json({ error: "Amistoso já realizado." });
