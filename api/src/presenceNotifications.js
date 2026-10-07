@@ -1,13 +1,11 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { notifyUsuario } = require('./notifications');
+const { formatDateBR, dateKeyUTC } = require('./dateOnly');
 
 const LEAD_DAYS = Math.max(1, Math.min(14, Number(process.env.PRESENCA_LEAD_DAYS || 7)));
-const ptDate = d => new Date(d).toLocaleDateString('pt-BR');
-const monthRef = d => {
-  const x = new Date(d);
-  return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}`;
-};
+const ptDate = formatDateBR;
+const monthRef = d => String(dateKeyUTC(d) || '').slice(0,7);
 
 async function ensureTeamPresences(agendamentoId, timeId){
   if(!timeId) return [];
