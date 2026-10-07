@@ -99,7 +99,7 @@ function tokenMesaValido(req, jogo) {
 
 async function donoPodeOperar(req, jogo) {
   const a=req.actor;
-  if(a?.kind==="USER"&&a.tipo==="SOCIO_GOPLAY") return true;
+  if(isPlatformAdmin(a)) return true;
   if(a?.kind==="USER"&&a.tipo==="DONO_SOCIETY") return Number(jogo?.campeonato?.society?.usuarioId)===Number(a.id);
   if(a?.kind==="USER"&&["ORGANIZADOR_COMPETICAO","ORGAO_PUBLICO"].includes(a.tipo)) return Number(jogo?.campeonato?.organizadorId)===Number(a.id);
   if(a?.kind==="STAFF") return Number(a.societyId)===Number(jogo?.campeonato?.society?.id)&&["ADMIN","MESARIO"].includes(a.funcao);
@@ -108,7 +108,7 @@ async function donoPodeOperar(req, jogo) {
 
 async function podeConfigurarMesa(req,jogo){
   const a=req.actor;
-  if(a?.kind==="USER"&&a.tipo==="SOCIO_GOPLAY") return true;
+  if(isPlatformAdmin(a)) return true;
   if(a?.kind==="USER"&&a.tipo==="DONO_SOCIETY") return Number(jogo?.campeonato?.society?.usuarioId)===Number(a.id);
   if(a?.kind==="USER"&&["ORGANIZADOR_COMPETICAO","ORGAO_PUBLICO"].includes(a.tipo)) return Number(jogo?.campeonato?.organizadorId)===Number(a.id);
   if(a?.kind==="STAFF") return Number(a.societyId)===Number(jogo?.campeonato?.society?.id)&&a.funcao==="ADMIN";
