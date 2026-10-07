@@ -50,6 +50,10 @@ async function buscarJogoCompleto(client, jogoId) {
         society: { select: { id: true, nome: true, usuarioId: true, imagem: true, cidade: true } },
         organizador: { select: { id: true, nome: true, email: true, tipo: true } }
       } },
+      amistoso: { include: {
+        society: { select: { id: true, nome: true, usuarioId: true, imagem: true, cidade: true } },
+        criadoPor: { select: { id: true, nome: true, email: true, tipo: true, isSocioGoPlay: true } }
+      } },
       timeA: { include: { jogadores: true } },
       timeB: { include: { jogadores: true } },
       estatisticasTimes: true,
@@ -75,9 +79,19 @@ function sanitizarJogoPublico(jogo) {
     const { usuarioId, ...societyPublico } = campeonato.society;
     campeonato.society = societyPublico;
   }
+  const amistoso = seguro.amistoso ? { ...seguro.amistoso } : null;
+  if (amistoso?.society) {
+    const { usuarioId, ...societyPublico } = amistoso.society;
+    amistoso.society = societyPublico;
+  }
+  if (amistoso?.criadoPor) {
+    const { email, isSocioGoPlay, ...criadorPublico } = amistoso.criadoPor;
+    amistoso.criadoPor = criadorPublico;
+  }
   return {
     ...seguro,
     campeonato,
+    amistoso,
     cronometroAtualSegundos: cronometroAtual(jogo),
     cronometroRodando: !!(jogo.cronometroInicioEm && jogo.statusOperacao === "AO_VIVO" && !jogo.finalizado),
     mesaConfigurada: !!mesaToken,
@@ -101,18 +115,24 @@ function tokenMesaValido(req, jogo) {
 async function donoPodeOperar(req, jogo) {
   const a=req.actor;
   if(isPlatformAdmin(a)) return true;
-  if(a?.kind==="USER"&&a.tipo==="DONO_SOCIETY") return Number(jogo?.campeonato?.society?.usuarioId)===Number(a.id);
+  const societyId=Number(jogo?.campeonato?.society?.id || jogo?.amistoso?.society?.id || 0);
+  const societyOwnerId=Number(jogo?.campeonato?.society?.usuarioId || jogo?.amistoso?.society?.usuarioId || 0);
+  if(a?.kind==="USER"&&a.tipo==="DONO_SOCIETY"&&societyOwnerId) return societyOwnerId===Number(a.id);
   if(a?.kind==="USER"&&["ORGANIZADOR_COMPETICAO","ORGAO_PUBLICO"].includes(a.tipo)) return Number(jogo?.campeonato?.organizadorId)===Number(a.id);
-  if(a?.kind==="STAFF") return Number(a.societyId)===Number(jogo?.campeonato?.society?.id)&&["ADMIN","MESARIO"].includes(a.funcao);
+  if(a?.kind==="USER"&&jogo?.amistoso&&!societyId) return Number(jogo.amistoso.criadoPorId)===Number(a.id);
+  if(a?.kind==="STAFF") return Number(a.societyId)===societyId&&["ADMIN","MESARIO"].includes(a.funcao);
   return false;
 }
 
 async function podeConfigurarMesa(req,jogo){
   const a=req.actor;
   if(isPlatformAdmin(a)) return true;
-  if(a?.kind==="USER"&&a.tipo==="DONO_SOCIETY") return Number(jogo?.campeonato?.society?.usuarioId)===Number(a.id);
+  const societyId=Number(jogo?.campeonato?.society?.id || jogo?.amistoso?.society?.id || 0);
+  const societyOwnerId=Number(jogo?.campeonato?.society?.usuarioId || jogo?.amistoso?.society?.usuarioId || 0);
+  if(a?.kind==="USER"&&a.tipo==="DONO_SOCIETY"&&societyOwnerId) return societyOwnerId===Number(a.id);
   if(a?.kind==="USER"&&["ORGANIZADOR_COMPETICAO","ORGAO_PUBLICO"].includes(a.tipo)) return Number(jogo?.campeonato?.organizadorId)===Number(a.id);
-  if(a?.kind==="STAFF") return Number(a.societyId)===Number(jogo?.campeonato?.society?.id)&&a.funcao==="ADMIN";
+  if(a?.kind==="USER"&&jogo?.amistoso&&!societyId) return Number(jogo.amistoso.criadoPorId)===Number(a.id);
+  if(a?.kind==="STAFF") return Number(a.societyId)===societyId&&a.funcao==="ADMIN";
   return false;
 }
 
@@ -524,10 +544,11 @@ const agendar = async (req, res) => {
     for (const usuarioId of destinoIds) {
       await notifyUsuario(prisma, usuarioId, titulo, mensagem, `jogo-detalhe.html?jogoId=${jogoId}`);
     }
-    if (jogo.campeonato?.society?.id) {
+    const staffSocietyId = jogo.campeonato?.society?.id || jogo.amistoso?.society?.id;
+    if (staffSocietyId) {
       await notifyStaff(
         prisma,
-        jogo.campeonato.society.id,
+        staffSocietyId,
         titulo,
         mensagem,
         ["ADMIN","MESARIO"],
@@ -569,7 +590,7 @@ const sumulaPdf = async (req, res) => {
     doc.fontSize(18).font("Helvetica-Bold").text("SÚMULA OFICIAL — GOPLAY", { align: "center" });
     doc.moveDown(0.35);
     doc.fontSize(10).font("Helvetica").fillColor("#555").text(
-      `${jogo.campeonato?.nome || "Campeonato"} • ${jogo.campeonato?.society?.nome || "Empresa"}`,
+      `${jogo.campeonato?.nome || "Amistoso"} • ${jogo.campeonato?.society?.nome || jogo.amistoso?.society?.nome || "GoPlay"}`,
       { align: "center" }
     );
     doc.fillColor("#000").moveDown();
