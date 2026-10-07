@@ -516,6 +516,7 @@ async function carregarTime(timeId) {
             <p><strong>Empresa:</strong> ${escapeHtml(time?.society?.nome || "-")}</p>
             <p><strong>Cidade:</strong> ${escapeHtml(time.cidade || "-")} / ${escapeHtml(time.estado || "-")}</p>
             <p><strong>Modalidade:</strong> ${escapeHtml(time.modalidade || "-")}</p>
+            <p><strong>Elenco:</strong> ${(time.jogadores || []).length}/${Number(time.maxJogadores || 20)} ${isDonoDesteTime ? `<button class="btn navy" style="padding:6px 9px;font-size:12px;margin-left:8px" onclick="editarLimiteJogadoresTime(${time.id}, ${Number(time.maxJogadores || 20)}, ${(time.jogadores || []).length})">Editar limite</button>` : ""}</p>
             ${podeVerDadosVinculo ? `
               <p><strong>Tipo de vínculo:</strong> ${pillTipo(time.tipoVinculo)}</p>
               <p><strong>Status:</strong> ${pillStatus(time.statusVinculo)}</p>
@@ -567,6 +568,20 @@ async function carregarTime(timeId) {
     }
 }
 
+async function editarLimiteJogadoresTime(timeId, atual, ocupados) {
+    const valor = Number(prompt("Novo limite de jogadores (atual: " + atual + ", elenco: " + ocupados + "):", String(atual)));
+    if (!Number.isInteger(valor) || valor < 1 || valor > 100) return alert("Informe um número inteiro entre 1 e 100.");
+    if (valor < ocupados) return alert("O limite não pode ser menor que o elenco atual (" + ocupados + ").");
+    try {
+        await fetchJSON(BASE_URL + "/time/" + timeId, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ maxJogadores: valor })
+        });
+        await carregarTime(timeId);
+    } catch (e) { alert(e.message || "Erro ao alterar limite."); }
+}
+
 async function removerJogadorDoTime(timeId, usuarioId) {
     if (!confirm("Remover este jogador do time? Ele também sairá das próximas confirmações da rotina.")) return;
     try {
@@ -575,6 +590,7 @@ async function removerJogadorDoTime(timeId, usuarioId) {
     } catch (e) { alert(e.message || "Erro ao remover jogador."); }
 }
 
+window.editarLimiteJogadoresTime = editarLimiteJogadoresTime;
 window.removerJogadorDoTime = removerJogadorDoTime;
 window.cancelarAgendamento = cancelarAgendamento;
 window.abrirPagamentoPorLink = abrirPagamentoPorLink;
