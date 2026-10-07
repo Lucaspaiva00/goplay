@@ -2,22 +2,29 @@ const BASE_URL = "https://goplay-dzlr.onrender.com";
 
 document.addEventListener("DOMContentLoaded", async () => {
     if (window.GoPlayEmpresaContextReady) await window.GoPlayEmpresaContextReady;
+    const usuario=JSON.parse(localStorage.getItem("usuarioLogado")||"null");
+    const independente=["ORGANIZADOR_COMPETICAO","ORGAO_PUBLICO"].includes(usuario?.tipo);
     const societyId = localStorage.getItem("societyId");
 
+    if (independente) {
+        await carregarCampeonatos(null,true);
+        return;
+    }
     if (!societyId) {
         const div = document.getElementById("listaCampeonatos");
         if (div) div.innerHTML = `<div class="empty">Selecione uma empresa no menu para ver os campeonatos.</div>`;
         return;
     }
 
-    await carregarCampeonatos(societyId);
+    await carregarCampeonatos(societyId,false);
 });
 
-async function carregarCampeonatos(societyId) {
+async function carregarCampeonatos(societyId, independente=false) {
 
     try {
 
-        const res = await fetch(`${BASE_URL}/campeonato/society/${societyId}`);
+        const url=independente?`${BASE_URL}/campeonato/organizador/meus`:`${BASE_URL}/campeonato/society/${societyId}`;
+        const res = await fetch(url);
 
         if (!res.ok) {
             throw new Error("Erro ao buscar campeonatos.");
