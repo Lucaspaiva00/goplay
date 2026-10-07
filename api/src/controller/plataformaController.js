@@ -78,12 +78,11 @@ async function dashboard(req, res) {
       meses.push({ mes: monthLabel(inicio), usuarios: u, societies: s, reservas: r, amistosos: a });
     }
 
-    const cidades = await prisma.society.groupBy({
+    const cidadesRaw = await prisma.society.groupBy({
       by: ["cidade", "estado"],
       _count: { _all: true },
-      orderBy: { _count: { cidade: "desc" } },
-      take: 15,
     });
+    const cidades = cidadesRaw.sort((a,b) => b._count._all - a._count._all).slice(0,15);
 
     return res.json({
       usuarios: {
