@@ -4,11 +4,12 @@ const { notifyUsuario, notifyStaff } = require('../notifications');
 const { configForDate, validateInterval, timeToMinutes, endToMinutes } = require('../businessHours');
 const { emitHorario } = require('../horarioRealtime');
 const { dispatchDuePresenceNotifications, ensureMonthlyPayment } = require('../presenceNotifications');
+const { parseDateOnly, dateKeyUTC, weekdayUTC, formatDateBR, addDaysUTC } = require('../dateOnly');
 
 const id = v => { const n = Number(v); return Number.isFinite(n) ? n : null; };
-const dateOnly = s => { const [y,m,d] = String(s||'').split('-').map(Number); return y&&m&&d ? new Date(y,m-1,d) : null; };
-const keyDate = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-const ptDate = d => new Date(d).toLocaleDateString('pt-BR');
+const dateOnly = parseDateOnly;
+const keyDate = dateKeyUTC;
+const ptDate = formatDateBR;
 
 async function actorCanManageGroup(actor, group) {
   if (!actor || !group) return false;
@@ -165,7 +166,11 @@ async function removeMember(req,res){
 }
 
 function nextWeekday(start, weekday){
-  const d=new Date(start); d.setHours(0,0,0,0); const diff=(weekday-d.getDay()+7)%7; d.setDate(d.getDate()+diff); return d;
+  const d=new Date(start);
+  d.setUTCHours(0,0,0,0);
+  const diff=(weekday-d.getUTCDay()+7)%7;
+  d.setUTCDate(d.getUTCDate()+diff);
+  return d;
 }
 function overlaps(aStart,aEnd,bStart,bEnd){ const ai=timeToMinutes(aStart),af=endToMinutes(aEnd),bi=timeToMinutes(bStart),bf=endToMinutes(bEnd); return [ai,af,bi,bf].every(v=>v!==null) && ai < bf && af > bi; }
 
@@ -177,8 +182,14 @@ async function actorIsCompanyManager(actor, societyId){
 }
 
 function datesFromFixed(hf){
-  const dates=[]; let d=nextWeekday(hf.dataInicio,Number(hf.diaSemana)); const end=hf.dataFim?new Date(hf.dataFim):null;
-  for(let i=0;i<Number(hf.quantidadeSemanas||12);i++){ if(end&&d>end)break; dates.push(new Date(d)); d=new Date(d); d.setDate(d.getDate()+7); }
+  const dates=[];
+  let d=nextWeekday(hf.dataInicio,Number(hf.diaSemana));
+  const end=hf.dataFim?new Date(hf.dataFim):null;
+  for(let i=0;i<Number(hf.quantidadeSemanas||12);i++){
+    if(end&&d>end)break;
+    dates.push(new Date(d));
+    d=addDaysUTC(d,7);
+  }
   return dates;
 }
 
@@ -236,9 +247,12 @@ async function createFixed(req,res){
     if(existingFixed) return res.status(409).json({error:'Este time já possui um horário fixo ativo nesta rotina.'});
     const campoId=id(req.body.campoId); const campo=await prisma.campo.findUnique({where:{id:campoId}});
     if(!campo||campo.societyId!==group.societyId) return res.status(400).json({error:'Quadra inválida para esta empresa.'});
-    const diaSemana=Number(req.body.diaSemana), horaInicio=String(req.body.horaInicio||'').slice(0,5), horaFim=String(req.body.horaFim||'').slice(0,5);
+    const horaInicio=String(req.body.horaInicio||'').slice(0,5), horaFim=String(req.body.horaFim||'').slice(0,5);
     const start=dateOnly(req.body.dataInicio), end=req.body.dataFim?dateOnly(req.body.dataFim):null, semanas=Math.max(1,Math.min(52,Number(req.body.semanas||12)));
-    if(!Number.isInteger(diaSemana)||diaSemana<0||diaSemana>6||!/^\d{2}:\d{2}$/.test(horaInicio)||!/^\d{2}:\d{2}$/.test(horaFim)||!start) return res.status(400).json({error:'Dados do horário fixo inválidos.'});
+    if(!/^\d{2}:\d{2}$/.test(horaInicio)||!/^\d{2}:\d{2}$/.test(horaFim)||!start) return res.status(400).json({error:'Dados do horário fixo inválidos.'});
+    // A data inicial é a fonte da verdade. O dia da semana é derivado dela para impedir
+    // combinações contraditórias (ex.: data de sexta com dropdown em segunda).
+    const diaSemana=weekdayUTC(start);
     const tipoRaw=String(req.body.tipoCobranca||'').toUpperCase();
     if(!['POR_JOGO','MENSAL'].includes(tipoRaw)) return res.status(400).json({error:'Escolha se a cobrança será por jogo ou mensal.'});
     const tipo=tipoRaw;
