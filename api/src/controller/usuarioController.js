@@ -136,11 +136,14 @@ const create = async (req, res) => {
             }
         });
 
+        const authToken = createToken({ kind: "USER", id: usuario.id });
         return res.status(201).json({
             id: usuario.id,
             nome: usuario.nome,
             email: usuario.email,
-            tipo: usuario.tipo
+            tipo: usuario.tipo,
+            isSocioGoPlay: usuario.isSocioGoPlay === true,
+            authToken
         });
 
     } catch (error) {
