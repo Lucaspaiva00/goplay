@@ -208,6 +208,7 @@ router.get("/pagamentos/:id", pagamentoController.readOne);
 router.post("/campeonato", ...requireCampeonatoCreate(["ADMIN"]), campeonatoController.create);
 router.get("/campeonato", campeonatoController.listAll);
 router.get("/campeonato/society/:societyId", campeonatoController.listBySociety);
+router.get("/campeonato/organizador/meus", authenticate, campeonatoController.listByOrganizer);
 router.get("/campeonato/:id", campeonatoController.readOne);
 
 router.post("/campeonato/:id/add-time", ...requireCampeonatoManager(["ADMIN"]), campeonatoController.addTime);
