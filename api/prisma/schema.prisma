@@ -827,6 +827,7 @@ model Amistoso {
   agendamento Agendamento? @relation(fields: [agendamentoId], references: [id], onDelete: SetNull)
 
   presencas PresencaAmistoso[]
+  jogo Jogo?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -913,8 +914,11 @@ model TimeGrupo {
 
 model Jogo {
   id           Int        @id @default(autoincrement())
-  campeonatoId Int
-  campeonato   Campeonato @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
+  campeonatoId Int?
+  campeonato   Campeonato? @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
+
+  amistosoId Int? @unique
+  amistoso Amistoso? @relation(fields: [amistosoId], references: [id], onDelete: Cascade)
 
   rodada Int
 
@@ -961,6 +965,7 @@ model Jogo {
   jogadoresAtuacao  JogoJogador[]
 
   @@index([campeonatoId])
+  @@index([amistosoId])
   @@index([grupoId])
   @@index([timeAId])
   @@index([timeBId])
