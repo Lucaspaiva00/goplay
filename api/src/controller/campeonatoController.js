@@ -174,10 +174,13 @@ const create = async (req, res) => {
         const nome = String(req.body.nome || "").trim();
         const maxTimes = Number(req.body.maxTimes || 4);
         const maxJogadoresPorTime = Number(req.body.maxJogadoresPorTime || 20);
+        const perfilOrganizador = req.actor?.kind === "USER" && ["ORGANIZADOR_COMPETICAO","ORGAO_PUBLICO"].includes(req.actor.tipo);
+        const socioSemSociety = req.actor?.kind === "USER" && req.actor.tipo === "SOCIO_GOPLAY" && !societyId;
+        const organizadorId = perfilOrganizador || socioSemSociety ? Number(req.actor.id) : null;
 
-        if (!societyId) {
+        if (!societyId && !organizadorId) {
             return res.status(400).json({
-                error: "societyId inválido.",
+                error: "Informe uma empresa ou use um perfil de organizador de competição.",
             });
         }
 
@@ -199,21 +202,18 @@ const create = async (req, res) => {
             });
         }
 
-        const society = await prisma.society.findUnique({
-            where: {
-                id: societyId,
-            },
-        });
-
-        if (!society) {
-            return res.status(404).json({
-                error: "Society não encontrado.",
-            });
+        let society = null;
+        if (societyId) {
+            society = await prisma.society.findUnique({ where: { id: societyId } });
+            if (!society) {
+                return res.status(404).json({ error: "Society não encontrado." });
+            }
         }
 
         const campeonato = await prisma.campeonato.create({
             data: {
-                societyId,
+                societyId: societyId || null,
+                organizadorId,
                 nome,
                 tipo: "LIGA_IDA_VOLTA",
                 maxTimes,
@@ -531,7 +531,7 @@ const addTime = async (req, res) => {
             });
         }
 
-        if (time.societyId !== campeonato.societyId) {
+        if (campeonato.societyId && time.societyId !== campeonato.societyId) {
             return res.status(400).json({
                 error: "Este time não pertence à empresa do campeonato.",
             });
