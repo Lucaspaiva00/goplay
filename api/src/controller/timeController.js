@@ -1,6 +1,7 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { notifyUsuario } = require("../notifications");
+const { isPlatformAdmin, ownsSociety } = require("../auth");
 
 /* =========================
    HELPERS
@@ -33,7 +34,10 @@ const create = async (req, res) => {
         const maxJogadores = Number(req.body.maxJogadores ?? 20);
 
         const tipoVinculo = req.body.tipoVinculo || "AVULSO";
-        const statusVinculo = req.body.statusVinculo || "PENDENTE";
+        const managesSociety = isPlatformAdmin(req.actor) || ((req.actor?.kind === "USER" || req.actor?.funcao === "ADMIN") && await ownsSociety(req.actor, societyId));
+        const ownsRequestedTeam = req.actor?.kind === "USER" && req.actor.tipo === "DONO_TIME" && Number(req.actor.id) === donoId;
+        if (!managesSociety && !ownsRequestedTeam) return res.status(403).json({ error: "Você só pode criar um time próprio ou administrar times da sua empresa." });
+        const statusVinculo = managesSociety ? (req.body.statusVinculo || "PENDENTE") : "PENDENTE";
         const valorMensalidade = toOptionalNumber(req.body.valorMensalidade);
         const diaVencimento = toOptionalNumber(req.body.diaVencimento);
         const observacaoVinculo = req.body.observacaoVinculo
@@ -273,10 +277,12 @@ const update = async (req, res) => {
                 where: { id: timeAtual.societyId, usuarioId: Number(req.actor.id) },
                 select: { id: true }
             }));
-        if (!isOwner && !isSocietyOwner) {
+        if (!isOwner && !isSocietyOwner && !isPlatformAdmin(req.actor)) {
             return res.status(403).json({ error: "Somente o dono do time ou o dono da empresa pode editar este time." });
         }
 
+        const vinculoFields = ["tipoVinculo", "statusVinculo", "valorMensalidade", "diaVencimento", "observacaoVinculo"];
+        if (!isSocietyOwner && !isPlatformAdmin(req.actor) && vinculoFields.some(key => req.body[key] !== undefined)) return res.status(403).json({ error: "Somente a empresa pode administrar o vínculo e a mensalidade do time." });
         const nome = req.body.nome !== undefined ? String(req.body.nome).trim() : undefined;
         const brasao = req.body.brasao !== undefined ? (req.body.brasao ? String(req.body.brasao).trim() : null) : undefined;
         const descricao = req.body.descricao !== undefined ? (req.body.descricao ? String(req.body.descricao).trim() : null) : undefined;
@@ -350,7 +356,8 @@ const update = async (req, res) => {
 
         return res.status(200).json(atualizado);
     } catch (error) {
-        console.log(error);
+        if (/GOPLAY_TEAM_LIMIT/.test(error.message)) return res.status(409).json({ error: "O limite não pode ser menor que o elenco atual." });
+        console.error(error);
         return res.status(500).json({ error: "Erro ao atualizar time." });
     }
 };
@@ -374,6 +381,8 @@ const remove = async (req, res) => {
         if (!time) {
             return res.status(404).json({ error: "Time não encontrado." });
         }
+
+        if (!isPlatformAdmin(req.actor) && !(req.actor?.kind === "USER" && Number(req.actor.id) === Number(time.donoId)) && !(await ownsSociety(req.actor, time.societyId))) return res.status(403).json({ error: "Você não pode remover este time." });
 
         if (time.jogadores.length > 0) {
             await prisma.usuario.updateMany({
@@ -562,6 +571,10 @@ const responderSolicitacao = async (req, res) => {
             }
 
             await prisma.$transaction(async tx => {
+                await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${solicitacao.usuarioId} FOR UPDATE`;
+                const current = await tx.usuario.findUnique({ where: { id: solicitacao.usuarioId } });
+                const pending = await tx.solicitacaoEntradaTime.findUnique({ where: { id: solicitacao.id } });
+                if (current.timeRelacionadoId || pending.status !== "PENDENTE") throw Object.assign(new Error("O jogador já entrou em um time ou esta solicitação já foi respondida."), { status: 409 });
                 await tx.usuario.update({ where: { id: solicitacao.usuarioId }, data: { timeRelacionadoId: solicitacao.timeId } });
                 await tx.solicitacaoEntradaTime.update({ where: { id: solicitacao.id }, data: { status: "APROVADA", respondidoEm: new Date() } });
                 await tx.solicitacaoEntradaTime.updateMany({
@@ -594,6 +607,8 @@ const responderSolicitacao = async (req, res) => {
         await notifyUsuario(prisma, solicitacao.usuarioId, "Solicitação de time respondida", `Sua solicitação para entrar no ${solicitacao.time.nome} não foi aprovada desta vez.`, `times.html?societyId=${solicitacao.time.societyId}`);
         return res.json({ ok: true, status: "RECUSADA" });
     } catch (error) {
+        if (/GOPLAY_TEAM_FULL/.test(error.message)) return res.status(409).json({ error: "O time atingiu o limite de jogadores." });
+        if (error.status) return res.status(error.status).json({ error: error.message });
         console.error(error);
         return res.status(500).json({ error: "Erro ao responder solicitação." });
     }

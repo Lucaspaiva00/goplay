@@ -19,7 +19,7 @@ function canOpenMesa(a){return !!a.jogo?.id&&(isSocio()||(user?.tipo==="DONO_SOC
 async function loadOptions(){
   allTeams=(await api(`${BASE_URL}/time`).catch(()=>[])).filter(t=>String(t.statusVinculo||"").toUpperCase()==="APROVADO");
   societies=await api(`${BASE_URL}/society`).catch(()=>[]);
-  if(user?.tipo==="DONO_TIME") ownTeams=(await api(`${BASE_URL}/time/dono/${user.id}`).catch(()=>[])).filter(t=>String(t.statusVinculo||"").toUpperCase()==="APROVADO");
+  if(user?.tipo==="DONO_TIME"&&!isSocio()) ownTeams=(await api(`${BASE_URL}/time/dono/${user.id}`).catch(()=>[])).filter(t=>String(t.statusVinculo||"").toUpperCase()==="APROVADO");
   if(user?.tipo==="DONO_SOCIETY"||isSocio()){
     ownTeams=allTeams;
   }
@@ -34,11 +34,11 @@ function renderCreateOptions(){
   $("timeA").innerHTML='<option value="">Selecione</option>'+ownTeams.map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join("");
   $("timeB").innerHTML='<option value="">Selecione</option>'+allTeams.map(t=>`<option value="${t.id}">${esc(t.nome)} • ${esc(t.society?.nome||"")}</option>`).join("");
   $("societyId").innerHTML='<option value="">Sem estrutura definida</option>'+societies.map(s=>`<option value="${s.id}" ${Number(s.id)===sid?"selected":""}>${esc(s.nome)}</option>`).join("");
-  if(user?.tipo==="DONO_SOCIETY"){
+  if(user?.tipo==="DONO_SOCIETY"&&!isSocio()){
     $("societyId").disabled=true;
     $("createTitle").textContent="Criar amistoso na sua estrutura";
     $("createHelp").textContent="Escolha os dois times, quadra e horário. O amistoso será confirmado diretamente.";
-  }else if(user?.tipo==="DONO_TIME"){
+  }else if(user?.tipo==="DONO_TIME"&&!isSocio()){
     $("createTitle").textContent="Solicitar amistoso";
     $("createHelp").textContent="Seu time envia o convite ao adversário. Se houver uma Society, ela aprova a estrutura depois.";
   }
@@ -105,7 +105,7 @@ async function cancelar(id){
   try{await api(`${BASE_URL}/amistosos/${id}/cancelar`,{method:"POST"});await loadRows();}catch(e){alert(e.message);}
 }
 function presencesHtml(a){
-  if(user?.tipo==="PLAYER"){
+  if(user?.tipo==="PLAYER"&&!isSocio()){
     const p=myPresence(a);
     if(!p||a.status!=="CONFIRMADO")return "";
     return `<div class="presence-vote"><button class="${p.status==="VOU"?"active-yes":""}" onclick="presence(${a.id},'VOU')">👍 Vou</button><button class="${p.status==="NAO_VOU"?"active-no":""}" onclick="presence(${a.id},'NAO_VOU')">👎 Não vou</button></div>`;

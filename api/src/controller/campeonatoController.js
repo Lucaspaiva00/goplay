@@ -819,7 +819,7 @@ const finalizarJogo = async (req, res) => {
         const penaltisA = req.body.penaltisA === undefined || req.body.penaltisA === null || req.body.penaltisA === "" ? null : Number(req.body.penaltisA);
         const penaltisB = req.body.penaltisB === undefined || req.body.penaltisB === null || req.body.penaltisB === "" ? null : Number(req.body.penaltisB);
 
-        if (!jogoId || !Number.isFinite(golsA) || !Number.isFinite(golsB)) {
+        if (!jogoId || !Number.isInteger(golsA) || !Number.isInteger(golsB)) {
             return res.status(400).json({
                 error: "Informe golsA e golsB corretamente.",
             });
@@ -861,6 +861,7 @@ const finalizarJogo = async (req, res) => {
         }
 
         const result = await prisma.$transaction(async (tx) => {
+            await tx.$queryRaw`SELECT id FROM "Jogo" WHERE id = ${jogoId} FOR UPDATE`;
             const jogo = await tx.jogo.findUnique({
                 where: { id: jogoId },
             });

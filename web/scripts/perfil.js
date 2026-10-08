@@ -159,7 +159,7 @@ async function salvarPerfil() {
 
         const result = await fetchJSON(`${BASE_URL}/usuarios/${usuarioLogado.id}`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("authToken") || ""}` },
             body: JSON.stringify(payload)
         });
 

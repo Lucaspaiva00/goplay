@@ -7,7 +7,7 @@ const { configForDate, validateInterval, timeToMinutes, endToMinutes } = require
 
 const toId = value => {
   const n = Number(value);
-  return Number.isFinite(n) && n > 0 ? n : null;
+  return Number.isInteger(n) && n > 0 ? n : null;
 };
 
 function saoPauloParts(value) {
@@ -45,13 +45,13 @@ function endParts(dataHora, duracaoMinutos) {
   return saoPauloParts(new Date(new Date(dataHora).getTime() + Number(duracaoMinutos) * 60000));
 }
 
-async function validateVenue({ societyId, campoId, dataHora, duracaoMinutos, ignoreAgendamentoId = null }) {
+async function validateVenue({ societyId, campoId, dataHora, duracaoMinutos, ignoreAgendamentoId = null }, client = prisma) {
   if (campoId && !societyId) {
     return { ok: false, error: "Selecione a empresa responsável pela quadra." };
   }
   if (!societyId) return { ok: true, society: null, campo: null, timing: null };
 
-  const society = await prisma.society.findUnique({
+  const society = await client.society.findUnique({
     where: { id: Number(societyId) },
     include: { horariosFuncionamento: true },
   });
@@ -59,7 +59,7 @@ async function validateVenue({ societyId, campoId, dataHora, duracaoMinutos, ign
 
   let campo = null;
   if (campoId) {
-    campo = await prisma.campo.findUnique({ where: { id: Number(campoId) } });
+    campo = await client.campo.findUnique({ where: { id: Number(campoId) } });
     if (!campo || Number(campo.societyId) !== Number(societyId)) {
       return { ok: false, error: "A quadra selecionada não pertence a esta empresa." };
     }
@@ -67,7 +67,7 @@ async function validateVenue({ societyId, campoId, dataHora, duracaoMinutos, ign
     const ini = saoPauloParts(dataHora);
     const fim = endParts(dataHora, duracaoMinutos);
     if (!ini || !fim) return { ok: false, error: "Data ou horário inválido." };
-    if (ini.dateKey !== fim.dateKey) {
+    if (ini.dateKey !== fim.dateKey && !(fim.time === "00:00" && Number(duracaoMinutos) === 1440 - timeToMinutes(ini.time))) {
       return { ok: false, error: "O amistoso não pode atravessar a meia-noite nesta versão." };
     }
 
@@ -76,7 +76,7 @@ async function validateVenue({ societyId, campoId, dataHora, duracaoMinutos, ign
     const interval = validateInterval(config, ini.time, fim.time);
     if (!interval.ok) return interval;
 
-    const existentes = await prisma.agendamento.findMany({
+    const existentes = await client.agendamento.findMany({
       where: {
         campoId: Number(campoId),
         data: date,
@@ -103,8 +103,8 @@ async function validateVenue({ societyId, campoId, dataHora, duracaoMinutos, ign
   return { ok: true, society, campo: null, timing: null };
 }
 
-async function loadAmistoso(id) {
-  return prisma.amistoso.findUnique({
+async function loadAmistoso(id, client = prisma) {
+  return client.amistoso.findUnique({
     where: { id: Number(id) },
     include: {
       criadoPor: { select: { id: true, nome: true, email: true, tipo: true } },
@@ -167,22 +167,26 @@ async function notifyConfirmed(amistoso) {
   }
 }
 
-async function confirmAmistoso(id) {
-  const amistoso = await loadAmistoso(id);
-  if (!amistoso) throw new Error("Amistoso não encontrado.");
-  if (amistoso.status === "CONFIRMADO") return amistoso;
+async function confirmAmistosoInTransaction(tx, id) {
+  await tx.$queryRaw`SELECT id FROM "Amistoso" WHERE id = ${Number(id)} FOR UPDATE`;
+  const amistoso = await loadAmistoso(id, tx);
+  if (!amistoso) throw Object.assign(new Error("Amistoso não encontrado."), { status: 404 });
+  if (amistoso.status === "CONFIRMADO") return false;
   if (["RECUSADO","CANCELADO","REALIZADO"].includes(amistoso.status)) {
-    throw new Error("Este amistoso não pode mais ser confirmado.");
+    throw Object.assign(new Error("Este amistoso não pode mais ser confirmado."), { status: 409 });
   }
 
+  if (new Date(amistoso.dataHora) <= new Date()) throw Object.assign(new Error("O horário do amistoso já passou."), { status: 409 });
+  if (!amistoso.aprovadoAdversarioEm || (amistoso.societyId && !amistoso.aprovadoSocietyEm)) throw Object.assign(new Error("O amistoso ainda depende de aprovação."), { status: 409 });
+  if (amistoso.campoId) await tx.$queryRaw`SELECT id FROM "Campo" WHERE id = ${amistoso.campoId} FOR UPDATE`;
   const venue = await validateVenue({
     societyId: amistoso.societyId,
     campoId: amistoso.campoId,
     dataHora: amistoso.dataHora,
     duracaoMinutos: amistoso.duracaoMinutos,
     ignoreAgendamentoId: amistoso.agendamentoId,
-  });
-  if (!venue.ok) throw new Error(venue.error);
+  }, tx);
+  if (!venue.ok) throw Object.assign(new Error(venue.error), { status: 409 });
 
   const playerRows = [
     ...amistoso.timeA.jogadores.map(j => ({ usuarioId: j.id, timeId: amistoso.timeAId })),
@@ -190,72 +194,74 @@ async function confirmAmistoso(id) {
   ];
   const uniquePlayers = [...new Map(playerRows.map(p => [Number(p.usuarioId), p])).values()];
 
-  await prisma.$transaction(async tx => {
-    let agendamentoId = amistoso.agendamentoId || null;
+  let agendamentoId = amistoso.agendamentoId || null;
 
-    if (amistoso.societyId && amistoso.campoId && venue.timing && !agendamentoId) {
-      const campo = await tx.campo.findUnique({ where: { id: amistoso.campoId } });
-      const ag = await tx.agendamento.create({
-        data: {
-          societyId: amistoso.societyId,
-          campoId: amistoso.campoId,
-          timeId: amistoso.timeAId,
-          data: venue.timing.date,
-          horaInicio: venue.timing.horaInicio,
-          horaFim: venue.timing.horaFim,
-          valor: Number(campo?.valorAvulso || 0),
-          status: "CONFIRMADO",
-          organizadorId: amistoso.criadoPorId,
-        },
-      });
-      agendamentoId = ag.id;
-    }
-
-    let jogo = await tx.jogo.findUnique({ where: { amistosoId: amistoso.id } });
-    if (!jogo) {
-      jogo = await tx.jogo.create({
-        data: {
-          amistosoId: amistoso.id,
-          campeonatoId: null,
-          rodada: 1,
-          tipoJogo: "IDA",
-          timeAId: amistoso.timeAId,
-          timeBId: amistoso.timeBId,
-          dataHora: amistoso.dataHora,
-        },
-      });
-      await tx.jogoEstatisticaTime.createMany({
-        data: [
-          { jogoId: jogo.id, timeId: amistoso.timeAId },
-          { jogoId: jogo.id, timeId: amistoso.timeBId },
-        ],
-        skipDuplicates: true,
-      });
-    }
-
-    if (uniquePlayers.length) {
-      await tx.presencaAmistoso.createMany({
-        data: uniquePlayers.map(p => ({
-          amistosoId: amistoso.id,
-          usuarioId: p.usuarioId,
-          timeId: p.timeId,
-          status: "PENDENTE",
-        })),
-        skipDuplicates: true,
-      });
-    }
-
-    await tx.amistoso.update({
-      where: { id: amistoso.id },
+  if (amistoso.societyId && amistoso.campoId && venue.timing && !agendamentoId) {
+    const campo = await tx.campo.findUnique({ where: { id: amistoso.campoId } });
+    const ag = await tx.agendamento.create({
       data: {
+        societyId: amistoso.societyId,
+        campoId: amistoso.campoId,
+        timeId: amistoso.timeAId,
+        data: venue.timing.date,
+        horaInicio: venue.timing.horaInicio,
+        horaFim: venue.timing.horaFim,
+        valor: Number(campo?.valorAvulso || 0),
         status: "CONFIRMADO",
-        agendamentoId,
+        organizadorId: amistoso.criadoPorId,
       },
     });
-  });
+    agendamentoId = ag.id;
+  }
 
+  let jogo = await tx.jogo.findUnique({ where: { amistosoId: amistoso.id } });
+  if (!jogo) {
+    jogo = await tx.jogo.create({
+      data: {
+        amistosoId: amistoso.id,
+        campeonatoId: null,
+        rodada: 1,
+        tipoJogo: "IDA",
+        timeAId: amistoso.timeAId,
+        timeBId: amistoso.timeBId,
+        dataHora: amistoso.dataHora,
+      },
+    });
+    await tx.jogoEstatisticaTime.createMany({
+      data: [
+        { jogoId: jogo.id, timeId: amistoso.timeAId },
+        { jogoId: jogo.id, timeId: amistoso.timeBId },
+      ],
+      skipDuplicates: true,
+    });
+  }
+
+  if (uniquePlayers.length) {
+    await tx.presencaAmistoso.createMany({
+      data: uniquePlayers.map(p => ({
+        amistosoId: amistoso.id,
+        usuarioId: p.usuarioId,
+        timeId: p.timeId,
+        status: "PENDENTE",
+      })),
+      skipDuplicates: true,
+    });
+  }
+
+  await tx.amistoso.update({
+    where: { id: amistoso.id },
+    data: {
+      status: "CONFIRMADO",
+      agendamentoId,
+    },
+  });
+  return true;
+}
+
+async function confirmAmistoso(id) {
+  const changed = await prisma.$transaction(tx => confirmAmistosoInTransaction(tx, id));
   const confirmado = await loadAmistoso(id);
-  await notifyConfirmed(confirmado);
+  if (changed) await notifyConfirmed(confirmado);
   return confirmado;
 }
 
@@ -269,7 +275,10 @@ async function create(req, res) {
     const societyId = toId(req.body.societyId);
     const campoId = toId(req.body.campoId);
     const dataHora = new Date(req.body.dataHora);
-    const duracaoMinutos = Math.max(20, Math.min(180, Number(req.body.duracaoMinutos || 60)));
+    dataHora.setUTCSeconds(0, 0);
+    const duracaoMinutos = Number(req.body.duracaoMinutos ?? 60);
+    if (!Number.isInteger(duracaoMinutos) || duracaoMinutos < 20 || duracaoMinutos > 180) return res.status(400).json({ error: "A duração deve ser um inteiro entre 20 e 180 minutos." });
+    if (societyId && !campoId) return res.status(400).json({ error: "Selecione a quadra da empresa." });
     const observacao = req.body.observacao ? String(req.body.observacao).trim() : null;
 
     if (!timeAId || !timeBId || timeAId === timeBId) {
@@ -292,7 +301,7 @@ async function create(req, res) {
     let aprovadoAdversarioEm = null;
     let aprovadoSocietyEm = null;
 
-    if (tipo === "DONO_TIME") {
+    if (tipo === "DONO_TIME" && !isPlatformAdmin(req.actor)) {
       if (Number(timeA.donoId) !== Number(req.actor.id)) {
         return res.status(403).json({ error: "Você só pode solicitar amistoso usando um time que pertence a você." });
       }
@@ -312,8 +321,7 @@ async function create(req, res) {
     const venue = await validateVenue({ societyId, campoId, dataHora, duracaoMinutos });
     if (!venue.ok) return res.status(409).json({ error: venue.error });
 
-    const row = await prisma.amistoso.create({
-      data: {
+    const data = {
         criadoPorId: Number(req.actor.id),
         societyId: societyId || null,
         campoId: campoId || null,
@@ -325,10 +333,15 @@ async function create(req, res) {
         aprovadoAdversarioEm,
         aprovadoSocietyEm,
         observacao,
-      },
+    };
+    const ownerRequest = tipo === "DONO_TIME" && !isPlatformAdmin(req.actor);
+    const row = ownerRequest ? await prisma.amistoso.create({ data }) : await prisma.$transaction(async tx => {
+      const created = await tx.amistoso.create({ data });
+      await confirmAmistosoInTransaction(tx, created.id);
+      return created;
     });
 
-    if (tipo === "DONO_TIME") {
+    if (tipo === "DONO_TIME" && !isPlatformAdmin(req.actor)) {
       await notifyUsuario(
         prisma,
         timeB.donoId,
@@ -339,11 +352,14 @@ async function create(req, res) {
       return res.status(201).json(await loadAmistoso(row.id));
     }
 
-    const confirmado = await confirmAmistoso(row.id);
+    const confirmado = await loadAmistoso(row.id);
+    await notifyConfirmed(confirmado);
     return res.status(201).json(confirmado);
   } catch (e) {
+    if (/GOPLAY_BOOKING_OVERLAP/.test(e.message)) return res.status(409).json({ error: "Esse horário já está ocupado nesta quadra." });
+    if (e.status) return res.status(e.status).json({ error: e.message });
     console.error("create amistoso", e);
-    return res.status(500).json({ error: e.message || "Erro ao criar amistoso." });
+    return res.status(500).json({ error: "Erro ao criar amistoso." });
   }
 }
 
@@ -360,19 +376,23 @@ async function responderAdversario(req, res) {
     if (Number(a.timeB.donoId) !== Number(req.actor.id)) return res.status(403).json({ error: "Somente o dono do time adversário pode responder." });
 
     if (acao === "RECUSAR") {
-      const out = await prisma.amistoso.update({
-        where: { id },
+      const result = await prisma.amistoso.updateMany({
+        where: { id, status: "PENDENTE_ADVERSARIO" },
         data: { status: "RECUSADO", recusadoEm: new Date(), motivoRecusa: String(req.body.motivo || "").trim() || null },
       });
+      if (!result.count) return res.status(409).json({ error: "Este convite já foi respondido." });
+      const out = await loadAmistoso(id);
       await notifyUsuario(prisma, a.criadoPorId, "Amistoso recusado", `${a.timeB.nome} recusou o amistoso contra ${a.timeA.nome}.`, `amistosos.html?amistosoId=${id}`);
       return res.json(out);
     }
 
     if (a.societyId) {
-      const out = await prisma.amistoso.update({
-        where: { id },
+      const result = await prisma.amistoso.updateMany({
+        where: { id, status: "PENDENTE_ADVERSARIO" },
         data: { status: "PENDENTE_SOCIETY", aprovadoAdversarioEm: new Date() },
       });
+      if (!result.count) return res.status(409).json({ error: "Este convite já foi respondido." });
+      const out = await loadAmistoso(id);
       if (a.society?.usuarioId) {
         await notifyUsuario(
           prisma,
@@ -393,11 +413,14 @@ async function responderAdversario(req, res) {
       return res.json(out);
     }
 
-    await prisma.amistoso.update({ where: { id }, data: { aprovadoAdversarioEm: new Date() } });
+    const response = await prisma.amistoso.updateMany({ where: { id, status: "PENDENTE_ADVERSARIO" }, data: { aprovadoAdversarioEm: new Date() } });
+    if (!response.count) return res.status(409).json({ error: "Este convite já foi respondido." });
     return res.json(await confirmAmistoso(id));
   } catch (e) {
+    if (/GOPLAY_BOOKING_OVERLAP/.test(e.message)) return res.status(409).json({ error: "Esse horário já está ocupado nesta quadra." });
+    if (e.status) return res.status(e.status).json({ error: e.message });
     console.error("responder adversario", e);
-    return res.status(500).json({ error: e.message || "Erro ao responder amistoso." });
+    return res.status(500).json({ error: "Erro ao responder amistoso." });
   }
 }
 
@@ -418,21 +441,26 @@ async function responderSociety(req, res) {
     if (!permitido) return res.status(403).json({ error: "Somente o dono ou administrador desta empresa pode responder." });
 
     if (acao === "RECUSAR") {
-      const out = await prisma.amistoso.update({
-        where: { id },
+      const result = await prisma.amistoso.updateMany({
+        where: { id, status: "PENDENTE_SOCIETY" },
         data: { status: "RECUSADO", recusadoEm: new Date(), motivoRecusa: String(req.body.motivo || "").trim() || null },
       });
+      if (!result.count) return res.status(409).json({ error: "Este convite já foi respondido." });
+      const out = await loadAmistoso(id);
       for (const ownerId of new Set([a.timeA.donoId, a.timeB.donoId].map(Number))) {
         await notifyUsuario(prisma, ownerId, "Amistoso não aprovado pela empresa", `${a.society.nome} não aprovou ${a.timeA.nome} × ${a.timeB.nome}.`, `amistosos.html?amistosoId=${id}`);
       }
       return res.json(out);
     }
 
-    await prisma.amistoso.update({ where: { id }, data: { aprovadoSocietyEm: new Date() } });
+    const response = await prisma.amistoso.updateMany({ where: { id, status: "PENDENTE_SOCIETY" }, data: { aprovadoSocietyEm: new Date() } });
+    if (!response.count) return res.status(409).json({ error: "Este convite já foi respondido." });
     return res.json(await confirmAmistoso(id));
   } catch (e) {
+    if (/GOPLAY_BOOKING_OVERLAP/.test(e.message)) return res.status(409).json({ error: "Esse horário já está ocupado nesta quadra." });
+    if (e.status) return res.status(e.status).json({ error: e.message });
     console.error("responder society amistoso", e);
-    return res.status(500).json({ error: e.message || "Erro ao aprovar amistoso." });
+    return res.status(500).json({ error: "Erro ao aprovar amistoso." });
   }
 }
 
@@ -440,6 +468,7 @@ async function responderPresenca(req, res) {
   try {
     if (req.actor?.kind !== "USER") return res.status(403).json({ error: "Acesso negado." });
     const id = toId(req.params.id);
+    if (!id) return res.status(400).json({ error: "Amistoso inválido." });
     const status = String(req.body.status || "").toUpperCase();
     if (!["VOU","NAO_VOU"].includes(status)) return res.status(400).json({ error: "Resposta inválida." });
 
@@ -448,6 +477,8 @@ async function responderPresenca(req, res) {
       include: { amistoso: { include: { timeA: true, timeB: true } } },
     });
     if (!presenca) return res.status(404).json({ error: "Você não foi convidado para este amistoso." });
+    const currentPlayer = await prisma.usuario.findUnique({ where: { id: Number(req.actor.id) }, select: { timeRelacionadoId: true } });
+    if (Number(currentPlayer?.timeRelacionadoId) !== Number(presenca.timeId)) return res.status(403).json({ error: "Você não pertence mais ao time deste amistoso." });
     if (presenca.amistoso.status !== "CONFIRMADO") return res.status(409).json({ error: "O amistoso ainda não está confirmado." });
 
     const out = await prisma.presencaAmistoso.update({
@@ -475,9 +506,12 @@ async function responderPresenca(req, res) {
 
 function sanitizeForActor(row, actor) {
   if (!row) return row;
-  if (actor?.kind === "USER" && actor.tipo === "PLAYER") {
+  if (actor?.kind === "USER" && actor.tipo === "PLAYER" && !isPlatformAdmin(actor)) {
     return {
       ...row,
+      criadoPor: row.criadoPor ? { id: row.criadoPor.id, nome: row.criadoPor.nome, tipo: row.criadoPor.tipo } : null,
+      timeA: { ...row.timeA, dono: { id: row.timeA.dono.id, nome: row.timeA.dono.nome }, jogadores: undefined },
+      timeB: { ...row.timeB, dono: { id: row.timeB.dono.id, nome: row.timeB.dono.nome }, jogadores: undefined },
       presencas: (row.presencas || []).filter(p => Number(p.usuarioId) === Number(actor.id)),
     };
   }
@@ -489,7 +523,9 @@ async function meus(req, res) {
     if (!req.actor) return res.status(401).json({ error: "Sessão inválida." });
     let where = {};
 
-    if (req.actor.kind === "USER" && req.actor.tipo === "PLAYER") {
+    if (isPlatformAdmin(req.actor)) {
+      where = {};
+    } else if (req.actor.kind === "USER" && req.actor.tipo === "PLAYER") {
       where = { presencas: { some: { usuarioId: Number(req.actor.id) } } };
     } else if (req.actor.kind === "USER" && req.actor.tipo === "DONO_TIME") {
       where = { OR: [{ timeA: { donoId: Number(req.actor.id) } }, { timeB: { donoId: Number(req.actor.id) } }] };
@@ -531,7 +567,10 @@ async function readOne(req, res) {
   try {
     const row = await loadAmistoso(toId(req.params.id));
     if (!row) return res.status(404).json({ error: "Amistoso não encontrado." });
-    return res.json(sanitizeForActor(row, req.actor));
+    const actor = req.actor;
+    const allowed = isPlatformAdmin(actor) || (actor?.kind === "STAFF" && Number(actor.societyId) === Number(row.societyId)) || (actor?.kind === "USER" && (Number(row.timeA.donoId) === Number(actor.id) || Number(row.timeB.donoId) === Number(actor.id) || Number(row.society?.usuarioId) === Number(actor.id) || row.presencas.some(p => Number(p.usuarioId) === Number(actor.id))));
+    if (!allowed) return res.status(403).json({ error: "Você não participa deste amistoso." });
+    return res.json(sanitizeForActor(row, actor));
   } catch (e) {
     console.error(e);
     return res.status(500).json({ error: "Erro ao carregar amistoso." });
@@ -550,14 +589,22 @@ async function cancelar(req, res) {
     const isSocietyOwner = a.societyId && await ownsSociety(req.actor, a.societyId);
     if (!isCreator && !isSocio && !isSocietyOwner) return res.status(403).json({ error: "Você não pode cancelar este amistoso." });
     if (a.status === "REALIZADO") return res.status(409).json({ error: "Amistoso já realizado." });
-    if (a.jogo?.statusOperacao === "AO_VIVO") return res.status(409).json({ error: "Não é possível cancelar um amistoso com a partida em andamento." });
+    if (["AO_VIVO", "PAUSADA", "INTERVALO"].includes(a.jogo?.statusOperacao)) return res.status(409).json({ error: "Não é possível cancelar um amistoso com a partida em andamento." });
 
     await prisma.$transaction(async tx => {
-      if (a.agendamentoId) {
-        await tx.agendamento.update({ where: { id: a.agendamentoId }, data: { status: "CANCELADO" } }).catch(()=>null);
+      if (a.jogo?.id) await tx.$queryRaw`SELECT id FROM "Jogo" WHERE id = ${a.jogo.id} FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM "Amistoso" WHERE id = ${id} FOR UPDATE`;
+      const current = await loadAmistoso(id, tx);
+      if (current.status === "REALIZADO" || current.jogo?.finalizado || ["AO_VIVO", "PAUSADA", "INTERVALO"].includes(current.jogo?.statusOperacao)) throw Object.assign(new Error("Não é possível cancelar uma partida em andamento ou encerrada."), { status: 409 });
+      if (current.status === "CANCELADO") return;
+      const payment = current.agendamentoId ? await tx.pagamento.findUnique({ where: { agendamentoId: current.agendamentoId } }) : null;
+      if (payment?.status === "PAGO") throw Object.assign(new Error("Reserva já paga. Resolva o pagamento antes de cancelar o amistoso."), { status: 409 });
+      if (payment?.status === "PENDENTE") await tx.pagamento.update({ where: { id: payment.id }, data: { status: "CANCELADO" } });
+      if (current.agendamentoId) {
+        await tx.agendamento.update({ where: { id: current.agendamentoId }, data: { status: "CANCELADO" } });
       }
-      if (a.jogo?.id && !a.jogo.finalizado) {
-        await tx.jogo.delete({ where: { id: a.jogo.id } }).catch(()=>null);
+      if (current.jogo?.id && !current.jogo.finalizado) {
+        await tx.jogo.delete({ where: { id: current.jogo.id } });
       }
       await tx.amistoso.update({ where: { id }, data: { status: "CANCELADO" } });
     });
@@ -567,6 +614,7 @@ async function cancelar(req, res) {
     }
     return res.json({ ok: true });
   } catch (e) {
+    if (e.status) return res.status(e.status).json({ error: e.message });
     console.error(e);
     return res.status(500).json({ error: "Erro ao cancelar amistoso." });
   }

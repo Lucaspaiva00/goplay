@@ -3,7 +3,7 @@ const prisma = new PrismaClient();
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
-const { createToken } = require("../auth");
+const { createToken, isPlatformAdmin } = require("../auth");
 
 /* ============================================
    HELPERS
@@ -225,6 +225,12 @@ const readOne = async (req, res) => {
 ============================================ */
 const update = async (req, res) => {
     try {
+        if (req.actor?.kind !== "USER" || (Number(req.actor.id) !== Number(req.params.id) && !isPlatformAdmin(req.actor))) {
+            return res.status(403).json({ error: "Você só pode editar seu próprio perfil." });
+        }
+        if (["tipo", "isSocioGoPlay", "timeRelacionadoId"].some(key => req.body[key] !== undefined)) {
+            return res.status(403).json({ error: "Permissões e vínculo de time não podem ser alterados pelo perfil." });
+        }
         const id = Number(req.params.id);
 
         if (!Number.isFinite(id)) {

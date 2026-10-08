@@ -111,6 +111,7 @@ function requireCampeonatoCreate(roles=['ADMIN']){
     try{
       if(isPlatformAdmin(req.actor)) return next();
       if(req.actor?.kind==='USER' && ['ORGANIZADOR_COMPETICAO','ORGAO_PUBLICO'].includes(req.actor.tipo)){
+        if (req.body.societyId) return res.status(403).json({ error: "Use uma competição independente, sem empresa vinculada." });
         req.organizadorCampeonatoId=Number(req.actor.id);
         return next();
       }

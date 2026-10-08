@@ -27,9 +27,10 @@ const horariosDisponiveis = async (req, res) => {
     const data = parseDateOnly(dataStr);
     const config = configForDate(campo.society?.horariosFuncionamento, data);
     if (!config.ativo) return res.json([]);
-    const agendamentos = await prisma.agendamento.findMany({ where:{campoId,data,status:{not:"CANCELADO"}}, select:{horaInicio:true} });
-    const ocupados=new Set(agendamentos.map(a=>String(a.horaInicio).slice(0,5)));
-    return res.json(buildSlots(config).map(s=>({...s,disponivel:!ocupados.has(s.horaInicio)})));
+    const agendamentos = await prisma.agendamento.findMany({ where:{campoId,data,status:{not:"CANCELADO"}}, select:{horaInicio:true,horaFim:true} });
+    return res.json(buildSlots(config).map(slot => ({ ...slot, disponivel: !agendamentos.some(a =>
+      timeToMinutes(slot.horaInicio) < endToMinutes(a.horaFim) && endToMinutes(slot.horaFim) > timeToMinutes(a.horaInicio)
+    ) })));
   } catch(err){ console.error(err); return res.status(500).json({error:"Erro ao listar horários."}); }
 };
 
@@ -120,6 +121,7 @@ const create = async (req, res) => {
     return res.status(201).json(agendamento);
   } catch (err) {
     console.error(err);
+    if (/GOPLAY_BOOKING_OVERLAP/.test(err.message)) return res.status(409).json({ error: "Esse horário já está ocupado nesta quadra." });
     res.status(500).json({ error: "Erro ao criar agendamento." });
   }
 };
@@ -174,6 +176,7 @@ const cancelar = async (req, res) => {
       return res.status(404).json({ error: "Agendamento não encontrado." });
     }
 
+    if (await prisma.amistoso.findUnique({ where: { agendamentoId: id }, select: { id: true } })) return res.status(409).json({ error: "Cancele esta reserva pelo módulo de Amistosos." });
     const actor = req.actor;
     let podeCancelar = false;
     if (actor?.kind === "STAFF") podeCancelar = Number(actor.societyId) === Number(agendamento.societyId) && ["ADMIN","CAIXA","RECEPCAO"].includes(actor.funcao);
@@ -263,6 +266,7 @@ const remarcar = async (req, res) => {
     }
     const atual = await prisma.agendamento.findUnique({ where: { id }, include: { time: true, campo: true, grupoHorario: { include: { membros: { where: { ativo: true }, select: { usuarioId: true } } } } } });
     if (!atual) return res.status(404).json({ error: "Agendamento não encontrado." });
+    if (await prisma.amistoso.findUnique({ where: { agendamentoId: id }, select: { id: true } })) return res.status(409).json({ error: "A reserva pertence a um amistoso. Cancele e solicite um novo horário pelo módulo de Amistosos." });
     if (atual.status === "CANCELADO") return res.status(400).json({ error: "Agendamento cancelado não pode ser remarcado." });
     const data = parseDateOnly(dataStr);
     const [hh, mm] = horaInicio.split(":").map(Number);
@@ -292,6 +296,7 @@ const remarcar = async (req, res) => {
     return res.json(atualizado);
   } catch (err) {
     console.error(err);
+    if (/GOPLAY_BOOKING_OVERLAP/.test(err.message)) return res.status(409).json({ error: "Esse horário já está ocupado nesta quadra." });
     return res.status(500).json({ error: "Erro ao remarcar agendamento." });
   }
 };

@@ -45,7 +45,7 @@ router.post("/notificacoes/lidas/todas", authenticate, notificacaoController.mar
 
 router.post("/usuarios", usuarioController.create);
 router.get("/usuarios/:id", usuarioController.readOne);
-router.put("/usuarios/:id", usuarioController.update);
+router.put("/usuarios/:id", authenticate, usuarioController.update);
 
 /* =====================================================
    DASHBOARD
@@ -86,7 +86,7 @@ router.delete("/society/:societyId/player/:usuarioId", societyPlayerController.r
    TIMES
 ===================================================== */
 
-router.post("/time", timeController.create);
+router.post("/time", authenticate, timeController.create);
 router.get("/time", timeController.list);
 router.get("/time/solicitacoes/minhas", authenticate, timeController.minhasSolicitacoes);
 router.get("/time/dono/:donoId", timeController.listByOwner);
@@ -99,7 +99,7 @@ router.post("/time/solicitacoes/:id/cancelar", authenticate, timeController.canc
 router.post("/time/:timeId/jogadores/:usuarioId/remover", authenticate, timeController.removerJogador);
 router.get("/time/:timeId", timeController.details);
 router.put("/time/:timeId", authenticate, timeController.update);
-router.delete("/time/:timeId", timeController.remove);
+router.delete("/time/:timeId", authenticate, timeController.remove);
 router.post("/time/entrar", authenticate, timeController.join);
 router.post("/time/sair", authenticate, timeController.leave);
 router.put("/time/:timeId/vinculo", ...requireEntitySocietyRoles(["ADMIN"], "time", "timeId"), timeController.updateVinculo);

@@ -1,31 +1,19 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-function configuredSocioEmails() {
-  return [...new Set(
-    String(process.env.GOPLAY_SOCIO_EMAILS || "")
-      .split(",")
-      .map(x => x.trim().toLowerCase())
-      .filter(Boolean)
-  )];
+// Grant only existing, explicitly verified accounts. Emails are editable and
+// cannot serve as an administrative identity or a public signup allowlist.
+function configuredSocioIds() {
+  return [...new Set(String(process.env.GOPLAY_SOCIO_IDS || "")
+    .split(",").map(x => Number(x.trim())).filter(x => Number.isInteger(x) && x > 0))];
 }
-
 async function syncPlatformAdmins() {
-  const emails = configuredSocioEmails();
-  if (!emails.length) return { configured: 0, updated: 0 };
-
+  const ids = configuredSocioIds();
+  if (!ids.length) return { configured: 0, updated: 0 };
   const result = await prisma.usuario.updateMany({
-    where: { email: { in: emails } },
-    data: { isSocioGoPlay: true },
+    where: { id: { in: ids } }, data: { isSocioGoPlay: true },
   });
-
-  const found = await prisma.usuario.findMany({
-    where: { email: { in: emails } },
-    select: { id: true, nome: true, email: true, tipo: true, isSocioGoPlay: true },
-  });
-
-  console.log("[GOPLAY SOCIOS] perfis administrativos sincronizados:", found.map(x => x.email).join(", ") || "nenhuma conta encontrada");
-  return { configured: emails.length, updated: result.count, found: found.length };
+  console.log("[GOPLAY SOCIOS] contas existentes autorizadas:", result.count);
+  return { configured: ids.length, updated: result.count };
 }
-
-module.exports = { configuredSocioEmails, syncPlatformAdmins };
+module.exports = { configuredSocioIds, syncPlatformAdmins };

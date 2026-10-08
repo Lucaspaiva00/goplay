@@ -31,8 +31,11 @@ async function responderTime(req,res){
     const convite=await prisma.conviteCampeonatoTime.findUnique({where:{id},include:{time:{include:{jogadores:{select:{id:true,nome:true}}}},campeonato:{include:{society:true,times:true,organizador:{select:{id:true,nome:true,email:true}}}}}});
     if(!convite) return res.status(404).json({error:'Convite não encontrado.'});
     if(Number(convite.time.donoId)!==Number(req.actor.id)) return res.status(403).json({error:'Somente o dono do time pode responder.'});
+    if(convite.status!=='PENDENTE') return res.status(409).json({error:'Este convite já foi respondido.'});
     if(acao==='RECUSAR'){
-      const out=await prisma.conviteCampeonatoTime.update({where:{id},data:{status:'RECUSADO',respondidoEm:new Date()}});
+      const changed=await prisma.conviteCampeonatoTime.updateMany({where:{id,status:'PENDENTE'},data:{status:'RECUSADO',respondidoEm:new Date()}});
+      if(!changed.count) return res.status(409).json({error:'Este convite já foi respondido.'});
+      const out=await prisma.conviteCampeonatoTime.findUnique({where:{id}});
       const gestorId=organizerUserId(convite.campeonato);
       if(gestorId) await notifyUsuario(prisma, gestorId, 'Convite recusado', `${convite.time.nome} recusou participar de ${convite.campeonato.nome}.`, `campeonato-detalhe.html?campeonatoId=${convite.campeonatoId}`);
       return res.json(out);
@@ -44,6 +47,13 @@ async function responderTime(req,res){
     const limite=Number(convite.campeonato.maxJogadoresPorTime||20);
     if(jogadorIds.length>limite) return res.status(400).json({error:`Este campeonato permite no máximo ${limite} jogador(es) por time.`});
     const out=await prisma.$transaction(async tx=>{
+      await tx.$queryRaw`SELECT id FROM "Campeonato" WHERE id = ${convite.campeonatoId} FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM "ConviteCampeonatoTime" WHERE id = ${id} FOR UPDATE`;
+      const current=await tx.conviteCampeonatoTime.findUnique({where:{id}});
+      if(current.status!=='PENDENTE') throw Object.assign(new Error('Este convite já foi respondido.'),{status:409});
+      const inscritos=await tx.timeCampeonato.count({where:{campeonatoId:convite.campeonatoId}});
+      if(inscritos>=convite.campeonato.maxTimes) throw Object.assign(new Error('O campeonato já atingiu o limite de times.'),{status:409});
+      if(await tx.jogo.count({where:{campeonatoId:convite.campeonatoId}})) throw Object.assign(new Error('A competição já gerou partidas e não aceita novas inscrições.'),{status:409});
       await tx.timeCampeonato.upsert({where:{campeonatoId_timeId:{campeonatoId:convite.campeonatoId,timeId:convite.timeId}},create:{campeonatoId:convite.campeonatoId,timeId:convite.timeId},update:{}});
       await tx.tabelaCampeonato.upsert({where:{campeonatoId_timeId:{campeonatoId:convite.campeonatoId,timeId:convite.timeId}},create:{campeonatoId:convite.campeonatoId,timeId:convite.timeId},update:{}});
       const c=await tx.conviteCampeonatoTime.update({where:{id},data:{status:'ACEITO',respondidoEm:new Date()}});
@@ -59,7 +69,7 @@ async function responderTime(req,res){
     if(gestorId) await notifyUsuario(prisma, gestorId, 'Time aceitou o campeonato', `${convite.time.nome} confirmou participação em ${convite.campeonato.nome}.`, `campeonato-detalhe.html?campeonatoId=${convite.campeonatoId}`);
     if(convite.campeonato.societyId) await notifyStaff(prisma,convite.campeonato.societyId,'Time confirmado',`${convite.time.nome} aceitou participar de ${convite.campeonato.nome}.`,['ADMIN'],`campeonato-detalhe.html?campeonatoId=${convite.campeonatoId}`);
     return res.json({ok:true,convite:out,jogadoresConvidados:jogadorIds.length});
-  }catch(e){console.error(e);return res.status(500).json({error:'Erro ao responder convite do time.'});}
+  }catch(e){console.error(e);return res.status(e.status||500).json({error:e.status?e.message:'Erro ao responder convite do time.'});}
 }
 
 async function responderJogador(req,res){

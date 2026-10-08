@@ -6,6 +6,7 @@ const { notifyUsuario, notifyStaff } = require("../notifications");
 const { isPlatformAdmin } = require("../auth");
 
 const prisma = new PrismaClient();
+const publicPlayerSelect = { id: true, nome: true, fotoUrl: true, posicaoCampo: true, goleiro: true, timeRelacionadoId: true };
 
 const EVENTOS_INDIVIDUAIS = new Set([
   "GOL",
@@ -54,17 +55,17 @@ async function buscarJogoCompleto(client, jogoId) {
         society: { select: { id: true, nome: true, usuarioId: true, imagem: true, cidade: true } },
         criadoPor: { select: { id: true, nome: true, email: true, tipo: true, isSocioGoPlay: true } }
       } },
-      timeA: { include: { jogadores: true } },
-      timeB: { include: { jogadores: true } },
+      timeA: { include: { jogadores: { select: publicPlayerSelect } } },
+      timeB: { include: { jogadores: { select: publicPlayerSelect } } },
       estatisticasTimes: true,
-      jogadoresAtuacao: { include: { jogador: true } },
+      jogadoresAtuacao: { include: { jogador: { select: publicPlayerSelect } } },
       eventos: {
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         include: {
           time: true,
-          jogador: true,
-          jogadorSaindo: true,
-          jogadorEntrando: true,
+          jogador: { select: publicPlayerSelect },
+          jogadorSaindo: { select: publicPlayerSelect },
+          jogadorEntrando: { select: publicPlayerSelect },
         },
       },
     },
@@ -307,6 +308,7 @@ const updateStats = async (req, res) => {
     const jogo = await buscarJogoCompleto(prisma, jogoId);
     if (!jogo) return res.status(404).json({ error: "Jogo não encontrado." });
     if (!(await exigirOperador(req, res, jogo))) return;
+    if (jogo.finalizado) return res.status(409).json({ error: "O jogo já foi encerrado." });
     if (![jogo.timeAId, jogo.timeBId].includes(timeId)) return res.status(400).json({ error: "timeId não pertence a este jogo." });
 
     const payload = {
@@ -341,6 +343,7 @@ const addLineup = async (req, res) => {
     const jogo = await buscarJogoCompleto(prisma, jogoId);
     if (!jogo) return res.status(404).json({ error: "Jogo não encontrado." });
     if (!(await exigirOperador(req, res, jogo))) return;
+    if (jogo.finalizado) return res.status(409).json({ error: "O jogo já foi encerrado." });
     if (![jogo.timeAId, jogo.timeBId].includes(timeId)) return res.status(400).json({ error: "timeId não pertence a este jogo." });
 
     const jogador = await prisma.usuario.findUnique({ where: { id: jogadorId } });
@@ -424,6 +427,7 @@ const desfazerUltimoEvento = async (req, res) => {
     const jogo = await buscarJogoCompleto(prisma, jogoId);
     if (!jogo) return res.status(404).json({ error: "Jogo não encontrado." });
     if (!(await exigirOperador(req, res, jogo))) return;
+    if (jogo.finalizado) return res.status(409).json({ error: "O jogo já foi encerrado." });
 
     const ultimo = await prisma.jogoEvento.findFirst({
       where: { jogoId },

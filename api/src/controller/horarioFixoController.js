@@ -274,7 +274,7 @@ async function createFixed(req,res){
     await dispatchDuePresenceNotifications();
     await notifyStaff(prisma,group.societyId,'Novo horário fixo',`${group.nome}: ${generated.apps.length} ocorrências reservadas.`,['ADMIN','RECEPCAO'],`horario-grupo.html?grupoId=${groupId}`);
     res.status(201).json({horarioFixo:{...hf,status:'APROVADO'},agendamentos:generated.apps,pendenteAprovacao:false});
-  }catch(e){console.error(e);res.status(e.status||500).json({error:e.message||'Erro ao criar horário fixo.'});}
+  }catch(e){if (/GOPLAY_BOOKING_OVERLAP/.test(e.message)) return res.status(409).json({error:'Esse horário já está ocupado nesta quadra.'});console.error(e);res.status(e.status||500).json({error:e.message||'Erro ao criar horário fixo.'});}
 }
 
 async function approveFixed(req,res){
@@ -289,7 +289,7 @@ async function approveFixed(req,res){
     // Envia apenas a ocorrência que entrou na janela semanal; as próximas serão notificadas automaticamente.
     await dispatchDuePresenceNotifications();
     res.json({ok:true,agendamentos:generated.apps});
-  }catch(e){console.error(e);res.status(e.status||500).json({error:e.message||'Erro ao aprovar horário.'});}
+  }catch(e){if (/GOPLAY_BOOKING_OVERLAP/.test(e.message)) return res.status(409).json({error:'Esse horário já está ocupado nesta quadra.'});console.error(e);res.status(e.status||500).json({error:e.message||'Erro ao aprovar horário.'});}
 }
 
 async function rejectFixed(req,res){

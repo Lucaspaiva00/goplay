@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "dev": "node --watch server.js",
-    "start": "node server.js",
+    "start": "node test/release-validation.js && node server.js",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -15,7 +15,8 @@
     "db:setup": "prisma generate && prisma migrate dev",
     "db:reset": "prisma migrate reset --force && prisma generate",
     "seed": "node prisma/seed.js",
-    "db:seed": "npm run seed"
+    "db:seed": "npm run seed",
+    "test:integration": "node test/topicos-17-20.integration.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

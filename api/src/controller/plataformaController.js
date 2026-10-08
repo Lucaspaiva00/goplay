@@ -1,11 +1,14 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-function startOfMonthUTC(d = new Date()) {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
+function startOfMonthSP(d = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "numeric" }).formatToParts(d);
+  const year = Number(parts.find(p => p.type === "year").value);
+  const month = Number(parts.find(p => p.type === "month").value);
+  return new Date(Date.UTC(year, month - 1, 1, 3));
 }
-function addMonthsUTC(d, months) {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + months, 1));
+function addMonthsSP(d, months) {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + months, 1, 3));
 }
 function monthLabel(d) {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
@@ -14,7 +17,7 @@ function monthLabel(d) {
 async function dashboard(req, res) {
   try {
     const now = new Date();
-    const monthStart = startOfMonthUTC(now);
+    const monthStart = startOfMonthSP(now);
     const last30 = new Date(now.getTime() - 30 * 86400000);
 
     const [
@@ -69,8 +72,8 @@ async function dashboard(req, res) {
 
     const meses = [];
     for (let i = 5; i >= 0; i--) {
-      const inicio = addMonthsUTC(monthStart, -i);
-      const fim = addMonthsUTC(inicio, 1);
+      const inicio = addMonthsSP(monthStart, -i);
+      const fim = addMonthsSP(inicio, 1);
       const [u, s, r, a] = await Promise.all([
         prisma.usuario.count({ where: { createdAt: { gte: inicio, lt: fim } } }),
         prisma.society.count({ where: { createdAt: { gte: inicio, lt: fim } } }),
@@ -140,8 +143,11 @@ async function usuarios(req, res) {
   try {
     const q = String(req.query.q || "").trim();
     const tipo = String(req.query.tipo || "").trim().toUpperCase();
-    const take = Math.max(1, Math.min(100, Number(req.query.take || 30)));
+    const requestedTake = Number(req.query.take ?? 30);
+    if (!Number.isInteger(requestedTake) || requestedTake < 1) return res.status(400).json({ error: "Quantidade inválida." });
+    const take = Math.min(100, requestedTake);
 
+    if (tipo && !["PLAYER", "DONO_TIME", "DONO_SOCIETY", "ORGANIZADOR_COMPETICAO", "ORGAO_PUBLICO", "SOCIO_GOPLAY"].includes(tipo)) return res.status(400).json({ error: "Tipo de usuário inválido." });
     const where = {
       ...(q ? {
         OR: [
@@ -189,7 +195,9 @@ async function usuarios(req, res) {
 async function societies(req, res) {
   try {
     const q = String(req.query.q || "").trim();
-    const take = Math.max(1, Math.min(100, Number(req.query.take || 30)));
+    const requestedTake = Number(req.query.take ?? 30);
+    if (!Number.isInteger(requestedTake) || requestedTake < 1) return res.status(400).json({ error: "Quantidade inválida." });
+    const take = Math.min(100, requestedTake);
 
     const rows = await prisma.society.findMany({
       where: q ? {
