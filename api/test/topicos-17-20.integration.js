@@ -41,6 +41,17 @@ async function user(name,tipo='PLAYER',isSocioGoPlay=false) {
 }
 (async()=>{
  await once(server,'listening');
+ // Explicitly named interrupted validation runs only; never broad test-user deletion.
+ if (releaseValidation && process.env.GOPLAY_CLEANUP_FIXTURE_STAMPS) {
+  for (const oldStamp of process.env.GOPLAY_CLEANUP_FIXTURE_STAMPS.split(',')) {
+   if (!/^\d{13}$/.test(oldStamp)) throw new Error('Invalid fixture cleanup stamp');
+   const old = await prisma.usuario.findMany({where:{AND:[{email:{endsWith:'@example.invalid'}},{OR:[{email:{startsWith:`${oldStamp}-`}},{email:`normal-${oldStamp}@example.invalid`}]}]},select:{id:true}});
+   const ids=old.map(u=>u.id);
+   await prisma.campeonato.deleteMany({where:{organizadorId:{in:ids}}});
+   await prisma.usuario.deleteMany({where:{id:{in:ids}}});
+   console.log(`[GOPLAY VALIDATION] removed ${ids.length} fixtures from interrupted run ${oldStamp}`);
+  }
+ }
  const ownerA=await user('OwnerA','DONO_TIME'), ownerB=await user('OwnerB','DONO_TIME'), venueOwner=await user('VenueOwner','DONO_SOCIETY'), outsider=await user('Outsider'), partner=await user('Partner','PLAYER',true), organizer=await user('Organizer','ORGANIZADOR_COMPETICAO'), publicOrg=await user('PublicOrg','ORGAO_PUBLICO');
  const society=await prisma.society.create({data:{nome:`Integration ${stamp}`,usuarioId:venueOwner.id,cidade:'Pedreira'}});
  const otherSociety=await prisma.society.create({data:{nome:`Other ${stamp}`,usuarioId:ownerB.id}});
