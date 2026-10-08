@@ -231,7 +231,7 @@ async function notifyReplacedReservations(reservations, amistoso) {
       a.friendly?.timeA.donoId, a.friendly?.timeB.donoId,
       ...(a.friendly?.presencas || []).map(p => p.usuarioId)].filter(Boolean));
     const msg = `A reserva de ${saoPauloParts(amistoso.dataHora).dateKey} das ${a.horaInicio} às ${a.horaFim} foi cancelada pela empresa para ${amistoso.timeA.nome} × ${amistoso.timeB.nome}.${a.horarioFixoId ? ' Os demais dias do horário fixo permanecem reservados.' : ''}${a.pagamento?.status === 'PAGO' ? ' O pagamento recebido foi preservado; contate a empresa para o acerto financeiro.' : ''}`;
-    for (const id of ids) await notifyUsuario(prisma, id, 'Reserva substituída por amistoso', msg, a.friendly ? `amistosos.html?amistosoId=${a.friendly.id}` : 'agenda.html');
+    for (const id of ids) await notifyUsuario(prisma, id, 'Reserva substituída por amistoso', msg, a.friendly ? `amistosos.html?amistosoId=${a.friendly.id}` : a.grupoHorarioId ? `horario-grupo.html?grupoId=${a.grupoHorarioId}` : 'meus-agendamentos.html');
     await notifyStaff(prisma, a.societyId, 'Reserva substituída por amistoso', msg, ['ADMIN','CAIXA','RECEPCAO']);
   }
 }
