@@ -30,6 +30,7 @@ function renderCreateOptions(){
   $("createPanel").style.display=canCreate?"block":"none";
   if(!canCreate)return;
 
+  $("replaceBookingsPanel").hidden=!(user?.tipo==="DONO_SOCIETY"||isSocio());
   const sid=currentSociety();
   $("timeA").innerHTML='<option value="">Selecione</option>'+ownTeams.map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join("");
   $("timeB").innerHTML='<option value="">Selecione</option>'+allTeams.map(t=>`<option value="${t.id}">${esc(t.nome)} • ${esc(t.society?.nome||"")}</option>`).join("");
@@ -73,11 +74,25 @@ async function criar(){
     if(!body.timeAId||!body.timeBId)return alert("Selecione os dois times.");
     if(!body.dataHora)return alert("Informe data e horário.");
     if(body.societyId&&!body.campoId)return alert("Selecione a quadra desta empresa.");
+    $("btnCriar").disabled=true;
+    if(!$("replaceBookingsPanel").hidden&&$("substituirReservas").checked){
+      const preview=await api(`${BASE_URL}/amistosos/conflitos`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+      const conflicts=preview.reservas||[];
+      if(conflicts.some(r=>r.bloqueada))return alert("Este horário possui uma partida em andamento ou encerrada e não pode ser liberado.");
+      if(conflicts.length){
+        const lines=conflicts.map(r=>`• ${r.horaInicio}–${r.horaFim}: ${r.nome}${r.horarioFixo?' (somente esta data do horário fixo)':''}${r.pagamentoPago?' — pagamento recebido será preservado':''}`).join('\n');
+        if(!confirm(`Criar o amistoso em ${dt(body.dataHora)} e cancelar estas reservas?\n\n${lines}\n\nOs responsáveis serão avisados. Cobranças pendentes deste encontro serão canceladas. Pagamentos recebidos exigem acerto com a empresa.`))return;
+      }
+      body.substituirReservas=true;
+      body.reservasConfirmadasIds=conflicts.map(r=>r.id);
+    }
     const d=await api(`${BASE_URL}/amistosos`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
     alert(d.status==="CONFIRMADO"?"Amistoso criado e confirmado.":"Solicitação enviada ao dono do time adversário.");
     $("observacao").value="";
+    $("substituirReservas").checked=false;
     await loadRows();
   }catch(e){alert(e.message);}
+  finally{$("btnCriar").disabled=false;}
 }
 async function respondOpponent(id,acao){
   const motivo=acao==="RECUSAR"?(prompt("Motivo da recusa (opcional):")||""):"";

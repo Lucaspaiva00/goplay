@@ -171,6 +171,7 @@ router.post("/encontros-horario/:id/rateio", authenticate, horarioFixoController
 ===================================================== */
 
 router.post("/amistosos", authenticate, amistosoController.create);
+router.post("/amistosos/conflitos", authenticate, amistosoController.previewConflicts);
 router.get("/amistosos/meus", authenticate, amistosoController.meus);
 router.get("/amistosos/:id", authenticate, amistosoController.readOne);
 router.post("/amistosos/:id/responder-adversario", authenticate, amistosoController.responderAdversario);

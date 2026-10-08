@@ -45,7 +45,7 @@ function endParts(dataHora, duracaoMinutos) {
   return saoPauloParts(new Date(new Date(dataHora).getTime() + Number(duracaoMinutos) * 60000));
 }
 
-async function validateVenue({ societyId, campoId, dataHora, duracaoMinutos, ignoreAgendamentoId = null }, client = prisma) {
+async function validateVenue({ societyId, campoId, dataHora, duracaoMinutos, ignoreAgendamentoId = null, allowConflicts = false }, client = prisma) {
   if (campoId && !societyId) {
     return { ok: false, error: "Selecione a empresa responsável pela quadra." };
   }
@@ -83,21 +83,22 @@ async function validateVenue({ societyId, campoId, dataHora, duracaoMinutos, ign
         status: { not: "CANCELADO" },
         ...(ignoreAgendamentoId ? { id: { not: Number(ignoreAgendamentoId) } } : {}),
       },
-      select: { id: true, horaInicio: true, horaFim: true },
+      include: { time: { select: { nome: true } }, grupoHorario: { select: { nome: true } }, pagamento: { select: { status: true, valor: true } }, amistoso: { include: { jogo: { select: { finalizado: true, statusOperacao: true } } } } },
     });
 
     const start = timeToMinutes(ini.time);
     const end = endToMinutes(fim.time);
-    const conflito = existentes.find(a => {
+    const conflitos = existentes.filter(a => {
       const aStart = timeToMinutes(a.horaInicio);
       const aEnd = endToMinutes(a.horaFim);
       return aStart !== null && aEnd !== null && start < aEnd && end > aStart;
     });
-    if (conflito) {
+    if (conflitos.length && !allowConflicts) {
+      const conflito = conflitos[0];
       return { ok: false, error: `A quadra já possui uma reserva entre ${conflito.horaInicio} e ${conflito.horaFim}.` };
     }
 
-    return { ok: true, society, campo, timing: { date, horaInicio: ini.time, horaFim: fim.time } };
+    return { ok: true, society, campo, conflitos, timing: { date, horaInicio: ini.time, horaFim: fim.time } };
   }
 
   return { ok: true, society, campo: null, timing: null };
@@ -167,7 +168,75 @@ async function notifyConfirmed(amistoso) {
   }
 }
 
-async function confirmAmistosoInTransaction(tx, id) {
+function conflictSummary(a) {
+  const jogo = a.amistoso?.jogo;
+  return { id: a.id, horaInicio: a.horaInicio, horaFim: a.horaFim,
+    nome: a.grupoHorario?.nome || a.time?.nome || 'Reserva avulsa',
+    horarioFixo: !!a.horarioFixoId, pagamentoPago: a.pagamento?.status === 'PAGO',
+    bloqueada: !!jogo && (jogo.finalizado || ['AO_VIVO','PAUSADA','INTERVALO'].includes(jogo.statusOperacao)) };
+}
+
+async function previewConflicts(req, res) {
+  try {
+    const societyId = toId(req.body.societyId), campoId = toId(req.body.campoId);
+    if (req.actor?.kind !== 'USER' || !(await ownsSociety(req.actor, societyId))) return res.status(403).json({ error: 'Somente o dono desta empresa ou um sócio GoPlay pode liberar reservas.' });
+    const dataHora = new Date(req.body.dataHora), duracaoMinutos = Number(req.body.duracaoMinutos ?? 60);
+    dataHora.setUTCSeconds(0, 0);
+    if (!campoId || Number.isNaN(dataHora.getTime()) || dataHora <= new Date() || !Number.isInteger(duracaoMinutos) || duracaoMinutos < 20 || duracaoMinutos > 180) return res.status(400).json({ error: 'Informe quadra, data futura e duração válida.' });
+    const venue = await validateVenue({ societyId, campoId, dataHora, duracaoMinutos, allowConflicts: true });
+    if (!venue.ok) return res.status(409).json({ error: venue.error });
+    return res.json({ reservas: (venue.conflitos || []).map(conflictSummary) });
+  } catch (e) { console.error('preview amistoso', e); return res.status(500).json({ error: 'Erro ao consultar reservas.' }); }
+}
+
+async function replaceReservations(tx, venue, options) {
+  const conflicts = venue.conflitos || [];
+  const actual = conflicts.map(a => a.id).sort((a,b) => a-b);
+  const reviewed = [...new Set(options.reservasConfirmadasIds)].sort((a,b) => a-b);
+  if (JSON.stringify(actual) !== JSON.stringify(reviewed)) throw Object.assign(new Error('As reservas deste horário mudaram. Confira novamente antes de criar o amistoso.'), { status: 409 });
+  const cancelled = [];
+  for (const id of actual) {
+    await tx.$queryRaw`SELECT id FROM "Agendamento" WHERE id = ${id} FOR UPDATE`;
+    const linked = await tx.amistoso.findUnique({ where: { agendamentoId: id }, include: { jogo: true } });
+    if (linked?.jogo) await tx.$queryRaw`SELECT id FROM "Jogo" WHERE id = ${linked.jogo.id} FOR UPDATE`;
+    if (linked) await tx.$queryRaw`SELECT id FROM "Amistoso" WHERE id = ${linked.id} FOR UPDATE`;
+    const currentFriendly = linked ? await loadAmistoso(linked.id, tx) : null;
+    if (currentFriendly && (currentFriendly.status === 'REALIZADO' || currentFriendly.jogo?.finalizado || ['AO_VIVO','PAUSADA','INTERVALO'].includes(currentFriendly.jogo?.statusOperacao))) throw Object.assign(new Error('Não é possível substituir uma partida em andamento ou encerrada.'), { status: 409 });
+    const a = await tx.agendamento.findUnique({ where: { id }, include: {
+      pagamento: true, presencas: { select: { usuarioId: true } },
+      time: { select: { donoId: true, jogadores: { select: { id: true } } } },
+      grupoHorario: { include: { membros: { where: { ativo: true }, select: { usuarioId: true } } } },
+    } });
+    await tx.agendamento.update({ where: { id }, data: { status: 'CANCELADO' } });
+    // Preserve received money. Cancel only pending charges for this occurrence,
+    // including legacy player shares which have no relational booking ID.
+    await tx.pagamento.updateMany({ where: { societyId: a.societyId, status: 'PENDENTE', OR: [
+      { agendamentoId: id },
+      { AND: [{ descricao: { startsWith: 'Rateio ' } }, { descricao: { endsWith: ` - agendamento ${id}` } }] },
+    ] }, data: { status: 'CANCELADO' } });
+    if (currentFriendly) {
+      if (currentFriendly.jogo) await tx.jogo.delete({ where: { id: currentFriendly.jogo.id } });
+      await tx.amistoso.update({ where: { id: currentFriendly.id }, data: { status: 'CANCELADO' } });
+    }
+    cancelled.push({ ...a, friendly: currentFriendly });
+  }
+  return cancelled;
+}
+
+async function notifyReplacedReservations(reservations, amistoso) {
+  for (const a of reservations) {
+    const ids = new Set([a.organizadorId, a.time?.donoId, a.grupoHorario?.organizadorId,
+      ...(a.time?.jogadores || []).map(p => p.id), ...(a.presencas || []).map(p => p.usuarioId),
+      ...(a.grupoHorario?.membros || []).map(p => p.usuarioId),
+      a.friendly?.timeA.donoId, a.friendly?.timeB.donoId,
+      ...(a.friendly?.presencas || []).map(p => p.usuarioId)].filter(Boolean));
+    const msg = `A reserva de ${saoPauloParts(amistoso.dataHora).dateKey} das ${a.horaInicio} às ${a.horaFim} foi cancelada pela empresa para ${amistoso.timeA.nome} × ${amistoso.timeB.nome}.${a.horarioFixoId ? ' Os demais dias do horário fixo permanecem reservados.' : ''}${a.pagamento?.status === 'PAGO' ? ' O pagamento recebido foi preservado; contate a empresa para o acerto financeiro.' : ''}`;
+    for (const id of ids) await notifyUsuario(prisma, id, 'Reserva substituída por amistoso', msg, a.friendly ? `amistosos.html?amistosoId=${a.friendly.id}` : 'agenda.html');
+    await notifyStaff(prisma, a.societyId, 'Reserva substituída por amistoso', msg, ['ADMIN','CAIXA','RECEPCAO']);
+  }
+}
+
+async function confirmAmistosoInTransaction(tx, id, options = {}) {
   await tx.$queryRaw`SELECT id FROM "Amistoso" WHERE id = ${Number(id)} FOR UPDATE`;
   const amistoso = await loadAmistoso(id, tx);
   if (!amistoso) throw Object.assign(new Error("Amistoso não encontrado."), { status: 404 });
@@ -185,8 +254,10 @@ async function confirmAmistosoInTransaction(tx, id) {
     dataHora: amistoso.dataHora,
     duracaoMinutos: amistoso.duracaoMinutos,
     ignoreAgendamentoId: amistoso.agendamentoId,
+    allowConflicts: options.substituirReservas === true,
   }, tx);
   if (!venue.ok) throw Object.assign(new Error(venue.error), { status: 409 });
+  if (options.substituirReservas) options.cancelled.push(...await replaceReservations(tx, venue, options));
 
   const playerRows = [
     ...amistoso.timeA.jogadores.map(j => ({ usuarioId: j.id, timeId: amistoso.timeAId })),
@@ -280,6 +351,10 @@ async function create(req, res) {
     if (!Number.isInteger(duracaoMinutos) || duracaoMinutos < 20 || duracaoMinutos > 180) return res.status(400).json({ error: "A duração deve ser um inteiro entre 20 e 180 minutos." });
     if (societyId && !campoId) return res.status(400).json({ error: "Selecione a quadra da empresa." });
     const observacao = req.body.observacao ? String(req.body.observacao).trim() : null;
+    const substituirReservas = req.body.substituirReservas === true;
+    const reservasConfirmadasIds = req.body.reservasConfirmadasIds;
+    if (substituirReservas && (tipo === 'DONO_TIME' && !isPlatformAdmin(req.actor) || !societyId || !(await ownsSociety(req.actor, societyId)))) return res.status(403).json({ error: 'Somente o dono desta empresa ou um sócio GoPlay pode liberar reservas.' });
+    if (substituirReservas && (!Array.isArray(reservasConfirmadasIds) || reservasConfirmadasIds.some(id => !Number.isInteger(id) || id <= 0))) return res.status(400).json({ error: 'Confira e confirme as reservas que serão substituídas.' });
 
     if (!timeAId || !timeBId || timeAId === timeBId) {
       return res.status(400).json({ error: "Selecione dois times diferentes." });
@@ -318,7 +393,7 @@ async function create(req, res) {
       return res.status(403).json({ error: "Seu perfil não pode criar amistosos." });
     }
 
-    const venue = await validateVenue({ societyId, campoId, dataHora, duracaoMinutos });
+    const venue = await validateVenue({ societyId, campoId, dataHora, duracaoMinutos, allowConflicts: substituirReservas });
     if (!venue.ok) return res.status(409).json({ error: venue.error });
 
     const data = {
@@ -334,13 +409,14 @@ async function create(req, res) {
         aprovadoSocietyEm,
         observacao,
     };
+    const cancelled = [];
     const ownerRequest = tipo === "DONO_TIME" && !isPlatformAdmin(req.actor);
     const row = ownerRequest ? await prisma.amistoso.create({ data }) : await prisma.$transaction(async tx => {
       // Acquire the venue lock before inserting FK references. Otherwise two
       // transactions hold KEY SHARE locks and deadlock while upgrading them.
       if (campoId) await tx.$queryRaw`SELECT id FROM "Campo" WHERE id = ${campoId} FOR UPDATE`;
       const created = await tx.amistoso.create({ data });
-      await confirmAmistosoInTransaction(tx, created.id);
+      await confirmAmistosoInTransaction(tx, created.id, { substituirReservas, reservasConfirmadasIds, cancelled });
       return created;
     });
 
@@ -356,8 +432,9 @@ async function create(req, res) {
     }
 
     const confirmado = await loadAmistoso(row.id);
+    await notifyReplacedReservations(cancelled, confirmado);
     await notifyConfirmed(confirmado);
-    return res.status(201).json(confirmado);
+    return res.status(201).json({ ...confirmado, reservasSubstituidas: cancelled.map(a => a.id) });
   } catch (e) {
     if (/GOPLAY_BOOKING_OVERLAP/.test(e.message)) return res.status(409).json({ error: "Esse horário já está ocupado nesta quadra." });
     if (e.status) return res.status(e.status).json({ error: e.message });
@@ -625,6 +702,7 @@ async function cancelar(req, res) {
 
 module.exports = {
   create,
+  previewConflicts,
   meus,
   readOne,
   responderAdversario,

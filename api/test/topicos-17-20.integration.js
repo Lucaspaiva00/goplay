@@ -177,6 +177,64 @@ async function user(name,tipo='PLAYER',isSocioGoPlay=false) {
  assert.equal(await prisma.amistoso.count({where:{societyId:society.id,dataHora:new Date(at('20'))}}),1);
  const midnight=await request('/amistosos' ,venueOwner,'POST',{...base,dataHora:at('23'),duracaoMinutos:60},201);assert.equal((await prisma.agendamento.findUnique({where:{id:midnight.agendamentoId}})).horaFim,'00:00');
  assert(await prisma.notificacao.count({where:{usuarioId:players[0].id,titulo:'Você vai jogar este amistoso?'}})>0);
+ // Replacement is explicit, restricted to the venue, and scoped to one date.
+ const replaceBase={...base,dataHora:at('12'),duracaoMinutos:90};
+ const date=new Date(`${dateKey}T00:00:00Z`),nextDate=new Date('2035-10-15T00:00:00Z');
+ const group=await prisma.grupoHorario.create({data:{nome:'Fixed test',societyId:society.id,organizadorId:ownerA.id,timeId:teamA.id}});
+ const fixed=await prisma.horarioFixo.create({data:{grupoId:group.id,societyId:society.id,campoId:campo.id,organizadorId:ownerA.id,diaSemana:1,horaInicio:'12:00',horaFim:'13:00',dataInicio:date,status:'APROVADO'}});
+ const bookingData={societyId:society.id,campoId:campo.id,timeId:teamA.id,organizadorId:ownerA.id,data:date,valor:100,status:'CONFIRMADO'};
+ const old1=await prisma.agendamento.create({data:{...bookingData,horaInicio:'12:00',horaFim:'13:00',horarioFixoId:fixed.id,grupoHorarioId:group.id}});
+ const old2=await prisma.agendamento.create({data:{...bookingData,horaInicio:'13:00',horaFim:'14:00'}});
+ const nextWeek=await prisma.agendamento.create({data:{...bookingData,data:nextDate,horaInicio:'12:00',horaFim:'13:00',horarioFixoId:fixed.id,grupoHorarioId:group.id}});
+ const adjacent=await prisma.agendamento.create({data:{...bookingData,horaInicio:'14:00',horaFim:'15:00'}});
+ const paymentData={societyId:society.id,usuarioId:ownerA.id,tipo:'AVULSO',valor:100,forma:'PIX'};
+ const pending=await prisma.pagamento.create({data:{...paymentData,agendamentoId:old1.id}});
+ const paid=await prisma.pagamento.create({data:{...paymentData,agendamentoId:old2.id,status:'PAGO',pagoEm:new Date()}});
+ const share=await prisma.pagamento.create({data:{...paymentData,usuarioId:players[0].id,descricao:`Rateio Fixed test - ${dateKey} - agendamento ${old1.id}`}});
+ const monthly=await prisma.pagamento.create({data:{...paymentData,descricao:'Mensalidade Fixed test'}});
+ await request('/amistosos/conflitos',ownerA,'POST',replaceBase,403);
+ await request('/amistosos/conflitos',outsider,'POST',replaceBase,403);
+ await request('/amistosos/conflitos',venueOwner,'POST',{...replaceBase,societyId:otherSociety.id},403);
+ await request('/amistosos',ownerA,'POST',{...replaceBase,substituirReservas:true,reservasConfirmadasIds:[old1.id,old2.id]},403);
+ await request('/amistosos',venueOwner,'POST',replaceBase,409);
+ const preview=await request('/amistosos/conflitos',venueOwner,'POST',replaceBase);
+ assert.deepEqual(preview.reservas.map(r=>r.id).sort((a,b)=>a-b),[old1.id,old2.id]);
+ assert(preview.reservas.find(r=>r.id===old1.id).horarioFixo);
+ assert(preview.reservas.find(r=>r.id===old2.id).pagamentoPago);
+ await request('/amistosos',venueOwner,'POST',{...replaceBase,substituirReservas:true},400);
+ const beforeReplace=await prisma.amistoso.count({where:{societyId:society.id}});
+ await request('/amistosos',venueOwner,'POST',{...replaceBase,substituirReservas:true,reservasConfirmadasIds:[old1.id]},409);
+ assert.equal(await prisma.amistoso.count({where:{societyId:society.id}}),beforeReplace);
+ assert.equal((await prisma.agendamento.findUnique({where:{id:old1.id}})).status,'CONFIRMADO');checks+=2;
+ const replacement=await request('/amistosos',venueOwner,'POST',{...replaceBase,substituirReservas:true,reservasConfirmadasIds:preview.reservas.map(r=>r.id)},201);
+ assert.equal(replacement.status,'CONFIRMADO');
+ for(const id of [old1.id,old2.id]) {assert.equal((await prisma.agendamento.findUnique({where:{id}})).status,'CANCELADO');checks++;}
+ for(const id of [nextWeek.id,adjacent.id]) {assert.equal((await prisma.agendamento.findUnique({where:{id}})).status,'CONFIRMADO');checks++;}
+ assert.equal((await prisma.horarioFixo.findUnique({where:{id:fixed.id}})).status,'APROVADO');checks++;
+ for(const id of [pending.id,share.id]) {assert.equal((await prisma.pagamento.findUnique({where:{id}})).status,'CANCELADO');checks++;}
+ assert.equal((await prisma.pagamento.findUnique({where:{id:paid.id}})).status,'PAGO');checks++;
+ assert.equal((await prisma.pagamento.findUnique({where:{id:monthly.id}})).status,'PENDENTE');checks++;
+ assert(await prisma.notificacao.count({where:{usuarioId:ownerA.id,titulo:'Reserva substituída por amistoso'}})>0);checks++;
+ // Another confirmed friendly is cancelled coherently, with its game removed.
+ const replacementPreview=await request('/amistosos/conflitos',partner,'POST',replaceBase);
+ const superseding=await request('/amistosos',partner,'POST',{...replaceBase,substituirReservas:true,reservasConfirmadasIds:replacementPreview.reservas.map(r=>r.id)},201);
+ assert.equal((await prisma.amistoso.findUnique({where:{id:replacement.id}})).status,'CANCELADO');checks++;
+ assert.equal(await prisma.jogo.findUnique({where:{id:replacement.jogo.id}}),null);checks++;
+ await request(`/jogo/${superseding.jogo.id}/cronometro`,venueOwner,'POST',{acao:'INICIAR'});
+ const activePreview=await request('/amistosos/conflitos',venueOwner,'POST',replaceBase);
+ assert(activePreview.reservas[0].bloqueada);checks++;
+ await request('/amistosos',venueOwner,'POST',{...replaceBase,substituirReservas:true,reservasConfirmadasIds:activePreview.reservas.map(r=>r.id)},409);
+ assert.equal((await prisma.agendamento.findUnique({where:{id:superseding.agendamentoId}})).status,'CONFIRMADO');checks++;
+
+ const blockedRange={...replaceBase,duracaoMinutos:180};
+ const blockedPreview=await request('/amistosos/conflitos',venueOwner,'POST',blockedRange);
+ await request('/amistosos',venueOwner,'POST',{...blockedRange,substituirReservas:true,reservasConfirmadasIds:blockedPreview.reservas.map(r=>r.id)},409);
+ assert.equal((await prisma.agendamento.findUnique({where:{id:adjacent.id}})).status,'CONFIRMADO');checks++;
+ const raceOld=await prisma.agendamento.create({data:{...bookingData,horaInicio:'21:00',horaFim:'22:00'}});
+ const replaceRaceBody={...base,dataHora:at('21'),duracaoMinutos:60,substituirReservas:true,reservasConfirmadasIds:[raceOld.id]};
+ const replaceRace=await Promise.all([1,2].map(()=>fetch(`http://127.0.0.1:${server.address().port}/amistosos`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${venueOwner.token}`},body:JSON.stringify(replaceRaceBody)})));
+ assert.deepEqual(replaceRace.map(r=>r.status).sort(),[201,409]);checks+=2;
+ assert.equal(await prisma.amistoso.count({where:{societyId:society.id,dataHora:new Date(at('21'))}}),1);checks++;
  await cleanupFixtures();
  console.log(`PASS: ${checks} API/database checks (${releaseValidation ? 'production database; isolated fixtures removed' : 'isolated local database; fixtures removed'}).`);
  await prisma.$disconnect();server.close();process.exit(0);
