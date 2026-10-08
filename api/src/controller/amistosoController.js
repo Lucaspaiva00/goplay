@@ -336,6 +336,9 @@ async function create(req, res) {
     };
     const ownerRequest = tipo === "DONO_TIME" && !isPlatformAdmin(req.actor);
     const row = ownerRequest ? await prisma.amistoso.create({ data }) : await prisma.$transaction(async tx => {
+      // Acquire the venue lock before inserting FK references. Otherwise two
+      // transactions hold KEY SHARE locks and deadlock while upgrading them.
+      if (campoId) await tx.$queryRaw`SELECT id FROM "Campo" WHERE id = ${campoId} FOR UPDATE`;
       const created = await tx.amistoso.create({ data });
       await confirmAmistosoInTransaction(tx, created.id);
       return created;

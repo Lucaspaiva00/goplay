@@ -28,6 +28,10 @@ async function request(path, actor, method='GET', body, expected=200, extra={}) 
   if(path.endsWith('.pdf')) { assert.equal(res.status,expected,path);assert.equal(res.headers.get('content-type'),'application/pdf');const b=Buffer.from(await res.arrayBuffer());assert.equal(b.subarray(0,4).toString(),'%PDF');checks++;return b; }
   const json = await res.json(); assert.equal(res.status,expected,`${method} ${path}: ${JSON.stringify(json)}`); checks++;return json;
 }
+process.once('SIGTERM', async () => {
+  try { await cleanupFixtures(); } catch (e) { console.error('Interrupted validation cleanup:', e); }
+  await prisma.$disconnect(); server.close(); process.exit(1);
+});
 const auth=require('../src/auth');
 const stamp=Date.now();
 async function user(name,tipo='PLAYER',isSocioGoPlay=false) {
