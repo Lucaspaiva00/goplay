@@ -80,14 +80,14 @@ function sanitizarJogoPublico(jogo) {
     const { usuarioId, ...societyPublico } = campeonato.society;
     campeonato.society = societyPublico;
   }
-  const amistoso = seguro.amistoso ? { ...seguro.amistoso } : null;
+  const amistoso = seguro.amistoso ? {
+    id: seguro.amistoso.id, status: seguro.amistoso.status,
+    dataHora: seguro.amistoso.dataHora, duracaoMinutos: seguro.amistoso.duracaoMinutos,
+    society: seguro.amistoso.society,
+  } : null;
   if (amistoso?.society) {
     const { usuarioId, ...societyPublico } = amistoso.society;
     amistoso.society = societyPublico;
-  }
-  if (amistoso?.criadoPor) {
-    const { email, isSocioGoPlay, ...criadorPublico } = amistoso.criadoPor;
-    amistoso.criadoPor = criadorPublico;
   }
   return {
     ...seguro,

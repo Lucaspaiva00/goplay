@@ -139,7 +139,7 @@ function rowHtml(a){
     <div class="friend-actions">
       ${opponentAction?`<button class="friend-action ok" onclick="respondOpponent(${a.id},'ACEITAR')">✓ Aceitar</button><button class="friend-action no" onclick="respondOpponent(${a.id},'RECUSAR')">✕ Recusar</button>`:''}
       ${canSocietyRespond(a)?`<button class="friend-action ok" onclick="respondSociety(${a.id},'APROVAR')">✓ Aprovar estrutura</button><button class="friend-action no" onclick="respondSociety(${a.id},'RECUSAR')">✕ Recusar</button>`:''}
-      ${a.jogo?.id?`<button class="friend-action" onclick="location.href='jogo-detalhe.html?jogoId=${a.jogo.id}'">Central da partida</button>`:''}
+      ${a.jogo?.id?`<button class="friend-action" onclick="location.href='jogo-detalhe.html?jogoId=${a.jogo.id}'">${['AO_VIVO','PAUSADA','INTERVALO'].includes(a.jogo.statusOperacao)?'🔴 Assistir ao vivo':a.status==='REALIZADO'?'Ver resultado':'Acompanhar partida'}</button>`:''}
       ${canOpenMesa(a)&&a.status==="CONFIRMADO"?`<button class="friend-action dark" onclick="openMesa(${a.id})">Abrir Mesa</button>`:''}
       ${showCancel?`<button class="friend-action no" onclick="cancelar(${a.id})">Cancelar</button>`:''}
     </div>

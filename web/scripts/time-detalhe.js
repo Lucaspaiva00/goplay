@@ -279,7 +279,7 @@ async function responderSolicitacaoTime(id, status) {
 }
 
 async function criarRotinaDoTime(time) {
-    if (!confirm(`Criar a rotina recorrente do ${time.nome}? O elenco atual será usado nas confirmações 👍/👎.`)) return;
+    if (!confirm(`Criar a agenda de jogos do ${time.nome}? O elenco atual será usado nas confirmações 👍/👎.`)) return;
     try {
         const group = await fetchJSON(`${BASE_URL}/grupos-horario`, {
             method: "POST",
@@ -287,7 +287,7 @@ async function criarRotinaDoTime(time) {
             body: JSON.stringify({
                 timeId: Number(time.id),
                 societyId: Number(time.society?.id || 0),
-                nome: `${time.nome} • Rotina`,
+                nome: `${time.nome} • Jogos semanais`,
                 descricao: `Horário recorrente e confirmações do ${time.nome}.`,
                 maxJogadores: Math.max(20, (time.jogadores || []).length + 5)
             })
@@ -296,7 +296,7 @@ async function criarRotinaDoTime(time) {
     } catch (e) {
         if (e.message?.includes("já possui")) {
             await carregarTime(time.id);
-        } else alert(e.message || "Erro ao criar rotina do time.");
+        } else alert(e.message || "Erro ao organizar jogos do time.");
     }
 }
 
@@ -312,13 +312,13 @@ function renderRotinaTime(time, podeGerenciar, isMembro) {
 
     if (rotina?.id) {
         if (text) text.textContent = "A lista de jogadores vem do elenco do time. Aqui ficam o horário recorrente e a enquete semanal 👍/👎.";
-        actions.innerHTML = `<button class="btn green" onclick="location.href='horario-grupo.html?grupoId=${rotina.id}'"><i class="fa fa-thumbs-up"></i> Abrir rotina e presenças</button>`;
+        actions.innerHTML = `<button class="btn green" onclick="location.href='horario-grupo.html?grupoId=${rotina.id}'"><i class="fa fa-thumbs-up"></i> Ver jogos e presenças</button>`;
     } else if (podeGerenciar) {
-        if (text) text.textContent = "Crie uma única rotina vinculada a este time. Os jogadores aprovados entram automaticamente nas confirmações semanais.";
-        actions.innerHTML = `<button class="btn green" id="btnCriarRotinaTime"><i class="fa fa-rotate"></i> Criar rotina do time</button>`;
+        if (text) text.textContent = "Crie uma agenda de jogos vinculada a este time. Os jogadores aprovados entram automaticamente nas confirmações semanais.";
+        actions.innerHTML = `<button class="btn green" id="btnCriarRotinaTime"><i class="fa fa-rotate"></i> Organizar jogos do time</button>`;
         document.getElementById("btnCriarRotinaTime").onclick = () => criarRotinaDoTime(time);
     } else {
-        if (text) text.textContent = "O dono do time ainda não configurou a rotina semanal.";
+        if (text) text.textContent = "O dono do time ainda não configurou a agenda semanal.";
         actions.innerHTML = "";
     }
 }
@@ -583,7 +583,7 @@ async function editarLimiteJogadoresTime(timeId, atual, ocupados) {
 }
 
 async function removerJogadorDoTime(timeId, usuarioId) {
-    if (!confirm("Remover este jogador do time? Ele também sairá das próximas confirmações da rotina.")) return;
+    if (!confirm("Remover este jogador do time? Ele também sairá das próximas confirmações da agenda de jogos.")) return;
     try {
         await fetchJSON(`${BASE_URL}/time/${timeId}/jogadores/${usuarioId}/remover`, { method: "POST" });
         await carregarTime(timeId);

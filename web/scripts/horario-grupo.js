@@ -30,12 +30,12 @@ function updateBillingChoice(){
 async function render(){
   group=await api(`${BASE_URL}/grupos-horario/${GRUPO_ID}`);
   const topTitle=document.querySelector('.topbar .title');
-  if(topTitle) topTitle.textContent=group.time?'Rotina do Time':'Rotina / Presenças';
-  document.title=group.time?`Rotina • ${group.time.nome} – GoPlay`:'Rotina / Presenças – GoPlay';
+  if(topTitle) topTitle.textContent=group.time?'Jogos do time':'Jogos / Presenças';
+  document.title=group.time?`Jogos • ${group.time.nome} – GoPlay`:'Jogos / Presenças – GoPlay';
   const hoje=localDateKey();
   const future=group.agendamentos.filter(a=>dateKey(a.data)>=hoje);
   const next=future[0];
-  $('grupoHero').innerHTML=`<div><h2>${esc(group.nome)}</h2><p>📍 ${esc(group.society.nome)} • ${group.time?`⚽ Time: ${esc(group.time.nome)} • `:''}Organizador: ${esc(group.organizador.nome)}</p></div><div class="phase4-actions"><button class="p4-btn p4-secondary" onclick="location.href='meus-horarios.html'">Todas as rotinas</button>${group.time?`<button class="p4-btn p4-secondary" onclick="location.href='time-detalhe.html?timeId=${group.time.id}'">Ver time</button>`:''}</div>`;
+  $('grupoHero').innerHTML=`<div><h2>${esc(group.nome)}</h2><p>📍 ${esc(group.society.nome)} • ${group.time?`⚽ Time: ${esc(group.time.nome)} • `:''}Organizador: ${esc(group.organizador.nome)}</p></div><div class="phase4-actions"><button class="p4-btn p4-secondary" onclick="location.href='meus-horarios.html'">Todos os jogos</button>${group.time?`<button class="p4-btn p4-secondary" onclick="location.href='time-detalhe.html?timeId=${group.time.id}'">Ver time</button>`:''}</div>`;
   $('grupoResumo').innerHTML=`<div class="p4-topline"><span class="p4-chip">👥 ${group.membros.length}/${group.maxJogadores}</span><span class="p4-chip">${group.ativo?'Ativo':'Inativo'}</span></div><p class="p4-muted" style="margin-top:10px">${esc(group.descricao||'Sem descrição.')}</p>`;
   $('proximoJogo').innerHTML=next?`<strong>${date(next.data)} • ${esc(next.horaInicio)}-${esc(next.horaFim)}</strong><div class="p4-topline" style="margin-top:10px"><span class="p4-chip yes">👍 ${countStatus(next,'VOU')}</span><span class="p4-chip no">👎 ${countStatus(next,'NAO_VOU')}</span><span class="p4-chip wait">⏳ ${countStatus(next,'PENDENTE')}</span></div><button class="p4-btn p4-primary" style="margin-top:12px" onclick="location.href='confirmar-presenca.html?agendamentoId=${next.id}'">Abrir confirmação</button>`:'<div class="p4-muted">Ainda não existe encontro futuro.</div>';
   const hf=group.horariosFixos[0];
@@ -98,4 +98,4 @@ $('formHorarioFixo')?.addEventListener('submit',async e=>{
 });
 window.aprovarHorario=async hfId=>{if(!confirm('Aprovar este horário fixo e reservar todas as ocorrências?'))return;try{const d=await api(`${BASE_URL}/horarios-fixos/${hfId}/aprovar`,{method:'POST'});alert(`${d.agendamentos.length} encontros aprovados e reservados.`);await render();}catch(e){alert(e.message);}};
 window.recusarHorario=async hfId=>{if(!confirm('Recusar esta solicitação de horário fixo?'))return;try{await api(`${BASE_URL}/horarios-fixos/${hfId}/recusar`,{method:'POST'});alert('Solicitação recusada.');await render();}catch(e){alert(e.message);}};
-document.addEventListener('DOMContentLoaded',()=>{if(!GRUPO_ID)return alert('Rotina inválida. Volte ao time e abra a rotina novamente.');render().catch(e=>alert(e.message));});
+document.addEventListener('DOMContentLoaded',()=>{if(!GRUPO_ID)return alert('Agenda inválida. Volte ao time e abra a agenda de jogos novamente.');render().catch(e=>alert(e.message));});

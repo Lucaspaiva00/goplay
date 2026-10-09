@@ -235,6 +235,25 @@ async function user(name,tipo='PLAYER',isSocioGoPlay=false) {
  const replaceRace=await Promise.all([1,2].map(()=>fetch(`http://127.0.0.1:${server.address().port}/amistosos`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${venueOwner.token}`},body:JSON.stringify(replaceRaceBody)})));
  assert.deepEqual(replaceRace.map(r=>r.status).sort(),[201,409]);checks+=2;
  assert.equal(await prisma.amistoso.count({where:{societyId:society.id,dataHora:new Date(at('21'))}}),1);checks++;
+ // Spectators discover only confirmed games, with no private scheduling/presence data.
+ await prisma.amistoso.update({where:{id:superseding.id},data:{dataHora:new Date(Date.now()-3600000)}});
+ const query=`q=${stamp}`;
+ const feed=await request(`/amistosos/acompanhar?${query}`,null);
+ assert(feed.some(x=>x.id===superseding.id));checks++;
+ assert(!feed.some(x=>[replacement.id,refused.id,deniedVenue.id].includes(x.id)));checks++;
+ const liveFeed=await request(`/amistosos/acompanhar?aba=ao-vivo&${query}`,players[0]);
+ assert(liveFeed.some(x=>x.id===superseding.id));assert(liveFeed.every(x=>!x.jogo.finalizado));checks+=2;
+ const results=await request(`/amistosos/acompanhar?aba=resultados&${query}`,ownerA);
+ assert(results.some(x=>x.id===accepted.id&&x.society===null));assert(results.every(x=>x.jogo.finalizado));checks+=2;
+ await request('/amistosos/acompanhar?aba=invalid',null,'GET',undefined,400);
+ await request('/amistosos/acompanhar?take=61',null,'GET',undefined,400);
+ await request(`/jogo/${superseding.jogo.id}/evento`,players[0],'POST',{tipo:'GOL',timeId:teamA.id,jogadorId:players[0].id,minuto:2},403);
+ await request(`/jogo/${superseding.jogo.id}/evento`,venueOwner,'POST',{tipo:'GOL',timeId:teamA.id,jogadorId:players[0].id,minuto:2});
+ const updated=await request(`/amistosos/acompanhar?aba=ao-vivo&${query}`,null);
+ const watched=updated.find(x=>x.id===superseding.id);assert.equal(watched.jogo.golsA,1);assert.equal(watched.jogo.eventos[0].tipo,'GOL');checks+=2;
+ for(const forbidden of ['mesaToken','email','senha','presencas','pagamento','criadoPor','agendamentoId']){assert(!JSON.stringify(updated).includes(`"${forbidden}"`));checks++;}
+ const detail=await request(`/jogo/${superseding.jogo.id}`,players[0]);
+ assert(!('criadoPorId' in detail.jogo.amistoso));assert(!('observacao' in detail.jogo.amistoso));checks+=2;
  await cleanupFixtures();
  console.log(`PASS: ${checks} API/database checks (${releaseValidation ? 'production database; isolated fixtures removed' : 'isolated local database; fixtures removed'}).`);
  await prisma.$disconnect();server.close();process.exit(0);

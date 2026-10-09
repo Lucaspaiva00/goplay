@@ -63,7 +63,7 @@ function ajustarModoTela() {
             if (blocoCriacao) blocoCriacao.style.display = "none";
         } else {
             if (pageTitle) pageTitle.textContent = "⚽ Meus Times";
-            if (pageSubtitle) pageSubtitle.textContent = "Cadastre, gerencie o elenco e organize a rotina semanal dos seus times.";
+            if (pageSubtitle) pageSubtitle.textContent = "Cadastre, gerencie o elenco e organize a agenda semanal dos seus times.";
             if (blocoCriacao) blocoCriacao.style.display = "block";
         }
         return;

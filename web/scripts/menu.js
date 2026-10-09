@@ -36,31 +36,29 @@ if (!window.menuLoaded) {
     if(["ADMIN","MESARIO"].includes(f)) html+=section("ESPORTES")+item("fa-trophy","Campeonatos","location.href='campeonatos.html'")+item("fa-handshake","Amistosos","location.href='amistosos.html'");
     if(f==="ADMIN") html+=section("EMPRESA")+item("fa-user-shield","Funcionários","location.href='funcionarios.html'")+item("fa-futbol","Quadras","location.href='campos.html'")+item("fa-utensils","Cardápio","location.href='cardapio.html'");
   }
-  if(usuarioLogado.tipo==="DONO_TIME"){
-    html+=section("JOGAR")
-      +item("fa-building","Explorar Empresas","location.href='societies.html'")
-      +item("fa-futbol","Ver Quadras","navegarComEmpresa('campos-view.html')")
-      +item("fa-users","Times da Empresa","navegarComEmpresa('times.html?view=empresa')")
-      +item("fa-receipt","Minha Comanda","location.href='comanda.html'")
-      +item("fa-list","Minhas Reservas","location.href='meus-agendamentos.html'")
-      +item("fa-money-bill","Meus Pagamentos","location.href='meus-pagamentos.html'");
-    html+=section("MEU TIME")
-      +item("fa-shield-halved","Meus Times","location.href='times.html'")
-      +item("fa-thumbs-up","Horário Fixo / Presenças","location.href='meus-horarios.html'")
+  if(["DONO_TIME","PLAYER"].includes(usuarioLogado.tipo)){
+    const owner=usuarioLogado.tipo==="DONO_TIME";
+    html+=section("COMUNIDADE")
+      +item("fa-play","Assistir partidas","location.href='acompanhar.html'")
       +item("fa-trophy","Campeonatos","location.href='campeonatos-view.html'")
-      +item("fa-envelope-open-text","Convites de campeonato","location.href='convites-campeonato.html'")
-      +item("fa-handshake","Amistosos","location.href='amistosos.html'");
-  }
-  if(usuarioLogado.tipo==="PLAYER"){
-    html+=section("JOGAR")
-      +item("fa-building","Explorar Empresas","location.href='societies.html'")
-      +item("fa-futbol","Ver Quadras","navegarComEmpresa('campos-view.html')")
-      +item("fa-users","Times da Empresa","navegarComEmpresa('times.html')")
-      +item("fa-thumbs-up","Minhas Presenças","location.href='meus-horarios.html'")
-      +item("fa-receipt","Minha Comanda","location.href='comanda.html'")
-      +item("fa-trophy","Campeonatos","location.href='campeonatos-view.html'")
-      +item("fa-envelope-open-text","Convites de campeonato","location.href='convites-campeonato.html'")
-      +item("fa-handshake","Meus Amistosos","location.href='amistosos.html'");
+      +item("fa-building","Explorar Societies","location.href='societies.html'");
+    html+=section("MEU FUTEBOL")
+      +item("fa-shield-halved",owner?"Meus times":"Meu time",owner?"location.href='times.html'":"location.href='meu-time.html'")
+      +item("fa-thumbs-up",owner?"Jogos do time":"Confirmar presença","location.href='meus-horarios.html'")
+      +item("fa-handshake",owner?"Marcar / gerenciar amistosos":"Meus amistosos","location.href='amistosos.html'")
+      +item("fa-envelope-open-text","Convites de campeonato","location.href='convites-campeonato.html'");
+    if(owner)html+=item("fa-plus","Criar time","location.href='times.html#blocoCriacaoTime'");
+    html+=section("RESERVAS E SERVIÇOS")
+      +item("fa-futbol","Reservar quadra","navegarComEmpresa('campos-view.html')")
+      +item("fa-users","Encontrar times",owner?"navegarComEmpresa('times.html?view=empresa')":"navegarComEmpresa('times.html')")
+      +item("fa-receipt","Minha comanda","location.href='comanda.html'")
+      +item("fa-list","Minhas reservas","location.href='meus-agendamentos.html'")
+      +item("fa-money-bill","Meus pagamentos","location.href='meus-pagamentos.html'");
+    if(!document.getElementById('communityStyles')){const css=document.createElement('link');css.id='communityStyles';css.rel='stylesheet';css.href='../css/comunidade.css?v=20261009';document.head.appendChild(css);}
+    const nav=document.createElement('nav');nav.className='sport-bottom-nav';nav.setAttribute('aria-label','Navegação principal');
+    nav.innerHTML=`<a href="home.html"><i class="fa fa-house"></i>Feed</a><a href="acompanhar.html"><i class="fa fa-play"></i>Partidas</a><a href="meus-horarios.html"><i class="fa fa-calendar-check"></i>Meus jogos</a><a href="${owner?'times.html':'meu-time.html'}"><i class="fa fa-shield-halved"></i>Meu time</a>`;
+    for(const a of nav.querySelectorAll('a'))if(a.getAttribute('href').split('?')[0]===location.pathname.split('/').pop())a.setAttribute('aria-current','page');
+    document.body.appendChild(nav);document.body.classList.add('sport-experience');
   }
   if(["ORGANIZADOR_COMPETICAO","ORGAO_PUBLICO"].includes(usuarioLogado.tipo)){
     html+=section("COMPETIÇÕES")

@@ -11,7 +11,7 @@ function label(s){return s==='VOU'?'👍 Vou':s==='NAO_VOU'?'👎 Não vou':'⏳
 async function load(){
   data=await api(`${BASE_URL}/encontros-horario/${agId}`);
   const isRoutine=!!data.grupoHorarioId;
-  $('encontroHero').innerHTML=`<div><h2>${esc(data.nomeJogo||data.time?.nome||'Jogo')}</h2><p>${date(data.data)} • ${esc(data.horaInicio)}-${esc(data.horaFim)} • ${esc(data.society.nome)}</p></div><div class="phase4-actions">${isRoutine?`<button class="p4-btn p4-secondary" onclick="location.href='horario-grupo.html?grupoId=${data.grupoHorarioId}'">Ver rotina</button>`:`<button class="p4-btn p4-secondary" onclick="location.href='meus-agendamentos.html'">Minhas reservas</button>`}</div>`;
+  $('encontroHero').innerHTML=`<div><h2>${esc(data.nomeJogo||data.time?.nome||'Jogo')}</h2><p>${date(data.data)} • ${esc(data.horaInicio)}-${esc(data.horaFim)} • ${esc(data.society.nome)}</p></div><div class="phase4-actions">${isRoutine?`<button class="p4-btn p4-secondary" onclick="location.href='horario-grupo.html?grupoId=${data.grupoHorarioId}'">Agenda do time</button>`:`<button class="p4-btn p4-secondary" onclick="location.href='meus-agendamentos.html'">Minhas reservas</button>`}</div>`;
   const my=data.minhaPresenca;
   const playerView=user?.tipo==='PLAYER'&&!data.podeGerenciar;
   $('votoBox').style.display=my?'block':'none';

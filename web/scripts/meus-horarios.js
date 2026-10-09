@@ -11,8 +11,8 @@ let meusTimes=[];
 function configurePage(){
   if(user?.tipo==='DONO_TIME'){
     $('pageTitleHorarios').textContent='Horário Fixo / Presenças';
-    $('heroHorariosTitulo').textContent='⚽ Rotinas dos seus times';
-    $('heroHorariosTexto').textContent='Crie uma rotina para cada time que administra e acompanhe as confirmações semanais.';
+    $('heroHorariosTitulo').textContent='⚽ Jogos semanais dos seus times';
+    $('heroHorariosTexto').textContent='Organize os jogos semanais de cada time que administra e acompanhe as confirmações semanais.';
     $('btnNovoGrupo').style.display='inline-flex';
     $('disponibilidadeCard').style.display='none';
   }else if(user?.tipo==='PLAYER'){
@@ -30,8 +30,8 @@ async function carregarTimesDoDono(){
 function abrirModalNovaRotina(){
   const usados=new Set(grupos.filter(g=>g.time?.id).map(g=>Number(g.time.id)));
   const disponiveis=meusTimes.filter(t=>!usados.has(Number(t.id)));
-  if(!meusTimes.length) return alert('Você ainda não possui nenhum time. Crie ou administre um time antes de configurar uma rotina.');
-  if(!disponiveis.length) return alert('Todos os seus times já possuem uma rotina. Abra a rotina desejada na lista abaixo.');
+  if(!meusTimes.length) return alert('Você ainda não possui nenhum time. Crie ou administre um time antes de organizar seus jogos.');
+  if(!disponiveis.length) return alert('Todos os seus times já possuem uma agenda de jogos. Abra a agenda de jogos desejada na lista abaixo.');
   $('grupoTimeId').innerHTML='<option value="">Selecione o time</option>'+disponiveis.map(t=>`<option value="${t.id}">${esc(t.nome)} • ${esc(t.society?.nome||'Empresa')}</option>`).join('');
   $('grupoNome').value=''; $('grupoDescricao').value='';
   $('modalNovoGrupo').classList.add('show');
@@ -44,18 +44,18 @@ async function load(){
   if($('toggleDisponivel')) $('toggleDisponivel').checked=!!u.disponivelParaConvites;
   const box=$('gruposLista');
   if(!grupos.length){
-    if(user?.tipo==='DONO_TIME') box.innerHTML='<div class="p4-empty" style="grid-column:1/-1">Nenhuma rotina configurada ainda.<br><br><button class="p4-btn p4-primary" onclick="document.getElementById(\'btnNovoGrupo\').click()">+ Criar primeira rotina</button><div style="margin-top:8px">Escolha qual dos seus times terá o horário fixo.</div></div>';
-    else if(user?.tipo==='PLAYER') box.innerHTML='<div class="p4-empty" style="grid-column:1/-1">Você ainda não possui rotina de time.<br><br><button class="p4-btn p4-primary" onclick="location.href=\'times-disponiveis.html\'">Ver times da empresa</button><div style="margin-top:8px">Solicite entrada em um time. Depois que o dono aprovar, os horários e enquetes aparecem aqui.</div></div>';
+    if(user?.tipo==='DONO_TIME') box.innerHTML='<div class="p4-empty" style="grid-column:1/-1">Nenhuma agenda de jogos configurada ainda.<br><br><button class="p4-btn p4-primary" onclick="document.getElementById(\'btnNovoGrupo\').click()">+ Organizar jogos do time</button><div style="margin-top:8px">Escolha qual dos seus times terá o horário fixo.</div></div>';
+    else if(user?.tipo==='PLAYER') box.innerHTML='<div class="p4-empty" style="grid-column:1/-1">Você ainda não possui agenda do time.<br><br><button class="p4-btn p4-primary" onclick="location.href=\'times-disponiveis.html\'">Ver times da empresa</button><div style="margin-top:8px">Solicite entrada em um time. Depois que o dono aprovar, os horários e enquetes aparecem aqui.</div></div>';
     else box.innerHTML='<div class="p4-empty" style="grid-column:1/-1">Nenhum horário recorrente encontrado.</div>';
     return;
   }
-  box.innerHTML=grupos.map(g=>{const a=g.proximo,c=a?counts(a.presencas):null,st=a?myStatus(a.presencas):null;const hf=g.horariosFixos?.[0];return `<article class="p4-card"><div class="p4-topline"><span class="p4-chip">${g.time?'⚽ '+esc(g.time.nome):(g.euOrganizo?'⭐ Organizador':'👥 Grupo')}</span><span class="p4-chip">${g.membros.length}/${g.maxJogadores}</span>${hf?`<span class="p4-chip ${hf.status==='APROVADO'?'yes':hf.status==='PENDENTE'?'wait':'no'}">${hf.status==='APROVADO'?'✓ Fixo':hf.status==='PENDENTE'?'⏳ Aguardando empresa':'✕ Recusado'}</span>`:''}</div><h3 style="margin-top:10px">${esc(g.nome)}</h3><div class="p4-muted">📍 ${esc(g.society?.nome||'Empresa')}</div>${a?`<div style="margin-top:14px"><strong>Próximo: ${dte(a.data)} • ${esc(a.horaInicio)}</strong><div class="p4-topline" style="margin-top:8px"><span class="p4-chip yes">👍 ${c.vou}</span><span class="p4-chip no">👎 ${c.nao}</span><span class="p4-chip wait">⏳ ${c.pend}</span></div>${user?.tipo==='PLAYER'?`<div style="margin-top:8px" class="p4-muted">Sua resposta: ${st==='VOU'?'👍 Vou':st==='NAO_VOU'?'👎 Não vou':'⏳ Pendente'}</div>`:''}</div>`:'<div class="p4-muted" style="margin-top:14px">Nenhum encontro futuro criado ainda.</div>'}<div class="phase4-actions" style="margin-top:14px"><button class="p4-btn p4-dark" onclick="location.href='horario-grupo.html?grupoId=${g.id}'">${g.euOrganizo?'Gerenciar rotina':'Abrir rotina'}</button>${a?`<button class="p4-btn p4-primary" onclick="location.href='confirmar-presenca.html?agendamentoId=${a.id}'">${g.euOrganizo?'Ver presenças':'Confirmar presença'}</button>`:''}</div></article>`}).join('');
+  box.innerHTML=grupos.map(g=>{const a=g.proximo,c=a?counts(a.presencas):null,st=a?myStatus(a.presencas):null;const hf=g.horariosFixos?.[0];return `<article class="p4-card"><div class="p4-topline"><span class="p4-chip">${g.time?'⚽ '+esc(g.time.nome):(g.euOrganizo?'⭐ Organizador':'👥 Grupo')}</span><span class="p4-chip">${g.membros.length}/${g.maxJogadores}</span>${hf?`<span class="p4-chip ${hf.status==='APROVADO'?'yes':hf.status==='PENDENTE'?'wait':'no'}">${hf.status==='APROVADO'?'✓ Fixo':hf.status==='PENDENTE'?'⏳ Aguardando empresa':'✕ Recusado'}</span>`:''}</div><h3 style="margin-top:10px">${esc(g.nome)}</h3><div class="p4-muted">📍 ${esc(g.society?.nome||'Empresa')}</div>${a?`<div style="margin-top:14px"><strong>Próximo: ${dte(a.data)} • ${esc(a.horaInicio)}</strong><div class="p4-topline" style="margin-top:8px"><span class="p4-chip yes">👍 ${c.vou}</span><span class="p4-chip no">👎 ${c.nao}</span><span class="p4-chip wait">⏳ ${c.pend}</span></div>${user?.tipo==='PLAYER'?`<div style="margin-top:8px" class="p4-muted">Sua resposta: ${st==='VOU'?'👍 Vou':st==='NAO_VOU'?'👎 Não vou':'⏳ Pendente'}</div>`:''}</div>`:'<div class="p4-muted" style="margin-top:14px">Nenhum encontro futuro criado ainda.</div>'}<div class="phase4-actions" style="margin-top:14px"><button class="p4-btn p4-dark" onclick="location.href='horario-grupo.html?grupoId=${g.id}'">${g.euOrganizo?'Gerenciar jogos':'Ver jogos'}</button>${a?`<button class="p4-btn p4-primary" onclick="location.href='confirmar-presenca.html?agendamentoId=${a.id}'">${g.euOrganizo?'Ver presenças':'Confirmar presença'}</button>`:''}</div></article>`}).join('');
 }
 $('btnNovoGrupo')?.addEventListener('click',abrirModalNovaRotina);
 $('fecharNovoGrupo')?.addEventListener('click',()=>$('modalNovoGrupo').classList.remove('show'));
 $('formNovoGrupo')?.addEventListener('submit',async e=>{
   e.preventDefault();
-  if(user?.tipo!=='DONO_TIME') return alert('Somente o dono do time pode criar uma rotina.');
+  if(user?.tipo!=='DONO_TIME') return alert('Somente o dono do time pode organizar jogos.');
   const timeId=Number($('grupoTimeId').value||0); if(!timeId) return alert('Selecione o time.');
   try{
     const payload={timeId,nome:$('grupoNome').value.trim()||undefined,descricao:$('grupoDescricao').value.trim()||undefined};
@@ -64,7 +64,7 @@ $('formNovoGrupo')?.addEventListener('submit',async e=>{
     location.href=`horario-grupo.html?grupoId=${g.id}`;
   }catch(err){
     const match=String(err.message||'').match(/grupoId[^0-9]*(\d+)/i);
-    if(match&&confirm('Este time já possui uma rotina. Deseja abri-la?')) location.href=`horario-grupo.html?grupoId=${match[1]}`; else alert(err.message);
+    if(match&&confirm('Este time já possui uma agenda de jogos. Deseja abri-la?')) location.href=`horario-grupo.html?grupoId=${match[1]}`; else alert(err.message);
   }
 });
 $('toggleDisponivel')?.addEventListener('change',async e=>{try{await api(`${BASE_URL}/jogadores/disponibilidade`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({disponivel:e.target.checked})});}catch(err){alert(err.message);e.target.checked=!e.target.checked;}});

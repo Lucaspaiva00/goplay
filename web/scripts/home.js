@@ -24,12 +24,13 @@ window.votarHome=votarHome;
 
 function cardJogo(a){
   const st=resposta(a);
+  const podeResponder=usuarioLogado.tipo==="PLAYER"||(a.presencas||[]).some(p=>Number(p.usuarioId)===Number(usuarioLogado.id));
   return `<article class="home-game-card">
     <div class="home-game-date"><strong>${dateBR(a.data)}</strong><span>${esc(a.horaInicio)}–${esc(a.horaFim)}</span></div>
     <div class="home-game-body"><strong>${esc(a.grupoHorario?.nome||a.time?.nome||"Jogo")}</strong><small>${esc(a.campo?.nome||"Quadra")} • ${esc(a.society?.nome||"")}</small></div>
     <div class="home-presence-actions">
-      <button class="home-vote yes ${st==="VOU"?"active":""}" onclick="votarHome(${a.id},'VOU',this)">👍 Vou</button>
-      <button class="home-vote no ${st==="NAO_VOU"?"active":""}" onclick="votarHome(${a.id},'NAO_VOU',this)">👎 Não vou</button>
+      ${podeResponder?`<button class="home-vote yes ${st==="VOU"?"active":""}" onclick="votarHome(${a.id},'VOU',this)">👍 Vou</button>
+      <button class="home-vote no ${st==="NAO_VOU"?"active":""}" onclick="votarHome(${a.id},'NAO_VOU',this)">👎 Não vou</button>`:`<a class="home-game-watch" href="confirmar-presenca.html?agendamentoId=${a.id}">Ver presenças</a>`}
     </div>
     <button class="home-game-more" onclick="location.href='confirmar-presenca.html?agendamentoId=${a.id}'" aria-label="Abrir detalhes">›</button>
   </article>`;
@@ -54,12 +55,14 @@ window.votarAmistosoHome=votarAmistosoHome;
 function cardAmistoso(a){
   const p=(a.presencas||[]).find(x=>Number(x.usuarioId)===Number(usuarioLogado.id));
   const player=usuarioLogado.tipo==="PLAYER";
+  const active=["AO_VIVO","PAUSADA","INTERVALO"].includes(a.jogo?.statusOperacao);
   return `<article class="home-game-card">
     <div class="home-game-date"><strong>${new Date(a.dataHora).toLocaleDateString("pt-BR")}</strong><span>${new Date(a.dataHora).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</span></div>
     <div class="home-game-body"><strong>🤝 ${esc(a.timeA?.nome)} × ${esc(a.timeB?.nome)}</strong><small>${esc(a.society?.nome||"Local a definir")}${a.campo?.nome?` • ${esc(a.campo.nome)}`:""}</small></div>
     <div class="home-presence-actions">
-      ${player&&p?`<button class="home-vote yes ${p.status==="VOU"?"active":""}" onclick="votarAmistosoHome(${a.id},'VOU',this)">👍 Vou</button><button class="home-vote no ${p.status==="NAO_VOU"?"active":""}" onclick="votarAmistosoHome(${a.id},'NAO_VOU',this)">👎 Não vou</button>`:`<span class="chip">${a.status==="CONFIRMADO"?"Confirmado":a.status.replaceAll("_"," ")}</span>`}
+      ${player&&p&&a.status==="CONFIRMADO"?`<button class="home-vote yes ${p.status==="VOU"?"active":""}" onclick="votarAmistosoHome(${a.id},'VOU',this)">👍 Vou</button><button class="home-vote no ${p.status==="NAO_VOU"?"active":""}" onclick="votarAmistosoHome(${a.id},'NAO_VOU',this)">👎 Não vou</button>`:`<span class="chip">${a.status==="CONFIRMADO"?"Confirmado":a.status.replaceAll("_"," ")}</span>`}
     </div>
+    ${a.jogo?.id?`<a class="home-game-watch" href="jogo-detalhe.html?jogoId=${a.jogo.id}">${active?'🔴 Assistir ao vivo':'▶ Acompanhar'}</a>`:''}
     <button class="home-game-more" onclick="location.href='amistosos.html?amistosoId=${a.id}'" aria-label="Abrir amistoso">›</button>
   </article>`;
 }
@@ -69,7 +72,7 @@ async function amistososDoUsuario(timeId=null){
   const now=Date.now();
   return (list||[]).filter(a=>{
     if(!["CONFIRMADO","PENDENTE_ADVERSARIO","PENDENTE_SOCIETY"].includes(a.status))return false;
-    if(new Date(a.dataHora).getTime()<now)return false;
+    if(new Date(a.dataHora).getTime()<now&&!(["AO_VIVO","PAUSADA","INTERVALO"].includes(a.jogo?.statusOperacao)&&!a.jogo.finalizado))return false;
     if(timeId&&![Number(a.timeAId),Number(a.timeBId)].includes(Number(timeId)))return false;
     return true;
   }).sort((a,b)=>new Date(a.dataHora)-new Date(b.dataHora)).slice(0,6);
@@ -77,7 +80,7 @@ async function amistososDoUsuario(timeId=null){
 
 async function renderDonoTime(){
   const times=await api(`${BASE_URL}/time/dono/${usuarioLogado.id}`);
-  if(!times.length)return `<section class="action-card"><h3>Seu primeiro time</h3><p>Crie um time para começar a organizar jogos e reservas.</p><button class="btn green" onclick="location.href='times.html'">Criar / gerenciar time</button></section>`;
+  if(!times.length)return `<section class="action-card"><h3>Seu primeiro time</h3><p>Crie um time para começar a organizar jogos e reservas.</p><button class="btn green" onclick="location.href='times.html#blocoCriacaoTime'">Criar time</button></section>`;
   let selected=Number(localStorage.getItem("homeTimeId")||0);
   if(!times.some(t=>Number(t.id)===selected))selected=Number(times[0].id);
   localStorage.setItem("homeTimeId",String(selected));
@@ -85,36 +88,36 @@ async function renderDonoTime(){
   const [jogos,amistosos]=await Promise.all([jogosDoTime(selected),amistososDoUsuario(selected)]);
   const selector=times.length>1?`<select id="homeTimeSelect" class="home-team-select">${times.map(t=>`<option value="${t.id}" ${Number(t.id)===selected?"selected":""}>${esc(t.nome)}</option>`).join("")}</select>`:`<strong class="home-team-name">⚽ ${esc(time.nome)}</strong>`;
   return `<section class="home-team-head"><div><span class="home-eyebrow">MEU TIME</span>${selector}</div><button class="home-link-btn" onclick="location.href='times.html'">Gerenciar</button></section>
-  <section class="action-card home-games-section"><div class="home-section-head"><div><h3>Próximos jogos</h3><p>Confirme sua presença sem abrir outra tela.</p></div><button class="home-link-btn" onclick="location.href='meus-horarios.html'">Ver rotina</button></div>
+  <section class="action-card home-games-section"><div class="home-section-head"><div><h3>Próximos jogos</h3><p>Acompanhe a agenda e as confirmações do elenco.</p></div><button class="home-link-btn" onclick="location.href='meus-horarios.html'">Organizar jogos</button></div>
     <div class="home-games-strip">${jogos.length?jogos.map(cardJogo).join(""):'<div class="home-empty">Nenhum próximo jogo marcado para este time.</div>'}</div>
   </section>
   <section class="action-card home-games-section"><div class="home-section-head"><div><h3>Amistosos</h3><p>Convites e próximos amistosos deste time.</p></div><button class="home-link-btn" onclick="location.href='amistosos.html'">Gerenciar</button></div>
     <div class="home-games-strip">${amistosos.length?amistosos.map(cardAmistoso).join(""):'<div class="home-empty">Nenhum amistoso próximo.</div>'}</div>
   </section>
-  <section class="home-quick-grid">
+  <details class="sport-services"><summary>Reservas e serviços <span>Quadras, comanda e gestão</span></summary><section class="home-quick-grid">
     <button onclick="location.href='campos-view.html'"><i class="fa fa-futbol"></i><span>Reservar quadra</span></button>
     <button onclick="location.href='meus-agendamentos.html'"><i class="fa fa-calendar-check"></i><span>Minhas reservas</span></button>
     <button onclick="location.href='comanda.html'"><i class="fa fa-receipt"></i><span>Comanda</span></button>
     <button onclick="location.href='campeonatos-view.html'"><i class="fa fa-trophy"></i><span>Campeonatos</span></button>
-  </section>`;
+  </section></details>`;
 }
 async function renderPlayer(){
-  let time=null;try{time=await api(`${BASE_URL}/time/details/by-player/${usuarioLogado.id}`);}catch{}
+  let time=null;try{const data=await api(`${BASE_URL}/time/details/by-player/${usuarioLogado.id}`);time=data.time??(data.id?data:null);}catch{}
   if(!time?.id)return `<section class="action-card"><h3>Encontre seu time</h3><p>Escolha uma empresa e solicite entrada em um time. Depois da aprovação, seus jogos aparecem aqui.</p><button class="btn green" onclick="location.href='times.html'">Ver times</button></section>`;
   const [jogos,amistosos]=await Promise.all([jogosDoTime(time.id),amistososDoUsuario(time.id)]);
   return `<section class="home-team-head"><div><span class="home-eyebrow">MEU TIME</span><strong class="home-team-name">⚽ ${esc(time.nome)}</strong></div></section>
   <section class="action-card home-games-section"><div class="home-section-head"><div><h3>Seus próximos jogos</h3><p>É só responder se você vai ou não.</p></div></div>
     <div class="home-games-strip">${jogos.length?jogos.map(cardJogo).join(""):'<div class="home-empty">Nenhum próximo jogo marcado.</div>'}</div>
   </section>
-  <section class="action-card home-games-section"><div class="home-section-head"><div><h3>Próximos amistosos</h3><p>Confirme sua presença aqui mesmo.</p></div><button class="home-link-btn" onclick="location.href='amistosos.html'">Ver todos</button></div>
+  <section class="action-card home-games-section"><div class="home-section-head"><div><h3>Seus amistosos</h3><p>Confirme sua presença aqui mesmo.</p></div><button class="home-link-btn" onclick="location.href='amistosos.html'">Ver todos</button></div>
     <div class="home-games-strip">${amistosos.length?amistosos.map(cardAmistoso).join(""):'<div class="home-empty">Nenhum amistoso confirmado.</div>'}</div>
   </section>
-  <section class="home-quick-grid">
+  <details class="sport-services"><summary>Reservas e serviços <span>Quadras, comanda e gestão</span></summary><section class="home-quick-grid">
     <button onclick="location.href='comanda.html'"><i class="fa fa-receipt"></i><span>Minha comanda</span></button>
     <button onclick="location.href='times.html'"><i class="fa fa-users"></i><span>Times da empresa</span></button>
     <button onclick="location.href='campeonatos-view.html'"><i class="fa fa-trophy"></i><span>Campeonatos</span></button>
     <button onclick="location.href='societies.html'"><i class="fa fa-building"></i><span>Empresas</span></button>
-  </section>`;
+  </section></details>`;
 }
 async function carregarHomeEsportiva(){
   const box=document.getElementById("homeEsportiva");if(!box)return;
@@ -127,8 +130,15 @@ async function carregarHomeEsportiva(){
 async function renderHome(){
   if(window.GoPlayEmpresaContextReady)await window.GoPlayEmpresaContextReady;
   const empresa=getEmpresaAtual();
+  const esportivo=["PLAYER","DONO_TIME"].includes(usuarioLogado.tipo);
+  if(esportivo)document.body.classList.add("sport-home");
   let html=`<section class="welcome-card"><h2>👋 Bem-vindo, ${esc(usuarioLogado.nome||"usuário")}!</h2><p>${empresa?`Empresa atual: <strong>${esc(empresa.nome||"Selecionada")}</strong>`:"Selecione uma empresa quando quiser usar uma estrutura."}</p></section>`;
-  if(["PLAYER","DONO_TIME"].includes(usuarioLogado.tipo))html+='<div id="homeEsportiva"></div>';
+  if(esportivo){
+    const owner=usuarioLogado.tipo==="DONO_TIME";
+    html=`<section class="sport-profile-hero"><div class="sport-profile-avatar">${esc((usuarioLogado.nome||'G').slice(0,2).toUpperCase())}</div><div><span class="sport-eyebrow">BEM-VINDO À SUA COMUNIDADE</span><h1>Bom jogo, ${esc((usuarioLogado.nome||'Jogador').split(' ')[0])}!</h1><p>Sua galera, seus jogos e o futebol acontecendo agora.</p></div><a href="perfil.html" aria-label="Abrir meu perfil"><i class="fa fa-user"></i></a></section>
+    <nav class="sport-shortcuts" aria-label="Ações rápidas"><a href="acompanhar.html"><i class="fa fa-play"></i> Assistir partidas</a><a href="meus-horarios.html"><i class="fa fa-thumbs-up"></i> Confirmar presença</a><a href="${owner?'amistosos.html':'meu-time.html'}"><i class="fa ${owner?'fa-handshake':'fa-shield-halved'}"></i> ${owner?'Marcar amistoso':'Meu time'}</a>${owner?'<a href="times.html#blocoCriacaoTime"><i class="fa fa-plus"></i> Criar time</a>':''}</nav>
+    <div class="sport-home-layout"><div><div id="homeComunidade"></div></div><aside class="sport-personal"><div class="sport-section-head"><div><span class="sport-eyebrow">SEU VESTIÁRIO</span><h2>Minha agenda</h2><p>Presenças, convites e seu time.</p></div></div><div id="homeEsportiva"></div></aside></div>`;
+  }
   if(["ORGANIZADOR_COMPETICAO","ORGAO_PUBLICO"].includes(usuarioLogado.tipo)){
     html+=`<section class="action-card"><h3>Gestão de Competições</h3><p>Seu perfil pode criar e administrar competições sem possuir uma Society.</p><button class="btn green" onclick="location.href='campeonato-create.html'"><i class="fa fa-plus"></i> Criar campeonato</button><button class="btn navy" onclick="location.href='campeonatos.html'"><i class="fa fa-trophy"></i> Meus campeonatos</button></section>`;
   }
@@ -151,7 +161,7 @@ async function renderHome(){
     </section>`;
   }
   homeContent.innerHTML=html;
-  if(["PLAYER","DONO_TIME"].includes(usuarioLogado.tipo))await carregarHomeEsportiva();
+  if(esportivo){window.GoPlayPartidas?.mount(document.getElementById("homeComunidade"),{compact:true,take:12});await carregarHomeEsportiva();}
   if(usuarioLogado.tipo==="DONO_SOCIETY"&&empresa)await carregarResumo(empresa.id);
 }
 async function carregarResumo(societyId){
