@@ -109,12 +109,12 @@
         const s = await api(`/stories/${current.id}`);
         if (!d.open || gen !== viewerGeneration || slide !== activeSlide)
           return;
-        stage.className = "story-stage " + s.cor;
-        stage.innerHTML = `${s.imagem ? `<img src="${s.imagem}" alt="Foto do story">` : ""}${s.texto ? `<p>${esc(s.texto)}</p>` : ""}`;
+        stage.className = "story-stage " + s.cor + (s.imagem ? " has-photo" : "");
+        stage.innerHTML = `${s.imagem ? `<img src="${esc(s.imagem)}" alt="Foto do story">` : ""}${s.texto ? `<p>${esc(s.texto)}</p>` : ""}`;
         const author = d.querySelector("[data-author]");
         author.href = `jogador-perfil.html?usuarioId=${s.usuarioId}`;
         author.textContent = s.usuario.nome;
-        bottom.innerHTML = `<button data-prev ${i === 0 ? "disabled" : ""}>← Anterior</button>${s.usuarioId === user()?.id ? `<button data-views>${s.visualizacoes} visualizações</button><button data-delete>Excluir</button>` : ""}<button data-next>${i === stories.length - 1 ? "Concluir" : "Próximo →"}</button>`;
+        bottom.innerHTML = `<button data-prev ${i === 0 ? "disabled" : ""}aria-label="Story anterior" title="Story anterior">‹</button>${s.usuarioId === user()?.id ? `<button data-viewsaria-label="Ver visualizações" title="Ver visualizações">◉ ${s.visualizacoes}</button><button data-delete aria-label="Excluir story" title="Excluir story">Excluir</button>` : ""}<button data-next aria-label="${i === stories.length - 1 ? "Concluir stories" : "Próximo story"}" title="${i === stories.length - 1 ? "Concluir" : "Próximo"}">${i === stories.length - 1 ? "✓" : "›"}</button>`;
         bottom.querySelector("[data-prev]").onclick = () => {
           if (i > 0) {
             i--;
