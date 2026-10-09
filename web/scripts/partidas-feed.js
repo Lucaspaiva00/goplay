@@ -27,8 +27,9 @@
     if (!root) return;
     let aba='todos', q='', generation=0, currentRequest, debounce;
     root.innerHTML = `<section class="sport-community"><div class="sport-section-head"><div><span class="sport-eyebrow">NA COMUNIDADE GOPLAY</span><h2>${compact?'O futebol está acontecendo':'Acompanhe as partidas'}</h2><p>Placar, lances e resultados dos amistosos.</p></div>${compact?'<a class="sport-inline-link" href="acompanhar.html">Ver todos ↗</a>':'<button class="sport-inline-link" type="button" data-refresh>Atualizar</button>'}</div>
-      <div class="sport-feed-toolbar"><div class="sport-tabs" role="group" aria-label="Filtrar partidas">${[['todos','Para você'],['ao-vivo','Ao vivo'],['proximos','Próximos'],['resultados','Resultados']].map(([v,t])=>`<button type="button" data-tab="${v}" aria-pressed="${v===aba}">${t}</button>`).join('')}</div>${compact?'':'<input type="search" data-search placeholder="Buscar time, Society ou cidade" aria-label="Buscar partidas">'}</div>
+      <div class="sport-feed-toolbar"><div class="sport-tabs" role="group" aria-label="Filtrar partidas">${[['todos','Comunidade'],['ao-vivo','Ao vivo'],['proximos','Próximos'],['resultados','Resultados']].map(([v,t])=>`<button type="button" data-tab="${v}" aria-pressed="${v===aba}">${t}</button>`).join('')}</div>${compact?'':'<input type="search" data-search placeholder="Buscar time, Society ou cidade" aria-label="Buscar partidas">'}</div>
       <div class="sport-feed-status" role="status"></div><div class="sport-feed-grid"><div class="home-empty">Carregando partidas…</div></div></section>`;
+    root.classList.toggle('compact-feed',compact);
     const grid=root.querySelector('.sport-feed-grid'), note=root.querySelector('.sport-feed-status');
     async function load() {
       const gen=++generation;

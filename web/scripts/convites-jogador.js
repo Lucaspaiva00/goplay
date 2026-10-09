@@ -30,10 +30,13 @@
   }
   async function load() {
     try {
-      const [t, g] = await Promise.all([
+      const [t, g, f] = await Promise.all([
         api("/convites-time/meus"),
         api("/goleiros/pedidos/meus"),
+        api("/amistosos/meus"),
       ]);
+      const friendly = f.filter(r => r.status === "PENDENTE_ADVERSARIO" && Number(r.timeB?.donoId) === Number(user().id));
+      $("friendlyInvites").innerHTML = friendly.map(r => `<article class="social-invite-card"><span class="social-invite-status">Convite de amistoso</span><h3>${esc(r.timeA.nome)} × ${esc(r.timeB.nome)}</h3><p>${esc(new Date(r.dataHora).toLocaleString("pt-BR"))} · ${esc(r.society?.nome || "Amistoso independente")}</p><a href="amistosos.html?amistosoId=${r.id}">Ver detalhes →</a><footer><button data-kind="amistoso" data-id="${r.id}" data-answer="true">Aceitar</button><button data-kind="amistoso" data-id="${r.id}" data-answer="false">Recusar</button></footer></article>`).join("") || '<p class="society-empty">Nenhum amistoso aguardando sua aprovação.</p>';
       $("teamReceived").innerHTML =
         t.recebidos.map((r) => teamCard(r, true)).join("") ||
         '<p class="society-empty">Seus convites de time aparecerão aqui.</p>';
@@ -63,8 +66,8 @@
       $("inviteStatus").textContent = "Atualizando…";
       try {
         await send(
-          `${b.dataset.kind === "time" ? "/convites-time" : "/goleiros/pedidos"}/${b.dataset.id}/${b.hasAttribute("data-cancel") ? "cancelar" : "responder"}`,
-          b.hasAttribute("data-cancel")
+          b.dataset.kind === "amistoso" ? `/amistosos/${b.dataset.id}/responder-adversario` : `${b.dataset.kind === "time" ? "/convites-time" : "/goleiros/pedidos"}/${b.dataset.id}/${b.hasAttribute("data-cancel") ? "cancelar" : "responder"}`,
+          b.dataset.kind === "amistoso" ? { acao: b.dataset.answer === "true" ? "ACEITAR" : "RECUSAR" } : b.hasAttribute("data-cancel")
             ? {}
             : { aceitar: b.dataset.answer === "true" },
         );
