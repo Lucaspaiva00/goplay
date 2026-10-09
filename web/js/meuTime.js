@@ -89,7 +89,7 @@ async function carregarMeuTime() {
                         ? `<img class="player-avatar" src="${escapeHtml(j.fotoUrl)}" alt="">`
                         : `<div class="player-avatar" style="display:flex;align-items:center;justify-content:center;background:#e5e7eb;color:#6b7280;">${escapeHtml((j.nome || "?").charAt(0))}</div>`}
                     <div>
-                        <b>${escapeHtml(j.nome)}</b><br>
+                        <a class="social-profile-link" href="jogador-perfil.html?usuarioId=${j.id}">${escapeHtml(j.nome)} · Ver perfil →</a><br>
                         <small>${escapeHtml(j.posicaoCampo || "Posição não informada")}</small>
                     </div>
                 </div>

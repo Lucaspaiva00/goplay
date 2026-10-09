@@ -540,7 +540,7 @@ async function carregarTime(timeId) {
                         ? `<img src="${escapeHtml(j.fotoUrl)}" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">`
                         : `<div style="width:36px;height:36px;border-radius:50%;background:#e5e7eb;display:flex;align-items:center;justify-content:center;color:#6b7280;font-size:14px;">${escapeHtml((j.nome || "?").charAt(0))}</div>`}
                     <div style="flex:1;">
-                      <strong>${escapeHtml(j.nome)}</strong><br/>
+                      <a class="social-profile-link" href="jogador-perfil.html?usuarioId=${j.id}">${escapeHtml(j.nome)} · Ver perfil →</a><br/>
                       <span style="color:#6b7280;font-size:13px;">
                         ${escapeHtml(j.posicaoCampo || "—")} ${j.goleiro ? "• Goleiro" : ""}
                       </span>

@@ -246,6 +246,13 @@ const update = async (req, res) => {
         }
 
         const data = {};
+        if (req.body.bio !== undefined) {
+            if (req.body.bio !== null && typeof req.body.bio !== "string") return res.status(400).json({error:"Bio inválida."});
+            const bio=(req.body.bio||"").trim();
+            if(bio.length>280)return res.status(400).json({error:"A bio deve ter até 280 caracteres."});
+            data.bio=bio||null;
+        }
+
 
         // Nome
         if (req.body.nome !== undefined) {

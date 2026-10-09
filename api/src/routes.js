@@ -7,6 +7,7 @@ const router = express.Router();
 ===================================================== */
 
 const usuarioController = require("./controller/usuarioController");
+const jogadorPerfilController = require("./controller/jogadorPerfilController");
 const societyController = require("./controller/societyController");
 const timeController = require("./controller/timeController");
 const societyPlayerController = require("./controller/societyPlayerController");
@@ -42,6 +43,12 @@ router.post("/funcionario/login", funcionarioController.login);
 router.get("/notificacoes", authenticate, notificacaoController.list);
 router.post("/notificacoes/:id/lida", authenticate, notificacaoController.markRead);
 router.post("/notificacoes/lidas/todas", authenticate, notificacaoController.markAll);
+
+router.get("/jogadores/perfis", authenticateOptional, jogadorPerfilController.list);
+router.get("/jogadores/:id/perfil", authenticateOptional, jogadorPerfilController.read);
+router.get("/jogadores/:id/conexoes", authenticateOptional, jogadorPerfilController.connections);
+router.post("/jogadores/:id/seguir", authenticate, jogadorPerfilController.follow);
+router.delete("/jogadores/:id/seguir", authenticate, jogadorPerfilController.follow);
 
 router.post("/usuarios", usuarioController.create);
 router.get("/usuarios/:id", usuarioController.readOne);

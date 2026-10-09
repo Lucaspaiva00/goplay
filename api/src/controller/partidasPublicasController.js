@@ -18,6 +18,8 @@ async function list(req, res) {
   try {
     const aba = String(req.query.aba || 'todos');
     const take = Number(req.query.take || 30);
+    const timeId = req.query.timeId === undefined ? null : Number(req.query.timeId);
+    if (timeId !== null && (!Number.isInteger(timeId) || timeId < 1 || timeId>2147483647)) return res.status(400).json({error:'Time inválido.'});
     const societyId = req.query.societyId === undefined ? null : Number(req.query.societyId);
     if (societyId !== null && (!Number.isInteger(societyId) || societyId < 1)) return res.status(400).json({error:'Society inválida.'});
     const q = String(req.query.q || '').trim().slice(0, 100);
@@ -38,7 +40,7 @@ async function list(req, res) {
     };
     const keys = aba === 'todos' ? ['ao-vivo','proximos','resultados'] : [aba];
     const groups = await Promise.all(keys.map(key => prisma.amistoso.findMany({
-      where: { AND: [base, filters[key]] }, select, take,
+      where: { AND: [base, filters[key], ...(timeId ? [{OR:[{timeAId:timeId},{timeBId:timeId}]}] : [])] }, select, take,
       orderBy: [{ dataHora: key === 'resultados' ? 'desc' : 'asc' }, { id: 'desc' }],
     })));
     const rows = groups.flat().slice(0, take).map(a => {

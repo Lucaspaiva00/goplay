@@ -1,0 +1,7 @@
+(()=>{
+ const {api,card}=window.GoPlaySocial;let cursor=null,generation=0,request,debounce;
+ const $=id=>document.getElementById(id);
+ async function load(more=false){const gen=++generation;request?.abort();request=new AbortController();$('socialMore').disabled=true;$('socialStatus').textContent='Buscando jogadores…';try{const q=$('socialSearch').value.trim();const params=new URLSearchParams({q,take:'24',cursor:String(more?(cursor||0):0)});const data=await api('/jogadores/perfis?'+params,{signal:request.signal});if(gen!==generation)return;const html=data.usuarios.map(card).join('');if(more)$('socialPlayers').insertAdjacentHTML('beforeend',html);else $('socialPlayers').innerHTML=html||'<p class="society-empty">Nenhum jogador encontrado. Tente outro nome.</p>';cursor=data.nextCursor;$('socialMore').hidden=cursor===null;$('socialStatus').textContent=q?`Resultados para “${q}”`:'Encontre sua galera e abra um perfil para seguir.';}catch(e){if(e.name!=='AbortError'&&gen===generation)$('socialStatus').textContent=e.message;}finally{if(gen===generation)$('socialMore').disabled=false;}}
+ document.addEventListener('DOMContentLoaded',()=>{$('socialSearch').addEventListener('input',()=>{clearTimeout(debounce);debounce=setTimeout(()=>load(),300)});$('socialMore').onclick=()=>load(true);load();});
+ window.addEventListener('beforeunload',()=>{request?.abort();clearTimeout(debounce)},{once:true});
+})();

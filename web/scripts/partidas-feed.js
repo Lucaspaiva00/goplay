@@ -23,7 +23,7 @@
       <footer class="sport-post-actions"><a class="sport-watch" href="${url}"><i class="fa fa-play"></i> ${done?'Ver resultado':active?'Assistir ao vivo':'Acompanhar partida'}</a><button type="button" data-share="${j.id}" aria-label="Compartilhar esta partida"><i class="fa fa-share-nodes"></i> Compartilhar</button></footer>
     </article>`;
   }
-  function mount(root, { compact=false, take=30, societyId=null } = {}) {
+  function mount(root, { compact=false, take=30, societyId=null, timeId=null } = {}) {
     if (!root) return;
     let aba='todos', q='', generation=0, currentRequest, debounce;
     root.innerHTML = `<section class="sport-community"><div class="sport-section-head"><div><span class="sport-eyebrow">NA COMUNIDADE GOPLAY</span><h2>${compact?'O futebol está acontecendo':'Acompanhe as partidas'}</h2><p>Placar, lances e resultados dos amistosos.</p></div>${compact?'<a class="sport-inline-link" href="acompanhar.html">Ver todos ↗</a>':'<button class="sport-inline-link" type="button" data-refresh>Atualizar</button>'}</div>
@@ -36,6 +36,7 @@
       try {
         const params=new URLSearchParams({aba,take:String(take),q});
         if(societyId)params.set('societyId',String(societyId));
+        if(timeId)params.set('timeId',String(timeId));
         const r=await fetch(`${BASE}/amistosos/acompanhar?${params}`,{signal:currentRequest.signal});
         if(!r.ok)throw new Error('Não foi possível atualizar as partidas.');
         const data=await r.json();

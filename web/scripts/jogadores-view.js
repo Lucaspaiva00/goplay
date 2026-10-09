@@ -1,3 +1,4 @@
+function profileName(v){return String(v??"Jogador").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");}
 const BASE_URL = "https://goplay-dzlr.onrender.com";
 
 function getSocietyId() {
@@ -51,7 +52,7 @@ async function carregarJogadores() {
 
         div.innerHTML = jogadores.map((j) => `
             <div class="jogador-card">
-                <strong>${j?.usuario?.nome || "-"}</strong>
+                <strong><a href="jogador-perfil.html?usuarioId=${j.usuario.id}">${profileName(j?.usuario?.nome)} · Ver perfil</a></strong>
                 <p>Email: ${j?.usuario?.email || "-"}</p>
                 <p>Telefone: ${j?.usuario?.telefone || "-"}</p>
             </div>

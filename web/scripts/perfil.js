@@ -82,6 +82,7 @@ async function carregarPerfil() {
         const data = await fetchJSON(`${BASE_URL}/usuarios/${usuarioLogado.id}`);
 
         el("nome").value = data.nome || "";
+        if(el("bio"))el("bio").value=data.bio||"";
         el("telefone").value = data.telefone || "";
         el("nascimento").value = data.nascimento ? String(data.nascimento).split("T")[0] : "";
         el("sexo").value = data.sexo || "";
@@ -146,6 +147,7 @@ async function salvarPerfil() {
 
         const payload = {
             nome,
+            bio:el("bio")?.value.trim()||null,
             telefone,
             nascimento: nascimentoValue ? new Date(`${nascimentoValue}T12:00:00`).toISOString() : null,
             sexo,

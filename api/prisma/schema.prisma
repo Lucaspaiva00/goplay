@@ -204,6 +204,7 @@ model Usuario {
   senha        String
   telefone     String?
   fotoUrl      String?
+  bio          String?   @db.VarChar(280)
   pernaMelhor  String?
   posicaoCampo String?
   altura       Float?
@@ -253,6 +254,9 @@ model Usuario {
   amistososCriados          Amistoso[]                 @relation("AmistosoCriador")
   presencasAmistoso         PresencaAmistoso[]
   disponivelParaConvites    Boolean                    @default(false)
+
+  seguidores UsuarioSeguidor[] @relation("UsuarioSeguidores")
+  seguindo   UsuarioSeguidor[] @relation("UsuarioSeguindo")
 
   @@index([timeRelacionadoId])
   @@index([resetToken])
@@ -1148,4 +1152,15 @@ model ComandaItem {
 
   @@index([comandaId])
   @@index([cardapioId])
+}
+
+model UsuarioSeguidor {
+  seguidorId Int
+  seguidoId  Int
+  createdAt  DateTime @default(now())
+  seguidor   Usuario  @relation("UsuarioSeguindo", fields: [seguidorId], references: [id], onDelete: Cascade)
+  seguido    Usuario  @relation("UsuarioSeguidores", fields: [seguidoId], references: [id], onDelete: Cascade)
+
+  @@id([seguidorId, seguidoId])
+  @@index([seguidoId, seguidorId])
 }

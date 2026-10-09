@@ -42,10 +42,13 @@ if (!window.menuLoaded) {
       +item("fa-receipt","Minha comanda","location.href='comanda.html'")
       +item("fa-money-bill","Meus pagamentos","location.href='meus-pagamentos.html'");
     html+=section("COMUNIDADE")
+      +item("fa-user-group","Encontrar jogadores","location.href='jogadores-comunidade.html'")
+      +item("fa-building","Perfil da Society","abrirMinhaEmpresaMenu()")
       +item("fa-play","Assistir partidas","location.href='acompanhar.html'")
       +item("fa-trophy","Campeonatos","location.href='campeonatos-view.html'")
       +item("fa-building","Explorar Societies","location.href='societies.html'");
     html+=section("MEU FUTEBOL")
+      +item("fa-user","Meu perfil público",`location.href='jogador-perfil.html?usuarioId=${Number(usuarioLogado.id)}'`)
       +item("fa-shield-halved",owner?"Meus times":"Meu time",owner?"location.href='times.html'":"location.href='meu-time.html'")
       +item("fa-thumbs-up",owner?"Jogos do time":"Confirmar presença","location.href='meus-horarios.html'")
       +item("fa-handshake",owner?"Marcar / gerenciar amistosos":"Meus amistosos","location.href='amistosos.html'")
