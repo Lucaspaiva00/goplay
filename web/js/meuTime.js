@@ -77,7 +77,7 @@ async function carregarMeuTime() {
             <p><b>Localidade:</b> ${escapeHtml(time.cidade || "—")} - ${escapeHtml(time.estado || "—")}</p>
             <p><b>Modalidade:</b> ${escapeHtml(time.modalidade || "—")}</p>
             <p><b>Descrição:</b> ${escapeHtml(time.descricao || "Sem descrição")}</p>
-            ${time.rotinaHorario?.id ? `<div style="margin-top:16px"><button class="btn" onclick="location.href='horario-grupo.html?grupoId=${time.rotinaHorario.id}'">👍 Abrir rotina e confirmar presença</button></div>` : `<p style="margin-top:14px;color:#6b7280;">O dono do time ainda não configurou uma rotina semanal.</p>`}
+            ${time.rotinaHorario?.id ? `<div style="margin-top:16px"><button class="btn" onclick="location.href='horario-grupo.html?grupoId=${time.rotinaHorario.id}'">👍 Ver jogos e confirmar presença</button></div>` : `<p style="margin-top:14px;color:#6b7280;">O dono do time ainda não organizou os jogos semanais.</p>`}
         `;
 
         if (!Array.isArray(time.jogadores) || time.jogadores.length === 0) {

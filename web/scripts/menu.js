@@ -38,6 +38,9 @@ if (!window.menuLoaded) {
   }
   if(["DONO_TIME","PLAYER"].includes(usuarioLogado.tipo)){
     const owner=usuarioLogado.tipo==="DONO_TIME";
+    html+=section("MINHA CONTA")
+      +item("fa-receipt","Minha comanda","location.href='comanda.html'")
+      +item("fa-money-bill","Meus pagamentos","location.href='meus-pagamentos.html'");
     html+=section("COMUNIDADE")
       +item("fa-play","Assistir partidas","location.href='acompanhar.html'")
       +item("fa-trophy","Campeonatos","location.href='campeonatos-view.html'")
@@ -51,10 +54,8 @@ if (!window.menuLoaded) {
     html+=section("RESERVAS E SERVIÇOS")
       +item("fa-futbol",owner?"Reservar quadra":"Ver quadras","navegarComEmpresa('campos-view.html')")
       +item("fa-users","Encontrar times",owner?"navegarComEmpresa('times.html?view=empresa')":"navegarComEmpresa('times.html')")
-      +item("fa-receipt","Minha comanda","location.href='comanda.html'")
-      +item("fa-list",owner?"Minhas reservas":"Agenda do time","location.href='meus-agendamentos.html'")
-      +item("fa-money-bill","Meus pagamentos","location.href='meus-pagamentos.html'");
-    if(!document.getElementById('communityStyles')){const css=document.createElement('link');css.id='communityStyles';css.rel='stylesheet';css.href='../css/comunidade.css?v=20261009';document.head.appendChild(css);}
+      +item("fa-list",owner?"Minhas reservas":"Agenda do time","location.href='meus-agendamentos.html'");
+    if(!document.getElementById('communityStyles')){const css=document.createElement('link');css.id='communityStyles';css.rel='stylesheet';css.href='../css/comunidade.css?v=20261009-conta';document.head.appendChild(css);}
     const nav=document.createElement('nav');nav.className='sport-bottom-nav';nav.setAttribute('aria-label','Navegação principal');
     nav.innerHTML=`<a href="home.html"><i class="fa fa-house"></i>Feed</a><a href="acompanhar.html"><i class="fa fa-play"></i>Partidas</a><a href="meus-horarios.html"><i class="fa fa-calendar-check"></i>Meus jogos</a><a href="${owner?'times.html':'meu-time.html'}"><i class="fa fa-shield-halved"></i>Meu time</a>`;
     for(const a of nav.querySelectorAll('a'))if(a.getAttribute('href').split('?')[0]===location.pathname.split('/').pop())a.setAttribute('aria-current','page');
