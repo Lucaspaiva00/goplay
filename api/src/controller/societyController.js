@@ -33,7 +33,7 @@ const includeSociety = {
     cardapio: true,
     campos: true,
     times: { select: { id: true, nome: true, statusVinculo: true, tipoVinculo: true } },
-    societyPlayers: { include: { usuario: { select: { id:true, nome:true, fotoUrl:true, tipo:true, posicaoCampo:true, timeRelacionadoId:true } } } },
+    societyPlayers: { include: { usuario: { select: { id:true, nome:true, email:true, telefone:true, fotoUrl:true, tipo:true, posicaoCampo:true, timeRelacionadoId:true } } } },
     horariosFuncionamento: { orderBy: { diaSemana: "asc" } }
 };
 
