@@ -60,6 +60,7 @@ router.get("/geral", listagemController.geral);
 router.post("/society", societyController.create);
 router.get("/society", societyController.listAll);
 router.get("/society/owner/:usuarioId", societyController.readByOwner);
+router.get("/society/:id/comunidade", societyController.comunidade);
 router.get("/society/:id", societyController.readById);
 router.put("/society/:id", ...requireSocietyRoles(["ADMIN"], req => req.params.id), societyController.update);
 

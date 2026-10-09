@@ -3,11 +3,12 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Detalhes da Empresa – GoPlay</title>
+    <title>Perfil da Society – GoPlay</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="../css/goplay_home.css">
-    <link rel="stylesheet" href="../css/society-detalhe.css">
+    <link id="communityStyles" rel="stylesheet" href="../css/comunidade.css?v=20261009-perfil">
+    <link rel="stylesheet" href="../css/society-detalhe.css?v=20261009-perfil">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
@@ -30,17 +31,12 @@
 
     <main class="content">
 
-        <h2 class="section-title">
-            <i class="fa fa-map-pin"></i> Informações da Empresa
-        </h2>
-
-        <div id="societyInfo" class="info-card">
-            Carregando informações...
-        </div>
-
-        <div id="publicProfileNote" class="info-card" style="display:none;margin-top:16px;">
-            <strong><i class="fa fa-circle-info"></i> Perfil da empresa</strong>
-            <p style="margin:6px 0 0;color:#64748b;">Use o menu para consultar quadras, times ou abrir sua comanda. Recursos administrativos ficam disponíveis apenas para a equipe da empresa.</p>
+        <div class="society-profile-page">
+          <div id="societyInfo" class="society-profile-card" aria-live="polite">Carregando perfil…</div>
+          <nav class="society-profile-tabs" role="tablist" aria-label="Conteúdo da Society">
+          <button type="button" role="tab" data-profile-tab="partidas" aria-selected="true" aria-controls="panel-partidas" id="tab-partidas">Feed de partidas</button><button type="button" role="tab" data-profile-tab="jogadores" aria-selected="false" aria-controls="panel-jogadores" id="tab-jogadores">Jogadores</button><button type="button" role="tab" data-profile-tab="times" aria-selected="false" aria-controls="panel-times" id="tab-times">Times</button><button type="button" role="tab" data-profile-tab="quadras" aria-selected="false" aria-controls="panel-quadras" id="tab-quadras">Quadras</button><button type="button" role="tab" data-profile-tab="sobre" aria-selected="false" aria-controls="panel-sobre" id="tab-sobre">Sobre</button></nav>
+          <div class="society-profile-panels">
+          <section role="tabpanel" id="panel-partidas" aria-labelledby="tab-partidas" data-profile-panel="partidas" ><div id="profileFeed" class=""></div></section><section role="tabpanel" id="panel-jogadores" aria-labelledby="tab-jogadores" data-profile-panel="jogadores" hidden><div id="profileJogadores" class="society-member-grid"></div></section><section role="tabpanel" id="panel-times" aria-labelledby="tab-times" data-profile-panel="times" hidden><div id="profileTimes" class="society-member-grid"></div></section><section role="tabpanel" id="panel-quadras" aria-labelledby="tab-quadras" data-profile-panel="quadras" hidden><div id="profileQuadras" class="society-court-grid"></div></section><section role="tabpanel" id="panel-sobre" aria-labelledby="tab-sobre" data-profile-panel="sobre" hidden><div id="profileSobre" class=""></div></section></div>
         </div>
 
     </main>
@@ -95,8 +91,9 @@
         <script src="../scripts/session.js"></script>
 <script src="../js/goplay_home.js"></script>
     <script src="../scripts/uploadCloudinary.js"></script>
-    <script src="../scripts/societyDetalhe.js"></script>
-    <script src="../scripts/menu.js"></script>
+    <script src="../scripts/partidas-feed.js?v=20261009-perfil"></script>
+    <script src="../scripts/societyDetalhe.js?v=20261009-perfil"></script>
+    <script src="../scripts/menu.js?v=20261009-perfil"></script>
 
 </body>
 

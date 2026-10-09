@@ -33,7 +33,7 @@ const includeSociety = {
     cardapio: true,
     campos: true,
     times: { select: { id: true, nome: true, statusVinculo: true, tipoVinculo: true } },
-    societyPlayers: { include: { usuario: true } },
+    societyPlayers: { include: { usuario: { select: { id:true, nome:true, fotoUrl:true, tipo:true, posicaoCampo:true, timeRelacionadoId:true } } } },
     horariosFuncionamento: { orderBy: { diaSemana: "asc" } }
 };
 
@@ -109,4 +109,19 @@ const listAll = async (req,res) => {
     catch(error){console.log(error);return res.status(500).json({error:"Erro ao listar societies."});}
 };
 
-module.exports={create,readByOwner,readById,update,listAll};
+
+// Public community data, selected explicitly; roster membership is not a follow action.
+const comunidade = async (req,res) => {
+    const id=Number(req.params.id);
+    if(!Number.isInteger(id)||id<1)return res.status(400).json({error:"Society inválida."});
+    try {
+        if(!await prisma.society.findUnique({where:{id},select:{id:true}}))return res.status(404).json({error:"Society não encontrada."});
+        const [times,jogadores]=await Promise.all([
+            prisma.time.findMany({where:{societyId:id,statusVinculo:"APROVADO"},select:{id:true,nome:true,brasao:true,_count:{select:{jogadores:true}}},orderBy:{nome:"asc"}}),
+            prisma.usuario.findMany({where:{tipo:"PLAYER",OR:[{societyPlayers:{some:{societyId:id}}},{timeRelacionado:{is:{societyId:id,statusVinculo:"APROVADO"}}}]},select:{id:true,nome:true,fotoUrl:true,posicaoCampo:true},orderBy:{nome:"asc"}}),
+        ]);
+        return res.set("Cache-Control","no-store").json({totalJogadores:jogadores.length,totalTimes:times.length,jogadores,times});
+    }catch(e){console.error(e);return res.status(500).json({error:"Não foi possível carregar a comunidade."});}
+};
+
+module.exports={create,readByOwner,readById,update,listAll,comunidade};

@@ -254,6 +254,26 @@ async function user(name,tipo='PLAYER',isSocioGoPlay=false) {
  for(const forbidden of ['mesaToken','email','senha','presencas','pagamento','criadoPor','agendamentoId']){assert(!JSON.stringify(updated).includes(`"${forbidden}"`));checks++;}
  const detail=await request(`/jogo/${superseding.jogo.id}`,players[0]);
  assert(!('criadoPorId' in detail.jogo.amistoso));assert(!('observacao' in detail.jogo.amistoso));checks+=2;
+ // Society profiles count distinct players, approved teams only, and isolate their feed.
+ await prisma.societyPlayer.createMany({data:[{societyId:society.id,usuarioId:players[0].id},{societyId:society.id,usuarioId:outsider.id}]});
+ const pendingProfileTeam=await prisma.time.create({data:{nome:`Pending profile ${stamp}`,societyId:society.id,donoId:ownerA.id}});
+ const freeRacePlayer=await prisma.usuario.findFirst({where:{id:{in:racePlayers.map(p=>p.id)},timeRelacionadoId:null}});
+ await prisma.usuario.update({where:{id:freeRacePlayer.id},data:{timeRelacionadoId:pendingProfileTeam.id}});
+ const community=await request(`/society/${society.id}/comunidade`,null);
+ assert.equal(community.totalJogadores,27);checks++;
+ assert.equal(community.totalTimes,2);checks++;
+ assert(!community.times.some(t=>t.id===pendingProfileTeam.id));checks++;
+ assert.equal(community.jogadores.filter(p=>p.id===players[0].id).length,1);checks++;
+ assert(!community.jogadores.some(p=>p.id===freeRacePlayer.id));checks++;
+ for(const key of ['email','telefone','senha','isSocioGoPlay']){assert(!JSON.stringify(community).includes(`"${key}"`));checks++;}
+ await request('/society/invalid/comunidade',null,'GET',undefined,400);
+ await request('/society/2147483647/comunidade',null,'GET',undefined,404);
+ const ownFeed=await request(`/amistosos/acompanhar?societyId=${society.id}&${query}`,null);
+ assert(ownFeed.some(x=>x.id===superseding.id));assert(ownFeed.every(x=>x.society?.id===society.id));assert(!ownFeed.some(x=>x.id===accepted.id));checks+=3;
+ await request('/amistosos/acompanhar?societyId=invalid',null,'GET',undefined,400);
+ await request('/agendamentos',players[0],'POST',{societyId:society.id,campoId:campo.id,timeId:teamA.id,data:dateKey,horaInicio:'08:00'},403);
+ const publicSociety=await request(`/society/${society.id}`,null);
+ assert(!JSON.stringify(publicSociety.societyPlayers).includes('"senha"'));checks++;
  await cleanupFixtures();
  console.log(`PASS: ${checks} API/database checks (${releaseValidation ? 'production database; isolated fixtures removed' : 'isolated local database; fixtures removed'}).`);
  await prisma.$disconnect();server.close();process.exit(0);
