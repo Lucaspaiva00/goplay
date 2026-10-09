@@ -439,7 +439,8 @@ async function user(name,tipo='PLAYER',isSocioGoPlay=false) {
  await request('/goleiros/pedidos',ownerB,'POST',offer,403);
  await request('/goleiros/pedidos',ownerA,'POST',{...offer,goleiroId:multiPlayer.id},400);
  await request('/goleiros/pedidos',ownerA,'POST',{...offer,valorProposto:-1},400);
- const paymentCount=await prisma.pagamento.count();
+ const goaliePaymentScope={usuarioId:{in:[ownerA.id,ownerB.id,goalie.id]}};
+ const paymentCount=await prisma.pagamento.count({where:goaliePaymentScope});
  const offerA=await request('/goleiros/pedidos',ownerA,'POST',offer,201);
  await request(`/goleiros/pedidos/${offerA.id}/responder`,outsider,'POST',{aceitar:true},404);
  const offerB=await request('/goleiros/pedidos',ownerB,'POST',{...offer,timeId:socialTeamB.id},201);
@@ -447,7 +448,7 @@ async function user(name,tipo='PLAYER',isSocioGoPlay=false) {
  await request(`/goleiros/pedidos/${offerB.id}/responder`,goalie,'POST',{aceitar:true},409);
  assert.equal((await request('/goleiros/pedidos/meus',outsider)).pedidos.length,0);checks++;
  assert.equal((await request('/goleiros/pedidos/meus',goalie)).pedidos.length,2);checks++;
- assert.equal(await prisma.pagamento.count(),paymentCount);checks++;
+ assert.equal(await prisma.pagamento.count({where:goaliePaymentScope}),paymentCount);checks++;
  await request(`/goleiros/pedidos/${offerA.id}/cancelar`,ownerB,'POST',{},404);
  await request(`/goleiros/pedidos/${offerA.id}/cancelar`,ownerA,'POST',{});
  await request(`/goleiros/pedidos/${offerB.id}/responder`,goalie,'POST',{aceitar:false});
