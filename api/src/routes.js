@@ -7,6 +7,9 @@ const router = express.Router();
 ===================================================== */
 
 const usuarioController = require("./controller/usuarioController");
+const conviteTimeController = require("./controller/conviteTimeController");
+const goleiroController = require("./controller/goleiroController");
+const storyController = require("./controller/storyController");
 const jogadorPerfilController = require("./controller/jogadorPerfilController");
 const societyController = require("./controller/societyController");
 const timeController = require("./controller/timeController");
@@ -49,6 +52,21 @@ router.get("/jogadores/:id/perfil", authenticateOptional, jogadorPerfilControlle
 router.get("/jogadores/:id/conexoes", authenticateOptional, jogadorPerfilController.connections);
 router.post("/jogadores/:id/seguir", authenticate, jogadorPerfilController.follow);
 router.delete("/jogadores/:id/seguir", authenticate, jogadorPerfilController.follow);
+
+router.post("/time/:timeId/convidar-jogador", authenticate, conviteTimeController.create);
+router.get("/convites-time/meus", authenticate, conviteTimeController.list);
+router.post("/convites-time/:id/responder", authenticate, conviteTimeController.respond);
+router.post("/convites-time/:id/cancelar", authenticate, conviteTimeController.cancel);
+router.post("/goleiros/pedidos", authenticate, goleiroController.create);
+router.get("/goleiros/pedidos/meus", authenticate, goleiroController.list);
+router.post("/goleiros/pedidos/:id/responder", authenticate, goleiroController.respond);
+router.post("/goleiros/pedidos/:id/cancelar", authenticate, goleiroController.cancel);
+router.post("/stories", authenticate, storyController.publish);
+router.get("/stories", authenticate, storyController.list);
+router.get("/stories/:id", authenticate, storyController.read);
+router.post("/stories/:id/visualizar", authenticate, storyController.view);
+router.get("/stories/:id/visualizacoes", authenticate, storyController.viewers);
+router.delete("/stories/:id", authenticate, storyController.remove);
 
 router.post("/usuarios", usuarioController.create);
 router.get("/usuarios/:id", usuarioController.readOne);

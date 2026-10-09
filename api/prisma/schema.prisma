@@ -221,7 +221,13 @@ model Usuario {
   resetToken          String?
   resetTokenExpiresAt DateTime?
 
-  times Time[] @relation("TimeDono")
+  times                   Time[]              @relation("TimeDono")
+  timesJogador            Time[]              @relation("ElencoTimes")
+  convitesTime            ConviteTime[]
+  pedidosGoleiroRecebidos PedidoGoleiro[]     @relation("GoleiroPedido")
+  pedidosGoleiroEnviados  PedidoGoleiro[]     @relation("SolicitanteGoleiro")
+  stories                 Story[]
+  storiesVistos           StoryVisualizacao[]
 
   timeRelacionadoId Int?
   timeRelacionado   Time? @relation("TimeJogadores", fields: [timeRelacionadoId], references: [id])
@@ -400,7 +406,10 @@ model Time {
   donoId Int
   dono   Usuario @relation("TimeDono", fields: [donoId], references: [id], onDelete: Cascade)
 
-  jogadores Usuario[] @relation("TimeJogadores")
+  jogadoresPrincipais Usuario[]       @relation("TimeJogadores")
+  jogadores           Usuario[]       @relation("ElencoTimes")
+  convitesJogadores   ConviteTime[]
+  pedidosGoleiro      PedidoGoleiro[]
 
   /**
    * =========================
@@ -831,8 +840,9 @@ model Amistoso {
   agendamentoId Int?         @unique
   agendamento   Agendamento? @relation(fields: [agendamentoId], references: [id], onDelete: SetNull)
 
-  presencas PresencaAmistoso[]
-  jogo      Jogo?
+  presencas      PresencaAmistoso[]
+  pedidosGoleiro PedidoGoleiro[]
+  jogo           Jogo?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1166,4 +1176,74 @@ model UsuarioSeguidor {
 
   @@id([seguidorId, seguidoId])
   @@index([seguidoId, seguidorId])
+}
+
+enum StatusConviteSocial {
+  PENDENTE
+  ACEITO
+  RECUSADO
+  CANCELADO
+}
+
+model ConviteTime {
+  id           Int                 @id @default(autoincrement())
+  timeId       Int
+  time         Time                @relation(fields: [timeId], references: [id], onDelete: Cascade)
+  usuarioId    Int
+  usuario      Usuario             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  status       StatusConviteSocial @default(PENDENTE)
+  createdAt    DateTime            @default(now())
+  respondidoEm DateTime?
+
+  @@unique([timeId, usuarioId])
+  @@index([usuarioId, status])
+}
+
+model PedidoGoleiro {
+  id             Int                 @id @default(autoincrement())
+  timeId         Int
+  time           Time                @relation(fields: [timeId], references: [id], onDelete: Cascade)
+  solicitanteId  Int
+  solicitante    Usuario             @relation("SolicitanteGoleiro", fields: [solicitanteId], references: [id], onDelete: Cascade)
+  goleiroId      Int
+  goleiro        Usuario             @relation("GoleiroPedido", fields: [goleiroId], references: [id], onDelete: Cascade)
+  amistosoId     Int?
+  amistoso       Amistoso?           @relation(fields: [amistosoId], references: [id], onDelete: SetNull)
+  dataHora       DateTime
+  duracaoMinutos Int                 @default(60)
+  local          String              @db.VarChar(280)
+  mensagem       String?             @db.VarChar(500)
+  valorProposto  Decimal?            @db.Decimal(10, 2)
+  status         StatusConviteSocial @default(PENDENTE)
+  createdAt      DateTime            @default(now())
+  respondidoEm   DateTime?
+
+  @@unique([timeId, goleiroId, dataHora])
+  @@index([goleiroId, status, dataHora])
+  @@index([solicitanteId, status])
+}
+
+model Story {
+  id            Int                 @id @default(autoincrement())
+  usuarioId     Int
+  usuario       Usuario             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  texto         String?             @db.VarChar(280)
+  imagem        String?
+  cor           String              @default("verde") @db.VarChar(20)
+  createdAt     DateTime            @default(now())
+  expiresAt     DateTime
+  visualizacoes StoryVisualizacao[]
+
+  @@index([usuarioId, expiresAt])
+  @@index([expiresAt])
+}
+
+model StoryVisualizacao {
+  storyId   Int
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  usuarioId Int
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([storyId, usuarioId])
 }

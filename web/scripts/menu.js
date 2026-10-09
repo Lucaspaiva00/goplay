@@ -52,6 +52,8 @@ if (!window.menuLoaded) {
       +item("fa-shield-halved",owner?"Meus times":"Meu time",owner?"location.href='times.html'":"location.href='meu-time.html'")
       +item("fa-thumbs-up",owner?"Jogos do time":"Confirmar presença","location.href='meus-horarios.html'")
       +item("fa-handshake",owner?"Marcar / gerenciar amistosos":"Meus amistosos","location.href='amistosos.html'")
+      +item("fa-envelope","Meus convites · times e goleiros","location.href='convites-jogador.html'")
+      +item("fa-futbol","Encontrar goleiros","location.href='jogadores-comunidade.html?goleiro=true'")
       +item("fa-envelope-open-text","Convites de campeonato","location.href='convites-campeonato.html'");
     if(owner)html+=item("fa-plus","Criar time","location.href='times.html#blocoCriacaoTime'");
     html+=section("RESERVAS E SERVIÇOS")

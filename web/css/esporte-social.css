@@ -1,0 +1,295 @@
+.social-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0;
+}
+.social-tools a,
+.social-tools button {
+  border: 1px solid #dbe6e0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: #fff;
+  color: #123b2d;
+  text-decoration: none;
+  font-weight: 800;
+  cursor: pointer;
+}
+.social-tools .primary {
+  background: #167148;
+  color: white;
+}
+.social-dialog {
+  width: min(520px, calc(100vw - 32px));
+  max-height: 85vh;
+  border: 0;
+  border-radius: 22px;
+  padding: 24px;
+  color: #123b2d;
+  box-shadow: 0 24px 80px #001f2240;
+}
+.social-dialog::backdrop {
+  background: #001f22aa;
+}
+.social-dialog h2 {
+  margin: 0 0 8px;
+}
+.social-dialog p {
+  line-height: 1.5;
+  color: #64756b;
+}
+.social-dialog label {
+  display: block;
+  margin: 12px 0 5px;
+  font-weight: 700;
+}
+.social-dialog input,
+.social-dialog select,
+.social-dialog textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #cadbd0;
+  border-radius: 10px;
+  background: white;
+  font: inherit;
+}
+.social-dialog textarea {
+  resize: vertical;
+}
+.social-dialog .dialog-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+.social-dialog button,
+.social-invite-card button,
+.story-strip button {
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 15px;
+  background: #e9f2ec;
+  color: #155137;
+  font-weight: 800;
+  cursor: pointer;
+}
+.social-dialog button[type="submit"],
+.social-invite-card [data-answer="true"] {
+  background: #167148;
+  color: white;
+}
+.social-dialog [role="status"] {
+  min-height: 20px;
+}
+.social-invite-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 15px;
+}
+.social-invite-card {
+  background: white;
+  border: 1px solid #dce8e1;
+  border-radius: 17px;
+  padding: 20px;
+}
+.social-invite-card h3 {
+  margin: 8px 0;
+}
+.social-invite-card p {
+  line-height: 1.5;
+  color: #607369;
+}
+.social-invite-card footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.social-invite-status {
+  font-size: 12px;
+  font-weight: 800;
+  color: #23714d;
+}
+.social-invite-card a {
+  color: #167148;
+}
+.story-section {
+  background: white;
+  border: 1px solid #e1ebe6;
+  border-radius: 18px;
+  padding: 16px;
+  margin: 18px 0;
+}
+.story-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.story-section-header h2 {
+  font-size: 17px;
+  margin: 0;
+}
+.story-section-header small {
+  color: #6b7e72;
+}
+.story-strip {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 15px 0 3px;
+}
+.story-strip button {
+  flex: 0 0 80px;
+  background: transparent;
+  padding: 0;
+  text-align: center;
+  font-size: 12px;
+}
+.story-ring {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border: 3px solid #29a362;
+  border-radius: 50%;
+  margin: 0 auto 7px;
+  background: #edf6f0;
+  font-size: 20px;
+  overflow: hidden;
+}
+.story-ring.seen {
+  border-color: #ccd9d1;
+}
+.story-ring img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.story-viewer {
+  padding: 0;
+  background: #143f30;
+  color: white;
+  width: min(440px, calc(100vw - 26px));
+  height: min(780px, 85vh);
+  overflow: hidden;
+}
+.story-view-head {
+  position: absolute;
+  inset: 0 0 auto;
+  padding: 18px;
+  background: linear-gradient(#001b26a0, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 2;
+  color: white;
+}
+.story-view-head a {
+  color: white;
+  font-weight: 800;
+  text-decoration: none;
+}
+.story-view-head button {
+  background: #ffffff30;
+  color: white;
+}
+.story-stage {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: #176746;
+}
+.story-stage.azul {
+  background: #174575;
+}
+.story-stage.roxo {
+  background: #634b8a;
+}
+.story-stage.laranja {
+  background: #a84c24;
+}
+.story-stage img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.story-stage p {
+  position: absolute;
+  max-width: 85%;
+  font-size: 26px;
+  line-height: 1.4;
+  font-weight: 800;
+  text-align: center;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: white;
+  background: #001b2660;
+  border-radius: 14px;
+  padding: 18px;
+}
+.story-view-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 16px;
+  background: linear-gradient(transparent, #001b26b0);
+  z-index: 2;
+}
+.story-view-bottom button {
+  background: #ffffff30;
+  color: white;
+}
+.story-view-error {
+  padding: 90px 30px;
+  color: white;
+}
+.story-empty {
+  font-size: 13px;
+  color: #667c6d;
+  margin: 8px 0;
+}
+.goalie-badge {
+  display: inline-block;
+  background: #e5f3ea;
+  color: #176746;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-weight: 700;
+}
+.social-team-select {
+  padding: 10px;
+  border: 1px solid #ccdcd1;
+  border-radius: 10px;
+  max-width: 100%;
+}
+.story-photo-preview {
+  max-height: 180px;
+  max-width: 100%;
+  border-radius: 10px;
+}
+.social-dialog button:disabled,
+.social-invite-card button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+@media (max-width: 600px) {
+  .social-dialog {
+    padding: 18px;
+  }
+  .social-tools a {
+    flex: 1;
+    text-align: center;
+  }
+  .story-stage p {
+    font-size: 22px;
+  }
+}

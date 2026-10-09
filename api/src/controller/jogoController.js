@@ -54,7 +54,7 @@ async function buscarJogoCompleto(client, jogoId) {
       amistoso: { include: {
         society: { select: { id: true, nome: true, usuarioId: true, imagem: true, cidade: true } },
         criadoPor: { select: { id: true, nome: true, email: true, tipo: true, isSocioGoPlay: true } },
-        presencas: { where: { convidadoAvulso: true, status: "VOU" }, select: { timeId:true, usuario: {select:publicPlayerSelect} } }
+        presencas: { where: { OR:[{convidadoAvulso:false},{status:"VOU"}] }, select: { timeId:true, convidadoAvulso:true, status:true, usuario: {select:publicPlayerSelect} } }
       } },
       timeA: { include: { jogadores: { select: publicPlayerSelect } } },
       timeB: { include: { jogadores: { select: publicPlayerSelect } } },
@@ -72,12 +72,11 @@ async function buscarJogoCompleto(client, jogoId) {
     },
   });
   if(jogo?.amistoso)for(const team of [jogo.timeA,jogo.timeB])team.jogadores=team.jogadores.filter(j=>{const g=jogo.amistoso.presencas.find(p=>p.usuario.id===j.id);return !g||g.timeId===team.id;});
-  if(jogo?.amistoso)for(const p of jogo.amistoso.presencas||[]){const team=p.timeId===jogo.timeAId?jogo.timeA:jogo.timeB;if(!team.jogadores.some(j=>j.id===p.usuario.id))team.jogadores.push(p.usuario);}
+  if(jogo?.amistoso)for(const p of jogo.amistoso.presencas||[]){const team=p.timeId===jogo.timeAId?jogo.timeA:jogo.timeB;if(p.convidadoAvulso && p.status==="VOU" && p.usuario && !team.jogadores.some(j=>j.id===p.usuario.id))team.jogadores.push(p.usuario);}
   return jogo;
 }
 function eligiblePlayer(jogo,player,timeId){
-  const guest=(jogo.amistoso?.presencas||[]).find(p=>p.usuario.id===player.id);
-  return guest?guest.timeId===timeId:Number(player.timeRelacionadoId)===timeId;
+  return [jogo.timeAId,jogo.timeBId].includes(timeId) && (timeId===jogo.timeAId?jogo.timeA:jogo.timeB).jogadores.some(p=>p.id===player.id);
 }
 
 function sanitizarJogoPublico(jogo) {

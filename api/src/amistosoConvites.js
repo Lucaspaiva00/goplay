@@ -14,7 +14,7 @@ async function invite(prisma,{amistosoId,timeId,usuarioIds,actor,roster=false,au
     if(![a.timeAId,a.timeBId].includes(timeId))throw error('Time não participa deste amistoso.',400);
     if(!automatic&&!canInvite(actor,a,timeId))throw error('Sem permissão para convidar jogadores deste time.',403);
     if(a.status!=='CONFIRMADO'||a.jogo?.finalizado)throw error('Convites estão disponíveis somente para amistosos confirmados e não encerrados.',409);
-    const targets=await tx.usuario.findMany({where:{tipo:{in:['PLAYER','DONO_TIME']},...(roster?{timeRelacionadoId:timeId}:{id:{in:usuarioIds}})},select:{id:true,nome:true,email:true,timeRelacionadoId:true}});
+    const targets=await tx.usuario.findMany({where:{tipo:{in:['PLAYER','DONO_TIME']},...(roster?{timesJogador:{some:{id:timeId}}}:{id:{in:usuarioIds}})},select:{id:true,nome:true,email:true,timeRelacionadoId:true}});
     if(!roster&&targets.length!==usuarioIds.length)throw error('Selecione jogadores válidos.',400);
     const sent=[],skipped=[];
     for(const player of targets){
@@ -24,7 +24,7 @@ async function invite(prisma,{amistosoId,timeId,usuarioIds,actor,roster=false,au
       // Synchronizing the roster never overwrites an answer or sends duplicate invitations.
       if(roster&&existing){skipped.push(player.id);continue;}
       if(existing?.notificadoEm&&Date.now()-existing.notificadoEm.getTime()<60000){skipped.push(player.id);continue;}
-      const data={notificadoEm:new Date(),convidadoAvulso:player.timeRelacionadoId!==timeId};
+      const data={notificadoEm:new Date(),convidadoAvulso:!await require("./teamMembership").belongs(tx,player.id,timeId)};
       if(existing)await tx.presencaAmistoso.update({where:key,data});
       else await tx.presencaAmistoso.create({data:{amistosoId,usuarioId:player.id,timeId,...data}});
       const titulo='Você vai jogar este amistoso?';

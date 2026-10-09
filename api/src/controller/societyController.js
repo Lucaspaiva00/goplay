@@ -118,7 +118,7 @@ const comunidade = async (req,res) => {
         if(!await prisma.society.findUnique({where:{id},select:{id:true}}))return res.status(404).json({error:"Society não encontrada."});
         const [times,jogadores]=await Promise.all([
             prisma.time.findMany({where:{societyId:id,statusVinculo:"APROVADO"},select:{id:true,nome:true,brasao:true,_count:{select:{jogadores:true}}},orderBy:{nome:"asc"}}),
-            prisma.usuario.findMany({where:{tipo:"PLAYER",OR:[{societyPlayers:{some:{societyId:id}}},{timeRelacionado:{is:{societyId:id,statusVinculo:"APROVADO"}}}]},select:{id:true,nome:true,fotoUrl:true,posicaoCampo:true},orderBy:{nome:"asc"}}),
+            prisma.usuario.findMany({where:{tipo:"PLAYER",OR:[{societyPlayers:{some:{societyId:id}}},{timesJogador:{some:{societyId:id,statusVinculo:"APROVADO"}}}]},select:{id:true,nome:true,fotoUrl:true,posicaoCampo:true},orderBy:{nome:"asc"}}),
         ]);
         return res.set("Cache-Control","no-store").json({totalJogadores:jogadores.length,totalTimes:times.length,jogadores,times});
     }catch(e){console.error(e);return res.status(500).json({error:"Não foi possível carregar a comunidade."});}

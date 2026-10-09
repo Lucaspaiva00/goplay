@@ -228,7 +228,7 @@ const update = async (req, res) => {
         if (req.actor?.kind !== "USER" || (Number(req.actor.id) !== Number(req.params.id) && !isPlatformAdmin(req.actor))) {
             return res.status(403).json({ error: "Você só pode editar seu próprio perfil." });
         }
-        if (["tipo", "isSocioGoPlay", "timeRelacionadoId"].some(key => req.body[key] !== undefined)) {
+        if (["tipo", "isSocioGoPlay", "timeRelacionadoId", "timesJogador"].some(key => req.body[key] !== undefined)) {
             return res.status(403).json({ error: "Permissões e vínculo de time não podem ser alterados pelo perfil." });
         }
         const id = Number(req.params.id);
@@ -352,7 +352,8 @@ const update = async (req, res) => {
 
         // Goleiro
         if (req.body.goleiro !== undefined) {
-            data.goleiro = Boolean(req.body.goleiro);
+            if (typeof req.body.goleiro !== "boolean") return res.status(400).json({error:"Informe goleiro como true ou false."});
+            data.goleiro = req.body.goleiro;
         }
 
         // Foto de perfil

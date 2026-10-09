@@ -2,6 +2,7 @@ const BASE_URL = "https://goplay-dzlr.onrender.com";
 
 let solicitacoesJogador = [];
 let timeAtualJogador = null;
+let timesJogador = [];
 
 function getUsuario() {
     return JSON.parse(localStorage.getItem("usuarioLogado") || "null");
@@ -126,18 +127,12 @@ function solicitacaoDoTime(timeId) {
 }
 
 function playerAction(t) {
-    if (Number(timeAtualJogador?.id) === Number(t.id)) {
-        return `<button class="btn" onclick="location.href='meu-time.html'">✓ Meu time</button>`;
-    }
-    if (timeAtualJogador?.id) {
-        return `<button class="btn" disabled style="opacity:.55;cursor:not-allowed">Você já está em outro time</button>`;
+    if (timesJogador.some(time=>Number(time.id)===Number(t.id))) {
+        return `<button class="btn" onclick="location.href='meu-time.html?timeId=${t.id}'">✓ Meu time</button>`;
     }
     const req = solicitacaoDoTime(t.id);
     if (req?.status === "PENDENTE") {
         return `<button class="btn" disabled style="opacity:.7;cursor:not-allowed">⏳ Solicitação enviada</button>`;
-    }
-    if (req?.status === "APROVADA") {
-        return `<button class="btn" onclick="location.href='meu-time.html'">✓ Entrada aprovada</button>`;
     }
     if ((Array.isArray(t.jogadores) ? t.jogadores.length : 0) >= Number(t.maxJogadores || 20)) {
         return `<button class="btn" disabled style="opacity:.55;cursor:not-allowed">Time lotado</button>`;
@@ -205,6 +200,7 @@ async function carregarTimes() {
                 ]);
                 solicitacoesJogador = Array.isArray(reqs) ? reqs : [];
                 timeAtualJogador = current?.time || null;
+                timesJogador = current?.times || (timeAtualJogador?[timeAtualJogador]:[]);
             }
         } else if (usuario.tipo === "DONO_TIME") {
             data = await fetchJSON(`${BASE_URL}/time/dono/${usuario.id}`);

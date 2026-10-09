@@ -1,5 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const membership = require("../teamMembership");
 const { notifyUsuario } = require("../notifications");
 const { isPlatformAdmin, ownsSociety } = require("../auth");
 
@@ -306,7 +307,7 @@ const update = async (req, res) => {
             if (!Number.isInteger(maxJogadores) || maxJogadores < 1 || maxJogadores > 100) {
                 return res.status(400).json({ error: "O limite de jogadores deve ser um número inteiro entre 1 e 100." });
             }
-            const ocupados = await prisma.usuario.count({ where: { timeRelacionadoId: timeId } });
+            const ocupados = await membership.count(prisma,timeId);
             if (maxJogadores < ocupados) {
                 return res.status(409).json({ error: `O time já possui ${ocupados} jogador(es). O limite não pode ser menor que o elenco atual.` });
             }
@@ -460,12 +461,7 @@ const solicitarEntrada = async (req, res) => {
 
         const usuario = await prisma.usuario.findUnique({ where: { id: req.actor.id } });
         if (!usuario) return res.status(404).json({ error: "Jogador não encontrado." });
-        if (usuario.timeRelacionadoId) {
-            if (Number(usuario.timeRelacionadoId) === Number(timeId)) {
-                return res.status(400).json({ error: "Você já faz parte deste time." });
-            }
-            return res.status(400).json({ error: "Você já faz parte de outro time. Saia dele antes de solicitar entrada em outro." });
-        }
+        if (await membership.belongs(prisma,usuario.id,timeId))return res.status(400).json({error:"Você já faz parte deste time."});
 
         const time = await prisma.time.findUnique({
             where: { id: timeId },
@@ -475,7 +471,7 @@ const solicitarEntrada = async (req, res) => {
         if (time.statusVinculo !== "APROVADO") {
             return res.status(400).json({ error: "Este time ainda não está disponível para novos jogadores." });
         }
-        const ocupados = await prisma.usuario.count({ where: { timeRelacionadoId: timeId } });
+        const ocupados = await membership.count(prisma,timeId);
         if (ocupados >= Number(time.maxJogadores || 20)) {
             return res.status(409).json({ error: `Este time atingiu o limite de ${time.maxJogadores || 20} jogador(es).` });
         }
@@ -559,28 +555,19 @@ const responderSolicitacao = async (req, res) => {
         if (solicitacao.status !== "PENDENTE") return res.status(400).json({ error: "Esta solicitação já foi respondida." });
 
         if (status === "APROVADA") {
-            const usuarioAtual = await prisma.usuario.findUnique({ where: { id: solicitacao.usuarioId }, select: { timeRelacionadoId: true } });
-            if (usuarioAtual?.timeRelacionadoId && Number(usuarioAtual.timeRelacionadoId) !== Number(solicitacao.timeId)) {
-                return res.status(409).json({ error: "O jogador já entrou em outro time." });
-            }
-
-            const ocupados = await prisma.usuario.count({ where: { timeRelacionadoId: solicitacao.timeId } });
+            const ocupados = await membership.count(prisma,solicitacao.timeId);
             const limite = Number(solicitacao.time.maxJogadores || 20);
             if (ocupados >= limite) {
                 return res.status(409).json({ error: `O time já atingiu o limite de ${limite} jogador(es). Remova alguém ou aumente o limite antes de aprovar.` });
             }
 
             await prisma.$transaction(async tx => {
-                await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${solicitacao.usuarioId} FOR UPDATE`;
+                await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${solicitacao.usuarioId} FOR NO KEY UPDATE`;
                 const current = await tx.usuario.findUnique({ where: { id: solicitacao.usuarioId } });
                 const pending = await tx.solicitacaoEntradaTime.findUnique({ where: { id: solicitacao.id } });
-                if (current.timeRelacionadoId || pending.status !== "PENDENTE") throw Object.assign(new Error("O jogador já entrou em um time ou esta solicitação já foi respondida."), { status: 409 });
-                await tx.usuario.update({ where: { id: solicitacao.usuarioId }, data: { timeRelacionadoId: solicitacao.timeId } });
+                if (await membership.belongs(tx,current.id,solicitacao.timeId) || pending.status !== "PENDENTE") throw Object.assign(new Error("O jogador já pertence a este time ou esta solicitação já foi respondida."), { status: 409 });
+                await membership.add(tx,solicitacao.usuarioId,solicitacao.timeId);
                 await tx.solicitacaoEntradaTime.update({ where: { id: solicitacao.id }, data: { status: "APROVADA", respondidoEm: new Date() } });
-                await tx.solicitacaoEntradaTime.updateMany({
-                    where: { usuarioId: solicitacao.usuarioId, id: { not: solicitacao.id }, status: "PENDENTE" },
-                    data: { status: "CANCELADA", respondidoEm: new Date() }
-                });
                 await syncPlayerToRoutine(tx, solicitacao.timeId, solicitacao.usuarioId);
             });
 
@@ -642,11 +629,12 @@ const leave = async (req, res) => {
         const usuarioId = Number(req.actor.id);
         const user = await prisma.usuario.findUnique({ where: { id: usuarioId } });
         if (!user) return res.status(404).json({ error: "Usuário não encontrado." });
-        if (!user.timeRelacionadoId) return res.status(400).json({ error: "Você não faz parte de nenhum time." });
-        const oldTimeId = Number(user.timeRelacionadoId);
+        if (!user.timeRelacionadoId && !req.body.timeId) return res.status(400).json({ error: "Selecione o time do qual deseja sair." });
+        const oldTimeId = toId(req.body.timeId)||Number(user.timeRelacionadoId);
+        if(!await membership.belongs(prisma,usuarioId,oldTimeId))return res.status(404).json({error:"Você não pertence a este time."});
 
         await prisma.$transaction(async tx => {
-            await tx.usuario.update({ where: { id: usuarioId }, data: { timeRelacionadoId: null } });
+            await membership.remove(tx,usuarioId,oldTimeId);
             await unlinkPlayerFromRoutine(tx, oldTimeId, usuarioId);
         });
 
@@ -666,10 +654,10 @@ const removerJogador = async (req, res) => {
         if (!time) return res.status(404).json({ error: "Time não encontrado." });
         if (Number(time.donoId) !== Number(req.actor.id)) return res.status(403).json({ error: "Apenas o dono do time pode remover jogadores." });
         const jogador = await prisma.usuario.findUnique({ where: { id: usuarioId }, select: { id: true, nome: true, timeRelacionadoId: true } });
-        if (!jogador || Number(jogador.timeRelacionadoId) !== Number(timeId)) return res.status(404).json({ error: "Jogador não pertence a este time." });
+        if (!jogador || !await membership.belongs(prisma,usuarioId,timeId)) return res.status(404).json({ error: "Jogador não pertence a este time." });
 
         await prisma.$transaction(async tx => {
-            await tx.usuario.update({ where: { id: usuarioId }, data: { timeRelacionadoId: null } });
+            await membership.remove(tx,usuarioId,timeId);
             await unlinkPlayerFromRoutine(tx, timeId, usuarioId);
         });
         await notifyUsuario(prisma, usuarioId, "Vínculo com time encerrado", `Você foi removido do ${time.nome}.`, `times.html`);
@@ -693,15 +681,15 @@ const getTimeByPlayer = async (req, res) => {
 
         const jogador = await prisma.usuario.findUnique({
             where: { id: usuarioId },
-            include: { timeRelacionado: true }
+            include: { timesJogador:{include:{society:{select:{id:true,nome:true}}},orderBy:{nome:"asc"}} }
         });
 
-        if (!jogador || !jogador.timeRelacionadoId) {
-            return res.json({ time: null });
-        }
+        if (!jogador?.timesJogador.length)return res.json({time:null,times:[]});
+        const selected=toId(req.query.timeId)||jogador.timeRelacionadoId||jogador.timesJogador[0].id;
+        if(!jogador.timesJogador.some(t=>t.id===selected))return res.status(403).json({error:"Você não pertence a este time."});
 
         const time = await prisma.time.findUnique({
-            where: { id: jogador.timeRelacionadoId },
+            where: { id: selected },
             include: {
                 society: { select: { id: true, nome: true, pixChave: true, pixTitular: true } },
                 jogadores: {
@@ -717,7 +705,7 @@ const getTimeByPlayer = async (req, res) => {
             }
         });
 
-        return res.json({ time });
+        return res.json({ time,times:jogador.timesJogador });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ error: "Erro ao buscar time do jogador." });
@@ -900,5 +888,7 @@ module.exports = {
     updateVinculo,
     aprovar,
     recusar,
-    inativar
+    inativar,
+    syncPlayerToRoutine,
+    unlinkPlayerFromRoutine
 };

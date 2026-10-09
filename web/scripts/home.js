@@ -16,7 +16,7 @@ function resposta(a){return (a.presencas||[]).find(p=>Number(p.usuarioId)===Numb
 async function votarHome(id,status,btn){
   try{
     if(btn){btn.disabled=true;btn.textContent="Salvando...";}
-    await api(`${BASE_URL}/encontros-horario/${id}/presenca`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});
+    await api(`${BASE_URL}/encontros-horario/${id}/presenca`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({status,timeId:Number(document.getElementById(`homeFriendlySide-${id}`)?.value)||undefined})});
     await carregarHomeEsportiva();
   }catch(e){alert(e.message);}
 }
@@ -46,7 +46,7 @@ async function jogosDoTime(timeId){
 async function votarAmistosoHome(id,status,btn){
   try{
     if(btn){btn.disabled=true;btn.textContent="Salvando...";}
-    await api(`${BASE_URL}/amistosos/${id}/presenca`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});
+    await api(`${BASE_URL}/amistosos/${id}/presenca`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({status,timeId:Number(document.getElementById(`homeFriendlySide-${id}`)?.value)||undefined})});
     await carregarHomeEsportiva();
   }catch(e){alert(e.message);}
 }
@@ -60,6 +60,7 @@ function cardAmistoso(a){
     <div class="home-game-date"><strong>${new Date(a.dataHora).toLocaleDateString("pt-BR")}</strong><span>${new Date(a.dataHora).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</span></div>
     <div class="home-game-body"><strong>🤝 ${esc(a.timeA?.nome)} × ${esc(a.timeB?.nome)}</strong><small>${esc(a.society?.nome||"Local a definir")}${a.campo?.nome?` • ${esc(a.campo.nome)}`:""}</small></div>
     <div class="home-presence-actions">
+      ${p&&(a.minhasOpcoesTime||[]).length>1?`<label>Jogar por <select id="homeFriendlySide-${a.id}" class="social-team-select">${[a.timeA,a.timeB].map(t=>`<option value="${t.id}" ${t.id===p.timeId?'selected':''}>${esc(t.nome)}</option>`).join('')}</select></label>`:''}
       ${player&&p&&a.status==="CONFIRMADO"?`<button class="home-vote yes ${p.status==="VOU"?"active":""}" onclick="votarAmistosoHome(${a.id},'VOU',this)">👍 Vou</button><button class="home-vote no ${p.status==="NAO_VOU"?"active":""}" onclick="votarAmistosoHome(${a.id},'NAO_VOU',this)">👎 Não vou</button>`:`<span class="chip">${a.status==="CONFIRMADO"?"Confirmado":a.status.replaceAll("_"," ")}</span>`}
     </div>
     ${a.jogo?.id?`<a class="home-game-watch" href="jogo-detalhe.html?jogoId=${a.jogo.id}">${active?'🔴 Assistir ao vivo':'▶ Acompanhar'}</a>`:''}
@@ -79,7 +80,8 @@ async function amistososDoUsuario(timeId=null){
 }
 
 async function renderDonoTime(){
-  const times=await api(`${BASE_URL}/time/dono/${usuarioLogado.id}`);
+  const [ownedTeams,memberships]=await Promise.all([api(`${BASE_URL}/time/dono/${usuarioLogado.id}`),api(`${BASE_URL}/time/details/by-player/${usuarioLogado.id}`).catch(()=>({times:[]}))]);
+  const times=[...ownedTeams,...(memberships.times||[])].filter((t,i,a)=>a.findIndex(x=>x.id===t.id)===i);
   if(!times.length)return guestMatchesHtml(await amistososDoUsuario())+`<section class="action-card"><h3>Seu primeiro time</h3><p>Crie um time para começar a organizar jogos e reservas.</p><button class="btn green" onclick="location.href='times.html#blocoCriacaoTime'">Criar time</button></section>`;
   let selected=Number(localStorage.getItem("homeTimeId")||0);
   if(!times.some(t=>Number(t.id)===selected))selected=Number(times[0].id);
@@ -87,7 +89,7 @@ async function renderDonoTime(){
   const time=times.find(t=>Number(t.id)===selected);
   const [jogos,amistosos]=await Promise.all([jogosDoTime(selected),amistososDoUsuario(selected)]);
   const selector=times.length>1?`<select id="homeTimeSelect" class="home-team-select">${times.map(t=>`<option value="${t.id}" ${Number(t.id)===selected?"selected":""}>${esc(t.nome)}</option>`).join("")}</select>`:`<strong class="home-team-name">⚽ ${esc(time.nome)}</strong>`;
-  return `<section class="home-team-head"><div><span class="home-eyebrow">MEU TIME</span>${selector}</div><button class="home-link-btn" onclick="location.href='times.html'">Gerenciar</button></section>
+  return `<section class="home-team-head"><div><span class="home-eyebrow">MEU TIME</span>${selector}</div><button class="home-link-btn" onclick="location.href='${time.donoId===usuarioLogado.id?'times.html':'meu-time.html'}'">${time.donoId===usuarioLogado.id?'Gerenciar':'Ver elenco'}</button></section>
   <section class="action-card home-games-section"><div class="home-section-head"><div><h3>Próximos jogos</h3><p>Acompanhe a agenda e as confirmações do elenco.</p></div><button class="home-link-btn" onclick="location.href='meus-horarios.html'">Organizar jogos</button></div>
     <div class="home-games-strip">${jogos.length?jogos.map(cardJogo).join(""):'<div class="home-empty">Nenhum próximo jogo marcado para este time.</div>'}</div>
   </section>
@@ -103,11 +105,11 @@ async function renderDonoTime(){
 }
 function guestMatchesHtml(matches){return matches.length?`<section class="action-card home-games-section"><h3>Você foi convidado para jogar</h3><p>Responda sua presença mesmo sem fazer parte de um time.</p><div class="home-games-strip">${matches.map(cardAmistoso).join("")}</div></section>`:"";}
 async function renderPlayer(){
-  let time=null;try{const data=await api(`${BASE_URL}/time/details/by-player/${usuarioLogado.id}`);time=data.time??(data.id?data:null);}catch{}
+  let time=null,times=[];try{const selected=Number(localStorage.getItem("homePlayerTimeId")||0);let data=await api(`${BASE_URL}/time/details/by-player/${usuarioLogado.id}`);times=data.times||[];if(selected&&times.some(t=>t.id===selected))data=await api(`${BASE_URL}/time/details/by-player/${usuarioLogado.id}?timeId=${selected}`);time=data.time??(data.id?data:null);}catch{}
   const amistosos=await amistososDoUsuario();
   if(!time?.id)return guestMatchesHtml(amistosos)+`<section class="action-card"><h3>Encontre seu time</h3><p>Escolha uma empresa e solicite entrada em um time. Depois da aprovação, seus jogos aparecem aqui.</p><button class="btn green" onclick="location.href='times.html'">Ver times</button></section>`;
   const jogos=await jogosDoTime(time.id);
-  return `<section class="home-team-head"><div><span class="home-eyebrow">MEU TIME</span><strong class="home-team-name">⚽ ${esc(time.nome)}</strong></div></section>
+  return `<section class="home-team-head"><div><span class="home-eyebrow">MEU TIME</span><strong class="home-team-name">⚽ ${esc(time.nome)}</strong></div>${times.length>1?`<label>Meu time <select id="homePlayerTimeSelect" class="social-team-select">${times.map(t=>`<option value="${t.id}" ${t.id===time.id?'selected':''}>${esc(t.nome)}</option>`).join('')}</select></label>`:''}</section>
   <section class="action-card home-games-section"><div class="home-section-head"><div><h3>Seus próximos jogos</h3><p>É só responder se você vai ou não.</p></div></div>
     <div class="home-games-strip">${jogos.length?jogos.map(cardJogo).join(""):'<div class="home-empty">Nenhum próximo jogo marcado.</div>'}</div>
   </section>
@@ -126,6 +128,7 @@ async function carregarHomeEsportiva(){
   try{
     box.innerHTML='<div class="home-loading">Carregando seus jogos...</div>';
     box.innerHTML=usuarioLogado.tipo==="DONO_TIME"?await renderDonoTime():await renderPlayer();
+    document.getElementById("homePlayerTimeSelect")?.addEventListener("change",e=>{localStorage.setItem("homePlayerTimeId",e.target.value);carregarHomeEsportiva();});
     document.getElementById("homeTimeSelect")?.addEventListener("change",e=>{localStorage.setItem("homeTimeId",e.target.value);carregarHomeEsportiva();});
   }catch(e){console.error(e);box.innerHTML='<div class="home-empty">Não foi possível carregar seus jogos agora.</div>';}
 }
@@ -138,7 +141,7 @@ async function renderHome(){
   if(esportivo){
     const owner=usuarioLogado.tipo==="DONO_TIME";
     html=`<section class="sport-profile-hero"><div class="sport-profile-avatar">${esc((usuarioLogado.nome||'G').slice(0,2).toUpperCase())}</div><div><span class="sport-eyebrow">BEM-VINDO À SUA COMUNIDADE</span><h1>Bom jogo, ${esc((usuarioLogado.nome||'Jogador').split(' ')[0])}!</h1><p>Sua galera, seus jogos e o futebol acontecendo agora.</p></div><a href="jogador-perfil.html?usuarioId=${usuarioLogado.id}" aria-label="Abrir meu perfil público"><i class="fa fa-user"></i></a></section>
-    <nav class="sport-finance-shortcuts" aria-label="Comanda e pagamentos"><a href="comanda.html"><span class="sport-finance-icon"><i class="fa fa-receipt"></i></span><span><strong>Minha comanda</strong><small>Consumos e conta da sua visita</small></span><span aria-hidden="true">↗</span></a><a href="meus-pagamentos.html"><span class="sport-finance-icon"><i class="fa fa-wallet"></i></span><span><strong>Meus pagamentos</strong><small>Consulte valores e pendências</small></span><span aria-hidden="true">↗</span></a></nav>
+    <section id="homeStories"></section><nav class="social-tools"><a class="primary" href="convites-jogador.html">Meus convites · times e goleiros</a><a href="jogadores-comunidade.html?goleiro=true">🧤 Encontrar goleiros</a></nav><nav class="sport-finance-shortcuts" aria-label="Comanda e pagamentos"><a href="comanda.html"><span class="sport-finance-icon"><i class="fa fa-receipt"></i></span><span><strong>Minha comanda</strong><small>Consumos e conta da sua visita</small></span><span aria-hidden="true">↗</span></a><a href="meus-pagamentos.html"><span class="sport-finance-icon"><i class="fa fa-wallet"></i></span><span><strong>Meus pagamentos</strong><small>Consulte valores e pendências</small></span><span aria-hidden="true">↗</span></a></nav>
     <nav class="social-discovery" aria-label="Perfis da comunidade"><a href="${empresa?'society-detalhe.html?societyId='+empresa.id:'societies.html'}"><i class="fa fa-building"></i><span><strong>${empresa?esc(empresa.nome||'Society selecionada'):'Explorar Societies'}</strong><small>Abrir o perfil da comunidade →</small></span></a><a href="jogadores-comunidade.html"><i class="fa fa-user-group"></i><span><strong>Encontrar jogadores</strong><small>Ver perfis e seguir sua galera →</small></span></a><a href="jogador-perfil.html?usuarioId=${usuarioLogado.id}"><i class="fa fa-user"></i><span><strong>Meu perfil público</strong><small>Seguidores e quem você segue →</small></span></a></nav>
     <nav class="sport-shortcuts" aria-label="Ações rápidas"><a href="acompanhar.html"><i class="fa fa-play"></i> Assistir partidas</a><a href="meus-horarios.html"><i class="fa fa-thumbs-up"></i> Confirmar presença</a><a href="${owner?'amistosos.html':'meu-time.html'}"><i class="fa ${owner?'fa-handshake':'fa-shield-halved'}"></i> ${owner?'Marcar amistoso':'Meu time'}</a>${owner?'<a href="times.html#blocoCriacaoTime"><i class="fa fa-plus"></i> Criar time</a>':''}</nav>
     <div class="sport-home-layout"><div><div id="homeComunidade"></div></div><aside class="sport-personal"><div class="sport-section-head"><div><span class="sport-eyebrow">SEU VESTIÁRIO</span><h2>Minha agenda</h2><p>Presenças, convites e seu time.</p></div></div><div id="homeEsportiva"></div></aside></div>`;
@@ -164,7 +167,7 @@ async function renderHome(){
       <button class="btn navy" onclick="location.href='campeonatos.html'"><i class="fa fa-trophy"></i> Campeonatos</button>
     </section>`;
   }
-  homeContent.innerHTML=html;
+  homeContent.innerHTML=html;window.GoPlayStories?.mount(document.getElementById("homeStories"));
   if(esportivo){window.GoPlayPartidas?.mount(document.getElementById("homeComunidade"),{compact:true,take:12});await carregarHomeEsportiva();}
   if(usuarioLogado.tipo==="DONO_SOCIETY"&&empresa)await carregarResumo(empresa.id);
 }

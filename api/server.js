@@ -4,6 +4,7 @@ const cors = require("cors");
 const app = express();
 
 // Middlewares
+app.use("/stories", express.json({limit:"2mb"}));
 app.use(express.json());
 app.use(cors());
 
@@ -19,6 +20,7 @@ app.get("/", (req, res) => {
 // Porta
 const PORT = process.env.PORT || 3000;
 const { startPresenceNotificationJob } = require("./src/presenceNotifications");
+const { startStoryCleanupJob } = require("./src/storyLifecycle");
 const { syncPlatformAdmins } = require("./src/platformAdmins");
 
 async function startServer() {
@@ -31,6 +33,7 @@ async function startServer() {
     app.listen(PORT, () => {
         console.log(`Servidor rodando na porta ${PORT}`);
         startPresenceNotificationJob();
+        startStoryCleanupJob();
     });
 }
 

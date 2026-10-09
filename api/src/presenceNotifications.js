@@ -10,7 +10,7 @@ const monthRef = d => String(dateKeyUTC(d) || '').slice(0,7);
 async function ensureTeamPresences(agendamentoId, timeId){
   if(!timeId) return [];
   const jogadores = await prisma.usuario.findMany({
-    where:{ timeRelacionadoId:Number(timeId) },
+    where:{ timesJogador:{some:{id:Number(timeId)}} },
     select:{ id:true }
   });
   if(jogadores.length){

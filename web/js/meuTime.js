@@ -44,7 +44,8 @@ if (!usuarioLogado?.id) {
 
 const usuarioId = usuarioLogado.id;
 
-async function carregarMeuTime() {
+let timeSelecionadoId = null;
+async function carregarMeuTime(selectedId = null) {
     const dadosTime = document.getElementById("dadosTime");
     const listaJogadores = document.getElementById("listaJogadores");
     const btnSair = document.getElementById("sair");
@@ -53,7 +54,7 @@ async function carregarMeuTime() {
         dadosTime.innerHTML = `<p>Carregando informações do time...</p>`;
         listaJogadores.innerHTML = `<p>Carregando jogadores...</p>`;
 
-        const data = await fetchJSON(`${BASE_URL}/time/details/by-player/${usuarioId}`);
+        const data = await fetchJSON(`${BASE_URL}/time/details/by-player/${usuarioId}${selectedId?`?timeId=${selectedId}`:""}`);
 
         if (data?.error || !data?.time) {
             dadosTime.innerHTML = `
@@ -69,8 +70,10 @@ async function carregarMeuTime() {
         }
 
         const time = data.time;
+        timeSelecionadoId = time.id;
 
         dadosTime.innerHTML = `
+            ${data.times?.length>1?`<label>Meus times <select id="meuTimeSelect">${data.times.map(t=>`<option value="${t.id}" ${t.id===time.id?"selected":""}>${escapeHtml(t.nome)}</option>`).join("")}</select></label>`:""}
             ${time.brasao ? `<img src="${escapeHtml(time.brasao)}" alt="Brasão" style="width:72px;height:72px;border-radius:12px;object-fit:cover;border:1px solid #e5e7eb;margin-bottom:12px;">` : ""}
             <h2 style="margin-bottom: 10px;">${escapeHtml(time.nome)}</h2>
             <p><b>Society:</b> ${escapeHtml(time?.society?.nome || "-")}</p>
@@ -80,6 +83,7 @@ async function carregarMeuTime() {
             ${time.rotinaHorario?.id ? `<div style="margin-top:16px"><button class="btn" onclick="location.href='horario-grupo.html?grupoId=${time.rotinaHorario.id}'">👍 Ver jogos e confirmar presença</button></div>` : `<p style="margin-top:14px;color:#6b7280;">O dono do time ainda não organizou os jogos semanais.</p>`}
         `;
 
+        document.getElementById("meuTimeSelect")?.addEventListener("change", e=>carregarMeuTime(Number(e.target.value)));
         if (!Array.isArray(time.jogadores) || time.jogadores.length === 0) {
             listaJogadores.innerHTML = `<p>Nenhum jogador no time ainda.</p>`;
         } else {
@@ -106,13 +110,13 @@ async function carregarMeuTime() {
 }
 
 async function sairDoTime() {
-    if (!confirm("Tem certeza que deseja sair do time?")) return;
+    if (!confirm("Sair deste time? Seus outros times serão preservados.")) return;
 
     try {
         const data = await fetchJSON(`${BASE_URL}/time/sair`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ usuarioId })
+            body: JSON.stringify({ timeId: timeSelecionadoId })
         });
 
         if (data?.error) {
@@ -129,7 +133,7 @@ async function sairDoTime() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    carregarMeuTime();
+    carregarMeuTime(Number(new URL(location.href).searchParams.get("timeId"))||null);
 
     const btnSair = document.getElementById("sair");
     if (btnSair) {

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Meus convites · GoPlay</title>
+    <link rel="stylesheet" href="../css/goplay_home.css" />
+    <link
+      id="communityStyles"
+      rel="stylesheet"
+      href="../css/comunidade.css?v=20261009-social"
+    />
+    <link
+      rel="stylesheet"
+      href="../css/society-detalhe.css?v=20261009-social"
+    />
+    <link
+      rel="stylesheet"
+      href="../css/comunidade-social.css?v=20261009-social"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="../css/esporte-social.css?v=20261009-esporte"
+    />
+  </head>
+  <body>
+    <aside id="sidebar" class="sidebar">
+      <div class="logo-area"><h2>GoPlay</h2></div>
+      <ul id="menuDynamic"></ul>
+    </aside>
+    <div id="overlay" class="overlay"></div>
+    <header class="topbar">
+      <button id="menuBtn" class="menu-btn" aria-label="Abrir menu">
+        <i class="fa fa-bars"></i>
+      </button>
+      <h1 class="title">Meus convites</h1>
+    </header>
+    <main class="content">
+      <div class="society-profile-page" id="invitePage">
+        <div class="sport-page-intro">
+          <span class="sport-eyebrow">BORA JOGAR?</span>
+          <h1>Meus convites</h1>
+          <p>Entre em novos times e combine suas próximas partidas.</p>
+        </div>
+        <nav class="social-tools">
+          <a href="jogadores-comunidade.html">Encontrar jogadores</a
+          ><a href="jogadores-comunidade.html?goleiro=true"
+            >Encontrar goleiros</a
+          >
+        </nav>
+        <p id="inviteStatus" role="status" aria-live="polite"></p>
+        <h2>Convites recebidos para times</h2>
+        <section class="social-invite-grid" id="teamReceived"></section>
+        <section id="teamSentSection">
+          <h2>Convites enviados</h2>
+          <div class="social-invite-grid" id="teamSent"></div>
+        </section>
+        <h2 id="goleiros">Pedidos de goleiro</h2>
+        <p>
+          Confira o local, horário e valor antes de aceitar. Combine o pagamento
+          diretamente com o solicitante.
+        </p>
+        <section class="social-invite-grid" id="goalieRequests"></section>
+      </div>
+    </main>
+    <script src="../scripts/session.js"></script>
+    <script src="../js/goplay_home.js"></script>
+    <script src="../scripts/menu.js?v=20261009-esporte"></script>
+    <script src="../scripts/comunidade-social.js"></script>
+    <script src="../scripts/esporte-social.js?v=20261009-esporte"></script>
+    <script src="../scripts/convites-jogador.js?v=20261009-esporte"></script>
+  </body>
+</html>

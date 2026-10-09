@@ -210,7 +210,7 @@ async function generateFixedOccurrences(hf, group){
   const validation=await validateFixedConflicts(hf); if(!validation.ok) throw Object.assign(new Error(validation.error),{status:409});
   let playerIds=[];
   if(group.timeId){
-    playerIds=(await prisma.usuario.findMany({where:{timeRelacionadoId:group.timeId},select:{id:true}})).map(x=>x.id);
+    playerIds=(await prisma.usuario.findMany({where:{timesJogador:{some:{id:group.timeId}}},select:{id:true}})).map(x=>x.id);
   }else{
     // Compatibilidade com rotinas antigas que ainda não estão ligadas a um time.
     playerIds=(await prisma.grupoHorarioMembro.findMany({where:{grupoId:group.id,ativo:true},select:{usuarioId:true}})).map(x=>x.usuarioId);
@@ -323,7 +323,7 @@ async function occurrenceAccess(actor, ag){
   if(ag.timeId){
     const time=ag.time || await prisma.time.findUnique({where:{id:ag.timeId},select:{donoId:true}});
     if(time && Number(time.donoId)===Number(actor.id)) return {see:true,manage:true};
-    const player=await prisma.usuario.findFirst({where:{id:actor.id,timeRelacionadoId:ag.timeId},select:{id:true}});
+    const player=await prisma.usuario.findFirst({where:{id:actor.id,timesJogador:{some:{id:ag.timeId}}},select:{id:true}});
     if(player) return {see:true,manage:false};
   }
   return {see:false,manage:false};
