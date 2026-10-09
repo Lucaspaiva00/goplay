@@ -166,9 +166,11 @@
   async function mount(container, { usuarioId = null } = {}) {
     if (!container || !["PLAYER", "DONO_TIME"].includes(user()?.tipo)) return;
     container.className = "story-section";
+    container.setAttribute("aria-label", "Stories");
     const own = !usuarioId || Number(usuarioId) === user()?.id;
     container.innerHTML = `<div class="story-section-header"><h2>Stories</h2><small>Momentos de 24 horas</small></div><div class="story-strip"></div><p class="story-empty" role="status">Carregando stories…</p>`;
     async function load() {
+      container.classList.remove("story-error");
       try {
         const result = await api(
           "/stories" + (usuarioId ? `?usuarioId=${usuarioId}` : ""),
@@ -183,7 +185,7 @@
           [...grouped]
             .map(
               ([id, items]) =>
-                `<button type="button" data-author-id="${id}"><span class="story-ring ${items.every((s) => s.visto) ? "seen" : ""}">${esc(items[0].usuario.nome.slice(0, 2).toUpperCase())}</span>${esc(items[0].usuario.nome.split(" ")[0])}</button>`,
+                `<button type="button" data-author-id="${id}"><span class="story-ring ${items.every((s) => s.visto) ? "seen" : ""}">${avatar(items[0].usuario)}</span>${esc(items[0].usuario.nome.split(" ")[0])}</button>`,
             )
             .join("");
         container.querySelector("[role=status]").textContent = result.stories
@@ -203,6 +205,7 @@
                 view(grouped.get(Number(b.dataset.authorId)), 0, load)),
           );
       } catch (e) {
+        container.classList.add("story-error");
         container.querySelector("[role=status]").textContent = e.message;
       }
     }
