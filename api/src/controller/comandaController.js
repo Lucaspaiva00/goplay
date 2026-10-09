@@ -59,8 +59,8 @@ const abrir = async (req, res) => {
         if (!society) return res.status(404).json({ error: "Empresa não encontrada." });
 
         if (timeId) {
-            const time = await prisma.time.findUnique({ where: { id: timeId }, select: { id: true, societyId: true } });
-            if (!time || time.societyId !== societyId) return res.status(400).json({ error: "Time não pertence à empresa." });
+            const time = await prisma.time.findUnique({ where: { id: timeId }, select: { id: true } });
+            if (!time) return res.status(404).json({ error: "Time não encontrado." });
         }
 
         // Serialize openings for the same client/company to reuse an active tab.

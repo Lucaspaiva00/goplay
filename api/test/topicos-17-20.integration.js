@@ -353,6 +353,9 @@ async function user(name,tipo='PLAYER',isSocioGoPlay=false) {
  await request(`/amistosos/${inviteMatch.id}/cancelar`,ownerA,'POST',{});
  await request(invitePath,ownerA,'POST',{timeId:teamA.id,usuarioIds:[guest.id]},409);
  assert.equal(await prisma.notificacao.count({where:{usuarioId:guest.id,titulo:'Amistoso cancelado'}}),1);checks++;
+ // A visitor can consume at another venue while retaining their permanent team tag.
+ const visitingTab=await request('/comanda',players[0],'POST',{usuarioId:players[0].id,societyId:otherSociety.id,timeId:teamA.id},201);
+ assert.equal(visitingTab.societyId,otherSociety.id);assert.equal(visitingTab.timeId,teamA.id);checks+=2;
  // Cash operators open/reuse tabs, launch/remove items, close and receive.
  const staffActors={};for(const funcao of ['CAIXA','BAR','RECEPCAO']){const st=await prisma.funcionario.create({data:{societyId:society.id,nome:funcao,acesso:`${stamp}-${funcao}`,pinHash:'test',funcao}});staffActors[funcao]={token:auth.createToken({kind:'STAFF',id:st.id,sv:st.sessionVersion})};}
  await request('/comanda',ownerB,'POST',{usuarioId:guest.id,societyId:society.id},403);
