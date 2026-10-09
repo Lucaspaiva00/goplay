@@ -114,7 +114,7 @@
         const author = d.querySelector("[data-author]");
         author.href = `jogador-perfil.html?usuarioId=${s.usuarioId}`;
         author.textContent = s.usuario.nome;
-        bottom.innerHTML = `<button data-prev ${i === 0 ? "disabled" : ""}aria-label="Story anterior" title="Story anterior">‹</button>${s.usuarioId === user()?.id ? `<button data-viewsaria-label="Ver visualizações" title="Ver visualizações">◉ ${s.visualizacoes}</button><button data-delete aria-label="Excluir story" title="Excluir story">Excluir</button>` : ""}<button data-next aria-label="${i === stories.length - 1 ? "Concluir stories" : "Próximo story"}" title="${i === stories.length - 1 ? "Concluir" : "Próximo"}">${i === stories.length - 1 ? "✓" : "›"}</button>`;
+        bottom.innerHTML = `<button data-prev ${i === 0 ? "disabled" : ""} aria-label="Story anterior" title="Story anterior">‹</button>${s.usuarioId === user()?.id ? `<button data-views aria-label="Ver visualizações" title="Ver visualizações">◉ ${s.visualizacoes}</button><button data-delete aria-label="Excluir story" title="Excluir story">Excluir</button>` : ""}<button data-next aria-label="${i === stories.length - 1 ? "Concluir stories" : "Próximo story"}" title="${i === stories.length - 1 ? "Concluir" : "Próximo"}">${i === stories.length - 1 ? "✓" : "›"}</button>`;
         bottom.querySelector("[data-prev]").onclick = () => {
           if (i > 0) {
             i--;
