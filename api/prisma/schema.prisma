@@ -858,6 +858,9 @@ model PresencaAmistoso {
   timeId Int
   time   Time @relation(fields: [timeId], references: [id], onDelete: Cascade)
 
+  convidadoAvulso Boolean   @default(false)
+  notificadoEm    DateTime?
+
   status       StatusPresencaAmistoso @default(PENDENTE)
   respondidoEm DateTime?
 

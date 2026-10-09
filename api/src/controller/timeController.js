@@ -600,6 +600,7 @@ const responderSolicitacao = async (req, res) => {
                     await notifyUsuario(prisma, solicitacao.usuarioId, `Você vai jogar? • ${solicitacao.time.nome}`, `${new Date(proximo.data).toLocaleDateString("pt-BR")} às ${proximo.horaInicio}. Confirme 👍 ou 👎.`, `confirmar-presenca.html?agendamentoId=${proximo.id}`);
                 }
             }
+            try { await require("../amistosoConvites").syncJoinedPlayer(prisma, solicitacao.usuarioId, solicitacao.timeId); } catch(e) { console.error("Convite de amistoso após entrada no time",e.message); }
             return res.json({ ok: true, status: "APROVADA" });
         }
 

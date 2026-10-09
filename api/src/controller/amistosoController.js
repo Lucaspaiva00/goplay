@@ -527,7 +527,7 @@ async function responderSociety(req, res) {
       });
       if (!result.count) return res.status(409).json({ error: "Este convite já foi respondido." });
       const out = await loadAmistoso(id);
-      for (const ownerId of new Set([a.timeA.donoId, a.timeB.donoId].map(Number))) {
+      for (const ownerId of new Set([a.timeA.donoId, a.timeB.donoId, ...a.presencas.map(p=>p.usuarioId)].map(Number))) {
         await notifyUsuario(prisma, ownerId, "Amistoso não aprovado pela empresa", `${a.society.nome} não aprovou ${a.timeA.nome} × ${a.timeB.nome}.`, `amistosos.html?amistosoId=${id}`);
       }
       return res.json(out);
@@ -558,7 +558,7 @@ async function responderPresenca(req, res) {
     });
     if (!presenca) return res.status(404).json({ error: "Você não foi convidado para este amistoso." });
     const currentPlayer = await prisma.usuario.findUnique({ where: { id: Number(req.actor.id) }, select: { timeRelacionadoId: true } });
-    if (Number(currentPlayer?.timeRelacionadoId) !== Number(presenca.timeId)) return res.status(403).json({ error: "Você não pertence mais ao time deste amistoso." });
+    if (!presenca.convidadoAvulso && Number(currentPlayer?.timeRelacionadoId) !== Number(presenca.timeId)) return res.status(403).json({ error: "Você não pertence mais ao time deste amistoso." });
     if (presenca.amistoso.status !== "CONFIRMADO") return res.status(409).json({ error: "O amistoso ainda não está confirmado." });
 
     const out = await prisma.presencaAmistoso.update({
@@ -586,7 +586,7 @@ async function responderPresenca(req, res) {
 
 function sanitizeForActor(row, actor) {
   if (!row) return row;
-  if (actor?.kind === "USER" && actor.tipo === "PLAYER" && !isPlatformAdmin(actor)) {
+  if (actor?.kind === "USER" && !isPlatformAdmin(actor) && Number(actor.id)!==Number(row.timeA.donoId) && Number(actor.id)!==Number(row.timeB.donoId) && Number(actor.id)!==Number(row.society?.usuarioId)) {
     return {
       ...row,
       criadoPor: row.criadoPor ? { id: row.criadoPor.id, nome: row.criadoPor.nome, tipo: row.criadoPor.tipo } : null,
@@ -608,7 +608,7 @@ async function meus(req, res) {
     } else if (req.actor.kind === "USER" && req.actor.tipo === "PLAYER") {
       where = { presencas: { some: { usuarioId: Number(req.actor.id) } } };
     } else if (req.actor.kind === "USER" && req.actor.tipo === "DONO_TIME") {
-      where = { OR: [{ timeA: { donoId: Number(req.actor.id) } }, { timeB: { donoId: Number(req.actor.id) } }] };
+      where = { OR: [{ timeA: { donoId: Number(req.actor.id) } }, { timeB: { donoId: Number(req.actor.id) } }, {presencas:{some:{usuarioId:Number(req.actor.id)}}}] };
     } else if (req.actor.kind === "USER" && req.actor.tipo === "DONO_SOCIETY") {
       where = { society: { usuarioId: Number(req.actor.id) } };
     } else if (req.actor.kind === "USER" && isPlatformAdmin(req.actor)) {
@@ -689,7 +689,7 @@ async function cancelar(req, res) {
       await tx.amistoso.update({ where: { id }, data: { status: "CANCELADO" } });
     });
 
-    for (const ownerId of new Set([a.timeA.donoId, a.timeB.donoId].map(Number))) {
+    for (const ownerId of new Set([a.timeA.donoId, a.timeB.donoId, ...a.presencas.map(p=>p.usuarioId)].map(Number))) {
       await notifyUsuario(prisma, ownerId, "Amistoso cancelado", `${a.timeA.nome} × ${a.timeB.nome} foi cancelado.`, `amistosos.html?amistosoId=${id}`);
     }
     return res.json({ ok: true });
@@ -710,4 +710,13 @@ module.exports = {
   responderPresenca,
   cancelar,
   confirmAmistoso,
+};
+
+module.exports.convidarJogadores = async function(req,res){
+  const {invite,toId}=require('../amistosoConvites');
+  const amistosoId=toId(req.params.id),timeId=toId(req.body.timeId),roster=req.body.elenco===true;
+  const ids=req.body.usuarioIds;
+  if(!amistosoId||!timeId||(!roster&&(!Array.isArray(ids)||ids.length<1||ids.length>30||ids.some(id=>!toId(id)))))return res.status(400).json({error:'Selecione o time e até 30 jogadores.'});
+  try{return res.json(await invite(prisma,{amistosoId,timeId,usuarioIds:roster?[]:[...new Set(ids.map(Number))],roster,actor:req.actor}));}
+  catch(e){console.error('convites amistoso',e.message);return res.status(e.status||500).json({error:e.status?e.message:'Erro ao convidar jogadores.'});}
 };

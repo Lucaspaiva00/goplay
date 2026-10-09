@@ -54,7 +54,7 @@ window.votarAmistosoHome=votarAmistosoHome;
 
 function cardAmistoso(a){
   const p=(a.presencas||[]).find(x=>Number(x.usuarioId)===Number(usuarioLogado.id));
-  const player=usuarioLogado.tipo==="PLAYER";
+  const player=["PLAYER","DONO_TIME"].includes(usuarioLogado.tipo);
   const active=["AO_VIVO","PAUSADA","INTERVALO"].includes(a.jogo?.statusOperacao);
   return `<article class="home-game-card">
     <div class="home-game-date"><strong>${new Date(a.dataHora).toLocaleDateString("pt-BR")}</strong><span>${new Date(a.dataHora).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</span></div>
@@ -73,14 +73,14 @@ async function amistososDoUsuario(timeId=null){
   return (list||[]).filter(a=>{
     if(!["CONFIRMADO","PENDENTE_ADVERSARIO","PENDENTE_SOCIETY"].includes(a.status))return false;
     if(new Date(a.dataHora).getTime()<now&&!(["AO_VIVO","PAUSADA","INTERVALO"].includes(a.jogo?.statusOperacao)&&!a.jogo.finalizado))return false;
-    if(timeId&&![Number(a.timeAId),Number(a.timeBId)].includes(Number(timeId)))return false;
+    if(timeId&&![Number(a.timeAId),Number(a.timeBId)].includes(Number(timeId))&&!(a.presencas||[]).some(p=>Number(p.usuarioId)===Number(usuarioLogado.id)))return false;
     return true;
   }).sort((a,b)=>new Date(a.dataHora)-new Date(b.dataHora)).slice(0,6);
 }
 
 async function renderDonoTime(){
   const times=await api(`${BASE_URL}/time/dono/${usuarioLogado.id}`);
-  if(!times.length)return `<section class="action-card"><h3>Seu primeiro time</h3><p>Crie um time para começar a organizar jogos e reservas.</p><button class="btn green" onclick="location.href='times.html#blocoCriacaoTime'">Criar time</button></section>`;
+  if(!times.length)return guestMatchesHtml(await amistososDoUsuario())+`<section class="action-card"><h3>Seu primeiro time</h3><p>Crie um time para começar a organizar jogos e reservas.</p><button class="btn green" onclick="location.href='times.html#blocoCriacaoTime'">Criar time</button></section>`;
   let selected=Number(localStorage.getItem("homeTimeId")||0);
   if(!times.some(t=>Number(t.id)===selected))selected=Number(times[0].id);
   localStorage.setItem("homeTimeId",String(selected));
@@ -101,10 +101,12 @@ async function renderDonoTime(){
     <button onclick="location.href='campeonatos-view.html'"><i class="fa fa-trophy"></i><span>Campeonatos</span></button>
   </section></details>`;
 }
+function guestMatchesHtml(matches){return matches.length?`<section class="action-card home-games-section"><h3>Você foi convidado para jogar</h3><p>Responda sua presença mesmo sem fazer parte de um time.</p><div class="home-games-strip">${matches.map(cardAmistoso).join("")}</div></section>`:"";}
 async function renderPlayer(){
   let time=null;try{const data=await api(`${BASE_URL}/time/details/by-player/${usuarioLogado.id}`);time=data.time??(data.id?data:null);}catch{}
-  if(!time?.id)return `<section class="action-card"><h3>Encontre seu time</h3><p>Escolha uma empresa e solicite entrada em um time. Depois da aprovação, seus jogos aparecem aqui.</p><button class="btn green" onclick="location.href='times.html'">Ver times</button></section>`;
-  const [jogos,amistosos]=await Promise.all([jogosDoTime(time.id),amistososDoUsuario(time.id)]);
+  const amistosos=await amistososDoUsuario();
+  if(!time?.id)return guestMatchesHtml(amistosos)+`<section class="action-card"><h3>Encontre seu time</h3><p>Escolha uma empresa e solicite entrada em um time. Depois da aprovação, seus jogos aparecem aqui.</p><button class="btn green" onclick="location.href='times.html'">Ver times</button></section>`;
+  const jogos=await jogosDoTime(time.id);
   return `<section class="home-team-head"><div><span class="home-eyebrow">MEU TIME</span><strong class="home-team-name">⚽ ${esc(time.nome)}</strong></div></section>
   <section class="action-card home-games-section"><div class="home-section-head"><div><h3>Seus próximos jogos</h3><p>É só responder se você vai ou não.</p></div></div>
     <div class="home-games-strip">${jogos.length?jogos.map(cardJogo).join(""):'<div class="home-empty">Nenhum próximo jogo marcado.</div>'}</div>

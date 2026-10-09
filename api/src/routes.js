@@ -185,6 +185,7 @@ router.get("/amistosos/meus", authenticate, amistosoController.meus);
 router.get("/amistosos/:id", authenticate, amistosoController.readOne);
 router.post("/amistosos/:id/responder-adversario", authenticate, amistosoController.responderAdversario);
 router.post("/amistosos/:id/responder-society", authenticate, amistosoController.responderSociety);
+router.post("/amistosos/:id/convidar-jogadores", authenticate, amistosoController.convidarJogadores);
 router.post("/amistosos/:id/presenca", authenticate, amistosoController.responderPresenca);
 router.post("/amistosos/:id/cancelar", authenticate, amistosoController.cancelar);
 

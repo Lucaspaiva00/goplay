@@ -119,6 +119,10 @@ async function cancelar(id){
   if(!confirm("Cancelar este amistoso? A reserva vinculada também será cancelada."))return;
   try{await api(`${BASE_URL}/amistosos/${id}/cancelar`,{method:"POST"});await loadRows();}catch(e){alert(e.message);}
 }
+function canInviteTeam(a,time){return isSocio()||ownerOf(time)||(user?.tipo==='DONO_SOCIETY'&&Number(a.society?.usuarioId)===Number(user.id))||(staff?.funcao==='ADMIN'&&Number(staff.societyId)===Number(a.societyId));}
+async function invitePlayers(id,timeId,usuarioIds,elenco=false){try{const d=await api(`${BASE_URL}/amistosos/${id}/convidar-jogadores`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({timeId,usuarioIds,elenco})});alert(d.notificados?`${d.notificados} jogador(es) notificado(s).`:'Nenhum novo convite enviado. O elenco já foi convidado ou a notificação foi enviada há menos de 1 minuto.');await loadRows();}catch(e){alert(e.message);}}
+async function searchInvite(id,timeId){const input=$(`inviteSearch-${id}-${timeId}`),box=$(`inviteResults-${id}-${timeId}`);const q=input.value.trim();if(q.length<2){box.textContent='Digite pelo menos 2 letras.';return;}box.textContent='Buscando…';try{const d=await api(`${BASE_URL}/jogadores/perfis?q=${encodeURIComponent(q)}&take=12`);box.innerHTML=d.usuarios.length?d.usuarios.map(p=>`<div class="presence-line"><a href="jogador-perfil.html?usuarioId=${p.id}">${esc(p.nome)}</a><button type="button" class="friend-action" onclick="invitePlayers(${id},${timeId},[${p.id}])">Convidar</button></div>`).join(''):'Nenhum jogador encontrado.';}catch(e){box.textContent=e.message;}}
+window.invitePlayers=invitePlayers;window.searchInvite=searchInvite;
 function presencesHtml(a){
   if(user?.tipo==="PLAYER"&&!isSocio()){
     const p=myPresence(a);
@@ -127,8 +131,9 @@ function presencesHtml(a){
   }
   if(!["DONO_TIME","DONO_SOCIETY"].includes(user?.tipo)&&!isSocio()&&!staff)return "";
   if(a.status!=="CONFIRMADO"&&a.status!=="REALIZADO")return "";
-  const box=(time,label)=>{const ps=(a.presencas||[]).filter(p=>Number(p.timeId)===Number(time.id));const vou=ps.filter(p=>p.status==="VOU").length,nao=ps.filter(p=>p.status==="NAO_VOU").length,pend=ps.filter(p=>p.status==="PENDENTE").length;return `<div class="presence-box"><strong>${esc(label)} • 👍 ${vou} · 👎 ${nao} · ⏳ ${pend}</strong>${ps.length?ps.map(p=>`<div class="presence-line"><span>${esc(p.usuario?.nome||"Jogador")}</span><b>${p.status==="VOU"?"👍":p.status==="NAO_VOU"?"👎":"⏳"}</b></div>`).join(""):'<div class="presence-line">Sem jogadores convidados.</div>'}</div>`};
-  return `<div class="friend-presences">${box(a.timeA,a.timeA.nome)}${box(a.timeB,a.timeB.nome)}</div>`;
+  const box=(time,label)=>{const manage=a.status==="CONFIRMADO"&&canInviteTeam(a,time);const ps=(a.presencas||[]).filter(p=>Number(p.timeId)===Number(time.id));const vou=ps.filter(p=>p.status==="VOU").length,nao=ps.filter(p=>p.status==="NAO_VOU").length,pend=ps.filter(p=>p.status==="PENDENTE").length;return `<div class="presence-box"><strong>${esc(label)} • 👍 ${vou} · 👎 ${nao} · ⏳ ${pend}</strong>${ps.length?ps.map(p=>`<div class="presence-line"><span>${esc(p.usuario?.nome||"Jogador")}${p.convidadoAvulso?" · convidado avulso":""}</span>${manage?`<button type="button" class="presence-notify" onclick="invitePlayers(${a.id},${time.id},[${p.usuarioId}])">🔔 Notificar</button>`:""}<b>${p.status==="VOU"?"👍":p.status==="NAO_VOU"?"👎":"⏳"}</b></div>`).join(""):'<div class="presence-line">Sem jogadores convidados.</div>'}${manage?`<details class="invite-tools"><summary>+ Convidar jogadores</summary><p>O jogador recebe o convite e responde sem precisar entrar no time.</p><button type="button" class="friend-action" onclick="invitePlayers(${a.id},${time.id},[],true)">Notificar novos jogadores do elenco</button><div class="invite-search"><input id="inviteSearch-${a.id}-${time.id}" placeholder="Nome do jogador" aria-label="Buscar jogador para ${esc(label)}"><button type="button" class="friend-action" onclick="searchInvite(${a.id},${time.id})">Buscar</button></div><div id="inviteResults-${a.id}-${time.id}"></div></details>`:''}</div>`};
+  const own=myPresence(a);const vote=own&&a.status==='CONFIRMADO'?`<div class="presence-vote"><button onclick="presence(${a.id},'VOU')">👍 Vou</button><button onclick="presence(${a.id},'NAO_VOU')">👎 Não vou</button></div>`:'';
+  return vote+`<div class="friend-presences">${box(a.timeA,a.timeA.nome)}${box(a.timeB,a.timeB.nome)}</div>`;
 }
 function rowHtml(a){
   const p=myPresence(a);

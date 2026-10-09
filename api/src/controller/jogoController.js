@@ -44,7 +44,7 @@ function cronometroAtual(jogo) {
 }
 
 async function buscarJogoCompleto(client, jogoId) {
-  return client.jogo.findUnique({
+  const jogo = await client.jogo.findUnique({
     where: { id: jogoId },
     include: {
       campeonato: { include: {
@@ -53,7 +53,8 @@ async function buscarJogoCompleto(client, jogoId) {
       } },
       amistoso: { include: {
         society: { select: { id: true, nome: true, usuarioId: true, imagem: true, cidade: true } },
-        criadoPor: { select: { id: true, nome: true, email: true, tipo: true, isSocioGoPlay: true } }
+        criadoPor: { select: { id: true, nome: true, email: true, tipo: true, isSocioGoPlay: true } },
+        presencas: { where: { convidadoAvulso: true, status: "VOU" }, select: { timeId:true, usuario: {select:publicPlayerSelect} } }
       } },
       timeA: { include: { jogadores: { select: publicPlayerSelect } } },
       timeB: { include: { jogadores: { select: publicPlayerSelect } } },
@@ -70,6 +71,13 @@ async function buscarJogoCompleto(client, jogoId) {
       },
     },
   });
+  if(jogo?.amistoso)for(const team of [jogo.timeA,jogo.timeB])team.jogadores=team.jogadores.filter(j=>{const g=jogo.amistoso.presencas.find(p=>p.usuario.id===j.id);return !g||g.timeId===team.id;});
+  if(jogo?.amistoso)for(const p of jogo.amistoso.presencas||[]){const team=p.timeId===jogo.timeAId?jogo.timeA:jogo.timeB;if(!team.jogadores.some(j=>j.id===p.usuario.id))team.jogadores.push(p.usuario);}
+  return jogo;
+}
+function eligiblePlayer(jogo,player,timeId){
+  const guest=(jogo.amistoso?.presencas||[]).find(p=>p.usuario.id===player.id);
+  return guest?guest.timeId===timeId:Number(player.timeRelacionadoId)===timeId;
 }
 
 function sanitizarJogoPublico(jogo) {
@@ -347,7 +355,7 @@ const addLineup = async (req, res) => {
     if (![jogo.timeAId, jogo.timeBId].includes(timeId)) return res.status(400).json({ error: "timeId não pertence a este jogo." });
 
     const jogador = await prisma.usuario.findUnique({ where: { id: jogadorId } });
-    if (!jogador || Number(jogador.timeRelacionadoId) !== timeId) return res.status(400).json({ error: "Jogador não pertence ao time." });
+    if (!jogador || !eligiblePlayer(jogo,jogador,timeId)) return res.status(400).json({ error: "Jogador não pertence ao time." });
 
     const row = await prisma.jogoJogador.upsert({
       where: { jogoId_jogadorId: { jogoId, jogadorId } },
@@ -400,7 +408,7 @@ const addEvento = async (req, res) => {
       if (jogadores.length !== new Set(jogadoresParaValidar).size) {
         return res.status(400).json({ error: "Jogador inválido no evento." });
       }
-      if (timeId && jogadores.some(p => Number(p.timeRelacionadoId) !== Number(timeId))) {
+      if (timeId && jogadores.some(p => !eligiblePlayer(jogo,p,Number(timeId)))) {
         return res.status(400).json({ error: "O jogador selecionado não pertence ao time do evento." });
       }
     }
