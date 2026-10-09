@@ -300,5 +300,6 @@
 #homeStories .story-strip{gap:10px;padding:4px 0 6px;scrollbar-width:thin}
 #homeStories .story-strip button{flex:0 0 62px;font-size:11px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #homeStories .story-ring{box-sizing:border-box;width:50px;height:50px;border-width:2px;margin-bottom:5px;font-size:17px}
-.story-ring>.society-avatar{width:100%;height:100%;border:0;border-radius:50%;background:transparent;font-size:inherit}
+.story-ring>.society-avatar{display:grid;place-items:center;position:relative;overflow:hidden;width:100%;height:100%;border:0;border-radius:50%;background:transparent;font-size:inherit}
+.story-ring .society-avatar img{position:absolute;inset:0}
 #homeStories.story-error .story-empty{margin:4px 0;font-size:12px}
